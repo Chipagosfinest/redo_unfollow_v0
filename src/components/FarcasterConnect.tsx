@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Wallet, User } from "lucide-react";
+import { sdk } from '@farcaster/miniapp-sdk';
 
 interface FarcasterConnectProps {
   onAuth: (fid: number) => void;
@@ -43,14 +44,23 @@ export default function FarcasterConnect({
   }, [onAuth]);
 
   useEffect(() => {
-    // Auto-connect when in Farcaster native environment
-    if (typeof window !== 'undefined' && 'farcaster' in window) {
-      // @ts-ignore - Farcaster global object
-      const farcaster = (window as any).farcaster;
-      if (farcaster?.user?.fid && !isAuthenticated) {
-        handleFarcasterAuth(farcaster.user.fid);
+    // Auto-connect when in Farcaster native environment using Mini App SDK
+    const initializeAuth = async () => {
+      try {
+        // Call ready() to initialize the SDK
+        await sdk.actions.ready();
+        
+        // Get the current user from the SDK
+        const user = await sdk.actions.getUser();
+        if (user?.fid && !isAuthenticated) {
+          handleFarcasterAuth(user.fid);
+        }
+      } catch (error) {
+        console.log('Not in Farcaster environment or user not authenticated');
       }
-    }
+    };
+
+    initializeAuth();
   }, [isAuthenticated, handleFarcasterAuth]);
 
   if (isAuthenticated && userFid) {
@@ -89,16 +99,19 @@ export default function FarcasterConnect({
 
   return (
     <Button
-      onClick={() => {
-        if (typeof window !== 'undefined' && 'farcaster' in window) {
-          // @ts-ignore - Farcaster global object
-          const farcaster = (window as any).farcaster;
-          if (farcaster?.user?.fid) {
-            handleFarcasterAuth(farcaster.user.fid);
+      onClick={async () => {
+        try {
+          // Call ready() to initialize the SDK
+          await sdk.actions.ready();
+          
+          // Get the current user from the SDK
+          const user = await sdk.actions.getUser();
+          if (user?.fid) {
+            handleFarcasterAuth(user.fid);
           } else {
             toast.error("Please connect your Farcaster wallet first");
           }
-        } else {
+        } catch (error) {
           toast.error("Farcaster wallet not detected. Please use Farcaster app.");
         }
       }}

@@ -20,30 +20,31 @@ export interface UnfollowResult {
 }
 
 // Get Farcaster native wallet signer
+import { sdk } from '@farcaster/miniapp-sdk';
+
 export async function getFarcasterSigner(): Promise<FarcasterSigner | null> {
   try {
-    if (typeof window !== 'undefined' && 'farcaster' in window) {
-      // @ts-ignore - Farcaster global object
-      const farcaster = (window as any).farcaster;
-      
-      if (farcaster && farcaster.user) {
-        return {
-          signMessage: async (message: Uint8Array) => {
-            // Use Farcaster's native signing
-            if (farcaster.signMessage) {
-              return await farcaster.signMessage(message);
-            }
-            throw new Error("Native signing not available");
-          },
-          getPublicKey: async () => {
-            // Get public key from user data
-            return new Uint8Array(0); // Placeholder
-          },
-          getFid: async () => {
-            return farcaster.user.fid;
-          }
-        };
-      }
+    // Initialize the SDK
+    await sdk.actions.ready();
+    
+    // Get the current user from the SDK
+    const user = await sdk.actions.getUser();
+    
+    if (user?.fid) {
+      return {
+        signMessage: async (message: Uint8Array) => {
+          // Use the SDK's signing capabilities
+          const signature = await sdk.actions.signMessage(message);
+          return signature;
+        },
+        getPublicKey: async () => {
+          // Get public key from user data
+          return new Uint8Array(0); // Placeholder - SDK will handle this
+        },
+        getFid: async () => {
+          return user.fid;
+        }
+      };
     }
     
     return null;
