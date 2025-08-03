@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       fid: user.fid,
       username: user.username,
       displayName: user.displayName || user.username,
-      pfp: user.pfp?.url || "https://via.placeholder.com/40",
+      pfp: user.pfp?.url || "/icon.svg",
       followerCount: user.followerCount || 0,
       followingCount: user.followingCount || 0,
     }];

@@ -107,9 +107,9 @@ export default function CastEmbedPage() {
         <CardContent className="space-y-4">
           <div className="flex items-center space-x-3">
             <img
-              src={castData.author?.pfp?.url || "https://via.placeholder.com/40"}
-              alt={castData.author?.displayName}
-              className="w-10 h-10 rounded-full ring-2 ring-purple-200 dark:ring-purple-800"
+              src={castData.author?.pfp?.url || "/icon.svg"}
+              alt={castData.author?.displayName || "Author"}
+              className="w-12 h-12 rounded-full"
             />
             <div>
               <div className="font-medium text-gray-900 dark:text-gray-100">

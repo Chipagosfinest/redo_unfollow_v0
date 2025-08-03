@@ -1,30 +1,45 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { messageBytes, signature } = body;
+    const { fid } = await request.json();
 
-    if (!messageBytes || !signature) {
+    if (!fid || typeof fid !== 'number') {
       return NextResponse.json(
-        { error: "Missing messageBytes or signature" },
+        { error: 'Invalid FID provided' },
         { status: 400 }
       );
     }
 
-    // TODO: Implement real Farcaster authentication
-    // For now, return mock authentication
-    const mockUserFid = 12345;
+    // Validate FID exists in Farcaster
+    const userResponse = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${fid}`);
     
+    if (!userResponse.ok) {
+      return NextResponse.json(
+        { error: 'User not found in Farcaster' },
+        { status: 404 }
+      );
+    }
+
+    const userData = await userResponse.json();
+    
+    if (!userData.result?.user) {
+      return NextResponse.json(
+        { error: 'User not found in Farcaster' },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      userFid: mockUserFid,
-      message: "Authentication successful (mock)"
+      userFid: fid,
+      message: "Authentication successful"
     });
+
   } catch (error) {
-    console.error("Authentication error:", error);
+    console.error('Auth error:', error);
     return NextResponse.json(
-      { error: "Authentication failed" },
+      { error: 'Authentication failed' },
       { status: 500 }
     );
   }

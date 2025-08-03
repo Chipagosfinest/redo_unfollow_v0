@@ -147,7 +147,7 @@ export async function getFollowingList(userFid: number, cursor?: string): Promis
         fid: user.fid,
         username: user.username,
         displayName: user.displayName || user.username,
-        pfp: user.pfp?.url || "https://via.placeholder.com/40"
+        pfp: user.pfp?.url || "/icon.svg"
       })) || [],
       nextCursor: data.result?.next?.cursor
     };

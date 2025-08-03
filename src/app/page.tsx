@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Users, UserMinus, Activity, TrendingUp, Sparkles } from "lucide-react";
 import FarcasterConnect from "@/components/FarcasterConnect";
 import { sdk } from '@farcaster/miniapp-sdk';
+import { Input } from "@/components/ui/input";
 
 interface FarcasterUser {
   fid: number;
@@ -32,11 +33,17 @@ interface FollowingUser {
   isInactive: boolean;
 }
 
-export default function HomePage() {
+export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userFid, setUserFid] = useState<number | null>(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [followingUsers, setFollowingUsers] = useState<FollowingUser[]>([]);
+  const [followingUsers, setFollowingUsers] = useState<Array<{
+    fid: number;
+    username: string;
+    displayName: string;
+    pfp: string;
+  }>>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
 
   const [isUnfollowing, setIsUnfollowing] = useState(false);
@@ -72,7 +79,7 @@ export default function HomePage() {
   const handleScanFollowing = async () => {
     if (!userFid) return;
     
-    setIsScanning(true);
+    setIsLoading(true);
     try {
       const response = await fetch(`/api/following?fid=${userFid}&page=0&limit=50`);
       if (response.ok) {
@@ -85,7 +92,7 @@ export default function HomePage() {
       console.error("Error scanning following:", error);
       toast.error("Failed to scan following list");
     } finally {
-      setIsScanning(false);
+      setIsLoading(false);
     }
   };
 
@@ -174,6 +181,55 @@ export default function HomePage() {
     }
   };
 
+  const handleUnfollowUser = async (fid: number) => {
+    if (!userFid) return;
+    setIsLoading(true);
+    try {
+      await sdk.actions.unfollow(userFid, fid);
+      toast.success(`Unfollowed user ${fid}`);
+      setFollowingUsers(prev => prev.filter(user => user.fid !== fid));
+      setSelectedUsers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fid);
+        return newSet;
+      });
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      toast.error("Failed to unfollow user");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBatchUnfollow = async () => {
+    if (selectedUsers.size === 0) {
+      toast.error("Please select users to unfollow");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const fids = Array.from(selectedUsers);
+      for (let i = 0; i < fids.length; i++) {
+        const fid = fids[i];
+        await sdk.actions.unfollow(userFid!, fid);
+        setFollowingUsers(prev => prev.filter(user => user.fid !== fid));
+        setSelectedUsers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(fid);
+          return newSet;
+        });
+        setUnfollowProgress(prev => ({ ...prev, current: prev.current + 1 }));
+      }
+      toast.success(`Successfully unfollowed ${fids.length} users!`);
+    } catch (error) {
+      console.error("Error batch unfollowing:", error);
+      toast.error("Failed to unfollow some users");
+    } finally {
+      setIsLoading(false);
+      setUnfollowProgress({ current: 0, total: 0 });
+    }
+  };
+
   const formatLastCasted = (timestamp: number | undefined) => {
     if (!timestamp) return "Never";
     const days = Math.floor((Date.now() / 1000 - timestamp) / (24 * 60 * 60));
@@ -182,196 +238,305 @@ export default function HomePage() {
     return `${days} days ago`;
   };
 
+  const filteredUsers = followingUsers.filter(user => 
+    user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.displayName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        
-        {/* Hero Section */}
-        <div className="text-center mb-12">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800 p-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <Sparkles className="w-8 h-8 text-purple-600 mr-3" />
-                                 <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                       Unfollow Tool - Latest Mini App
-                     </h1>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Unfollow Tool
+            </h1>
           </div>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+          <p className="text-lg text-gray-600 dark:text-gray-300">
             Clean up your Farcaster following list automatically
           </p>
         </div>
 
-        {/* Authentication Section */}
-        {!isAuthenticated ? (
-          <Card className="max-w-md mx-auto">
-            <CardHeader className="text-center">
-              <div className="flex items-center justify-center mb-4">
-                <Users className="w-8 h-8 text-purple-600" />
+        {/* Farcaster Connect */}
+        <div className="mb-8">
+          <FarcasterConnect
+            onAuth={handleAuth}
+            onDisconnect={handleDisconnect}
+            isAuthenticated={isAuthenticated}
+            userFid={userFid}
+          />
+        </div>
+
+        {/* Main Content */}
+        {isAuthenticated && userFid && (
+          <div className="space-y-6">
+            {/* Search and Filters */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Search users by username..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setSelectedUsers(new Set())}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Clear Selection
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const allFids = followingUsers.map(user => user.fid);
+                      setSelectedUsers(new Set(allFids));
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Select All
+                  </Button>
+                </div>
               </div>
-              <CardTitle className="text-2xl">Connect Your Account</CardTitle>
-              <CardDescription>
-                Scan your following list and identify inactive users
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FarcasterConnect
-                onAuth={handleAuth}
-                onDisconnect={handleDisconnect}
-                isAuthenticated={isAuthenticated}
-                userFid={userFid}
-              />
-            </CardContent>
-          </Card>
-        ) : (
-          /* Main Dashboard */
-          <div className="space-y-8">
-            
-            {/* Scan Button */}
-            <div className="text-center">
-              <Button
-                onClick={handleScanFollowing}
-                disabled={isScanning}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 text-lg"
-              >
-                {isScanning ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Scanning...
-                  </div>
-                ) : (
-                  <>
-                    <Activity className="w-5 h-5 mr-2" />
-                    Scan Following List
-                  </>
-                )}
-              </Button>
             </div>
 
-            {/* Results */}
-            {followingUsers.length > 0 && (
-              <div className="space-y-6">
-                
-                {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center">
-                        <Users className="w-5 h-5 text-blue-600 mr-2" />
-                        <div>
-                          <p className="text-sm text-gray-600">Total Following</p>
-                          <p className="text-2xl font-bold">{followingUsers.length}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center">
-                        <Activity className="w-5 h-5 text-orange-600 mr-2" />
-                        <div>
-                          <p className="text-sm text-gray-600">Inactive Users</p>
-                          <p className="text-2xl font-bold">{followingUsers.filter(u => u.isInactive).length}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center">
-                        <TrendingUp className="w-5 h-5 text-green-600 mr-2" />
-                        <div>
-                          <p className="text-sm text-gray-600">Selected</p>
-                          <p className="text-2xl font-bold">{selectedUsers.size}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Actions */}
-                <div className="flex flex-wrap gap-4 justify-center">
-                  <Button
-                    onClick={handleSelectAllInactive}
-                    variant="outline"
-                    className="border-purple-200 text-purple-700 hover:bg-purple-50"
+            {/* User List */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-semibold flex items-center">
+                  <Users className="w-5 h-5 mr-2" />
+                  Following ({followingUsers.length})
+                </h2>
+              </div>
+              
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                {filteredUsers.map((user) => (
+                  <div
+                    key={user.fid}
+                    className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                   >
-                    Select All Inactive
-                  </Button>
-                  
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={selectedUsers.has(user.fid)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedUsers(prev => new Set([...prev, user.fid]));
+                            } else {
+                              setSelectedUsers(prev => {
+                                const newSet = new Set(prev);
+                                newSet.delete(user.fid);
+                                return newSet;
+                              });
+                            }
+                          }}
+                        />
+                        <img
+                          src={user.pfp || "/icon.svg"}
+                          alt={user.displayName}
+                          className="w-10 h-10 rounded-full"
+                        />
+                        <div>
+                          <div className="font-medium">{user.displayName}</div>
+                          <div className="text-sm text-gray-500">@{user.username}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          onClick={() => handleUnfollowUser(user.fid)}
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <UserMinus className="w-4 h-4 mr-1" />
+                          Unfollow
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Batch Actions */}
+            {selectedUsers.size > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold">
+                      Batch Unfollow ({selectedUsers.size} selected)
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Remove multiple users from your following list
+                    </p>
+                  </div>
                   <Button
-                    onClick={handleUnfollowSelected}
-                    disabled={selectedUsers.size === 0 || isUnfollowing}
+                    onClick={handleBatchUnfollow}
+                    disabled={isLoading}
                     className="bg-red-600 hover:bg-red-700 text-white"
                   >
-                    {isUnfollowing ? (
+                    {isLoading ? (
                       <div className="flex items-center">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Unfollowing...
+                        Processing...
                       </div>
                     ) : (
                       <>
                         <UserMinus className="w-4 h-4 mr-2" />
-                        Unfollow Selected ({selectedUsers.size})
+                        Unfollow Selected
                       </>
                     )}
                   </Button>
                 </div>
-
-                {/* Progress Bar */}
-                {isUnfollowing && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Unfollowing users...</span>
-                      <span>{unfollowProgress.current}/{unfollowProgress.total}</span>
-                    </div>
-                    <Progress value={(unfollowProgress.current / unfollowProgress.total) * 100} />
-                  </div>
-                )}
-
-                {/* User List */}
-                <div className="space-y-3">
-                  {followingUsers.map((user) => (
-                    <Card key={user.fid} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-center space-x-4">
-                          <Checkbox
-                            checked={selectedUsers.has(user.fid)}
-                            onCheckedChange={(checked) => handleSelectUser(user.fid, checked as boolean)}
-                          />
-                          
-                          <img
-                            src={user.pfp || "https://via.placeholder.com/40"}
-                            alt={user.displayName}
-                            className="w-10 h-10 rounded-full"
-                          />
-                          
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <h3 className="font-semibold">{user.displayName}</h3>
-                              <span className="text-gray-500">@{user.username}</span>
-                              {user.isMutualFollow && (
-                                <Badge variant="secondary" className="text-xs">Mutual</Badge>
-                              )}
-                              {user.isInactive && (
-                                <Badge variant="destructive" className="text-xs">Inactive</Badge>
-                              )}
-
-                            </div>
-                            <p className="text-sm text-gray-600">
-                              Last active: {formatLastCasted(user.lastCasted)}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Features Section */}
+        {!isAuthenticated && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="w-5 h-5 mr-2" />
+                  App Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h3 className="font-semibold">Name</h3>
+                  <p className="text-gray-600">Unfollow Tool</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold">Description</h3>
+                  <p className="text-gray-600">Clean up your Farcaster following list by identifying inactive users and mutual follows</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold">Category</h3>
+                  <Badge variant="secondary">Utility</Badge>
+                </div>
+                <div>
+                  <h3 className="font-semibold">Tags</h3>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    <Badge variant="outline">unfollow</Badge>
+                    <Badge variant="outline">automation</Badge>
+                    <Badge variant="outline">farcaster</Badge>
+                    <Badge variant="outline">tool</Badge>
+                    <Badge variant="outline">cleanup</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Activity className="w-5 h-5 mr-2" />
+                  Features
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">Auto-detect inactive users (60+ days)</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">Find non-mutual follows</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">Batch unfollow with one click</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">Zero manual input required</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">Native Farcaster integration</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>App URLs</CardTitle>
+                <CardDescription>All the links you need for Farcaster app registration</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-2">Main App</h3>
+                  <p className="text-sm text-gray-600 break-all">https://redounfollowv0.vercel.app</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Manifest</h3>
+                  <p className="text-sm text-gray-600 break-all">https://redounfollowv0.vercel.app/.well-known/farcaster.json</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Feed Integration</h3>
+                  <p className="text-sm text-gray-600 break-all">https://redounfollowv0.vercel.app/feed</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Tool Integration</h3>
+                  <p className="text-sm text-gray-600 break-all">https://redounfollowv0.vercel.app/tool</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Cast Embed</h3>
+                  <p className="text-sm text-gray-600 break-all">https://redounfollowv0.vercel.app/embed/cast</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Profile Embed</h3>
+                  <p className="text-sm text-gray-600 break-all">https://redounfollowv0.vercel.app/embed/profile</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>App Assets</CardTitle>
+                <CardDescription>Images and icons for your app</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-2">Icon</h3>
+                  <p className="text-sm text-gray-600 break-all">https://redounfollowv0.vercel.app/icon.svg</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Thumbnail</h3>
+                  <p className="text-sm text-gray-600 break-all">https://redounfollowv0.vercel.app/thumbnail.png</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Splash Screen</h3>
+                  <p className="text-sm text-gray-600 break-all">https://redounfollowv0.vercel.app/splash.png</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex flex-wrap gap-4 justify-center md:col-span-2">
+              <Button
+                onClick={() => window.open('https://redounfollowv0.vercel.app', '_blank')}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Open App
+              </Button>
+              <Button
+                onClick={() => window.open('https://redounfollowv0.vercel.app/.well-known/farcaster.json', '_blank')}
+                variant="outline"
+              >
+                View Manifest
+              </Button>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
 }
-// Force deployment refresh - Updated title to Unfollow Tool - Cache busting enabled - Mini app fixes applied - Latest deployment: $(date)

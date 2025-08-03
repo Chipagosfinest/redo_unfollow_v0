@@ -130,9 +130,9 @@ export default function ProfileEmbedPage() {
         <CardContent className="space-y-4">
           <div className="flex items-center space-x-3">
             <img
-              src={profileData.pfp?.url || "https://via.placeholder.com/40"}
-              alt={profileData.displayName}
-              className="w-12 h-12 rounded-full ring-2 ring-purple-200 dark:ring-purple-800"
+              src={profileData.pfp?.url || "/icon.svg"}
+              alt={profileData.displayName || "Profile"}
+              className="w-16 h-16 rounded-full"
             />
             <div>
               <div className="font-medium text-gray-900 dark:text-gray-100">

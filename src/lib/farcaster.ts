@@ -73,36 +73,60 @@ export class FarcasterService {
       throw error;
     }
   }
-
-  // Mock authentication - in production this would use real Farcaster Connect
-  async authenticateUser(fid: number): Promise<{ success: boolean; error?: string }> {
-    try {
-      // Simulate authentication process
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return { success: true };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Authentication failed" 
-      };
-    }
-  }
-
-  // Mock unfollow - in production this would sign and submit messages
-  async unfollowUser(targetFid: number): Promise<{ success: boolean; error?: string }> {
-    try {
-      // Simulate unfollow process
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      return { success: true };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Unfollow failed" 
-      };
-    }
-  }
 }
 
 export const farcasterService = new FarcasterService(); 
+
+export async function authenticateUser(messageBytes: Uint8Array, signature: Uint8Array): Promise<number | null> {
+  try {
+    // Validate signature and extract user FID
+    const response = await fetch('https://api.farcaster.xyz/v2/validate-message', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messageBytes: Array.from(messageBytes),
+        signature: Array.from(signature)
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Message validation failed');
+    }
+
+    const result = await response.json();
+    return result.valid ? result.fid : null;
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return null;
+  }
+}
+
+export async function unfollowUser(userFid: number, targetFid: number): Promise<boolean> {
+  try {
+    // Create follow-remove message
+    const message = {
+      data: {
+        type: "follow-remove",
+        fid: userFid,
+        targetFid: targetFid,
+        timestamp: Math.floor(Date.now() / 1000)
+      }
+    };
+
+    // Submit to Farcaster Hub
+    const response = await fetch('https://api.farcaster.xyz/v2/submit-message', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(message)
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error('Unfollow error:', error);
+    return false;
+  }
+} 

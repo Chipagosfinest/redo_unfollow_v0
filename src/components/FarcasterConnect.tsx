@@ -106,7 +106,7 @@ export default function FarcasterConnect({
         <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
           <div className="flex items-center space-x-3">
             <img
-              src={userProfile?.pfp?.url || "https://via.placeholder.com/40"}
+              src={userProfile?.pfp?.url || "/icon.svg"}
               alt={userProfile?.displayName || "User"}
               className="w-10 h-10 rounded-full"
             />
