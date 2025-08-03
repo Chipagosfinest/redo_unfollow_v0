@@ -16,6 +16,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Unfollow Tool",
   description: "Automated unfollow tool for Farcaster - like UnfollowX but for FC",
+  other: {
+    "fc:miniapp": "https://redounfollowv0-ge63r0kue-chipagosfinests-projects.vercel.app",
+    "fc:miniapp:icon": "https://redounfollowv0-ge63r0kue-chipagosfinests-projects.vercel.app/icon.svg",
+    "fc:miniapp:name": "Unfollow Tool",
+    "fc:miniapp:description": "Clean up your Farcaster following list by identifying inactive users and mutual follows",
+  },
 };
 
 export default function RootLayout({
