@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import FarcasterConnect from "@/components/FarcasterConnect";
-import { unfollowUser, FarcasterSigner } from "@/lib/farcaster-actions";
+import { unfollowUser, batchUnfollow, FarcasterSigner } from "@/lib/farcaster-actions";
 
 interface FollowingUser {
   fid: number;
@@ -38,11 +39,17 @@ export default function FarcasterUnfollowApp() {
   const [followingUsers, setFollowingUsers] = useState<FollowingUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUnfollowing, setIsUnfollowing] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
+  const [selectedUsers, setSelectedUsers] = new Set());
   const [unfollowedUsers, setUnfollowedUsers] = useState<Set<number>>(new Set());
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalFollowing, setTotalFollowing] = useState(0);
+  const [unfollowProgress, setUnfollowProgress] = useState({ current: 0, total: 0 });
+  const [batchResults, setBatchResults] = useState<{
+    success: number;
+    failed: number;
+    errors: Array<{ fid: number; error: string }>;
+  } | null>(null);
 
   const handleAuth = (fid: number) => {
     setIsAuthenticated(true);
@@ -59,6 +66,8 @@ export default function FarcasterUnfollowApp() {
     setCurrentPage(0);
     setTotalPages(0);
     setTotalFollowing(0);
+    setUnfollowProgress({ current: 0, total: 0 });
+    setBatchResults(null);
   };
 
   const loadFollowingPage = async (page: number = 0) => {
@@ -162,32 +171,36 @@ export default function FarcasterUnfollowApp() {
     }
 
     setIsUnfollowing(true);
+    setUnfollowProgress({ current: 0, total: selectedUsers.size });
+    setBatchResults(null);
+
     try {
-      for (const fid of selectedUsers) {
-        const result = await unfollowUser(signer, fid);
-        
-        if (result.success) {
-          setUnfollowedUsers(prev => new Set([...prev, fid]));
-          const user = followingUsers.find(u => u.fid === fid);
-          toast.success(`Successfully unfollowed @${user?.username || fid}`);
-        } else {
-          throw new Error(result.error || `Failed to unfollow ${fid}`);
-        }
-        
-        // Add delay between unfollows to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+      const selectedFids = Array.from(selectedUsers);
+      
+      const results = await batchUnfollow(signer, selectedFids, (current, total) => {
+        setUnfollowProgress({ current, total });
+      });
+
+      setBatchResults(results);
+      
+      // Update unfollowed users
+      const successfulFids = selectedFids.filter(fid => 
+        !results.errors.find(error => error.fid === fid)
+      );
+      setUnfollowedUsers(prev => new Set([...prev, ...successfulFids]));
       
       // Clear selection after successful unfollow
       setSelectedUsers(new Set());
-      toast.success(`Successfully unfollowed ${selectedUsers.size} users`);
+      
+      toast.success(`Batch unfollow completed: ${results.success} successful, ${results.failed} failed`);
       
       // Reload current page to update the list
       await loadFollowingPage(currentPage);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Bulk unfollow failed");
+      toast.error(error instanceof Error ? error.message : "Batch unfollow failed");
     } finally {
       setIsUnfollowing(false);
+      setUnfollowProgress({ current: 0, total: 0 });
     }
   };
 
@@ -205,8 +218,8 @@ export default function FarcasterUnfollowApp() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-gray-900">Farcaster Unfollow App</h1>
-          <p className="text-gray-600">Manage your following list and unfollow inactive users</p>
+          <h1 className="text-4xl font-bold text-gray-900">Farcaster UnfollowX</h1>
+          <p className="text-gray-600">Automated unfollow tool for Farcaster - like UnfollowX but for FC</p>
         </div>
 
         {/* Authentication Section */}
@@ -252,6 +265,52 @@ export default function FarcasterUnfollowApp() {
                   </div>
                 )}
               </div>
+
+              {/* Progress Bar for Batch Unfollow */}
+              {isUnfollowing && unfollowProgress.total > 0 && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Unfollowing progress...</span>
+                    <span>{unfollowProgress.current} / {unfollowProgress.total}</span>
+                  </div>
+                  <Progress value={(unfollowProgress.current / unfollowProgress.total) * 100} />
+                </div>
+              )}
+
+              {/* Batch Results */}
+              {batchResults && (
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-semibold mb-2">Batch Unfollow Results:</h4>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div className="text-center">
+                      <div className="text-green-600 font-bold">{batchResults.success}</div>
+                      <div>Successful</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-red-600 font-bold">{batchResults.failed}</div>
+                      <div>Failed</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-blue-600 font-bold">{batchResults.errors.length}</div>
+                      <div>Errors</div>
+                    </div>
+                  </div>
+                  {batchResults.errors.length > 0 && (
+                    <div className="mt-2">
+                      <details className="text-xs">
+                        <summary className="cursor-pointer">Show errors</summary>
+                        <div className="mt-2 space-y-1">
+                          {batchResults.errors.map((error, index) => (
+                            <div key={index} className="text-red-600">
+                              FID {error.fid}: {error.error}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {followingUsers.length > 0 && (
                 <div className="space-y-4">
