@@ -23,30 +23,40 @@ export default function FarcasterConnect({
   const [isConnecting, setIsConnecting] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
 
+  // Protect against external wallet injection
+  const getFarcasterWallet = useCallback(() => {
+    if (typeof window !== 'undefined' && 'farcaster' in window) {
+      // @ts-ignore - Farcaster global object
+      const farcaster = (window as any).farcaster;
+      // Only use native Farcaster wallet, ignore external injections
+      if (farcaster && farcaster.user && farcaster.user.fid) {
+        return farcaster;
+      }
+    }
+    return null;
+  }, []);
+
   const handleFarcasterAuth = useCallback(async (fid: number) => {
     setIsConnecting(true);
     try {
       // Initialize SDK first
       await sdk.actions.ready();
       
-      // In Mini App environment, get user profile from global object
-      if (typeof window !== 'undefined' && 'farcaster' in window) {
-        // @ts-ignore - Farcaster global object
-        const farcaster = (window as any).farcaster;
-        if (farcaster?.user) {
-          setUserProfile({
-            fid: farcaster.user.fid,
-            username: farcaster.user.username,
-            displayName: farcaster.user.displayName,
-            pfp: { url: farcaster.user.pfp?.url }
-          });
-        } else {
-          // Fallback to API if global object doesn't have profile
-          const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${fid}`);
-          if (response.ok) {
-            const data = await response.json();
-            setUserProfile(data.result?.user);
-          }
+      // Get native Farcaster wallet
+      const farcaster = getFarcasterWallet();
+      if (farcaster?.user) {
+        setUserProfile({
+          fid: farcaster.user.fid,
+          username: farcaster.user.username,
+          displayName: farcaster.user.displayName,
+          pfp: { url: farcaster.user.pfp?.url }
+        });
+      } else {
+        // Fallback to API if global object doesn't have profile
+        const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${fid}`);
+        if (response.ok) {
+          const data = await response.json();
+          setUserProfile(data.result?.user);
         }
       }
       
@@ -58,7 +68,7 @@ export default function FarcasterConnect({
     } finally {
       setIsConnecting(false);
     }
-  }, [onAuth]);
+  }, [onAuth, getFarcasterWallet]);
 
   useEffect(() => {
     // Auto-connect when in Farcaster native environment
@@ -68,21 +78,18 @@ export default function FarcasterConnect({
         await sdk.actions.ready();
         
         // Check for native Farcaster environment
-        if (typeof window !== 'undefined' && 'farcaster' in window) {
-          // @ts-ignore - Farcaster global object
-          const farcaster = (window as any).farcaster;
-          if (farcaster?.user?.fid && !isAuthenticated) {
-            // Set user profile immediately from native wallet
-            if (farcaster.user) {
-              setUserProfile({
-                fid: farcaster.user.fid,
-                username: farcaster.user.username,
-                displayName: farcaster.user.displayName,
-                pfp: { url: farcaster.user.pfp?.url }
-              });
-            }
-            handleFarcasterAuth(farcaster.user.fid);
+        const farcaster = getFarcasterWallet();
+        if (farcaster?.user?.fid && !isAuthenticated) {
+          // Set user profile immediately from native wallet
+          if (farcaster.user) {
+            setUserProfile({
+              fid: farcaster.user.fid,
+              username: farcaster.user.username,
+              displayName: farcaster.user.displayName,
+              pfp: { url: farcaster.user.pfp?.url }
+            });
           }
+          handleFarcasterAuth(farcaster.user.fid);
         }
       } catch (error) {
         console.log('Not in Farcaster native environment or user not authenticated');
@@ -90,7 +97,7 @@ export default function FarcasterConnect({
     };
 
     initializeAuth();
-  }, [isAuthenticated, handleFarcasterAuth]);
+  }, [isAuthenticated, handleFarcasterAuth, getFarcasterWallet]);
 
   if (isAuthenticated && userFid) {
     return (
@@ -134,25 +141,20 @@ export default function FarcasterConnect({
           await sdk.actions.ready();
           
           // Check for native Farcaster wallet
-          if (typeof window !== 'undefined' && 'farcaster' in window) {
-            // @ts-ignore - Farcaster global object
-            const farcaster = (window as any).farcaster;
-            if (farcaster?.user?.fid) {
-              // Set user profile immediately from native wallet
-              if (farcaster.user) {
-                setUserProfile({
-                  fid: farcaster.user.fid,
-                  username: farcaster.user.username,
-                  displayName: farcaster.user.displayName,
-                  pfp: { url: farcaster.user.pfp?.url }
-                });
-              }
-              handleFarcasterAuth(farcaster.user.fid);
-            } else {
-              toast.error("Please connect your Farcaster native wallet first");
+          const farcaster = getFarcasterWallet();
+          if (farcaster?.user?.fid) {
+            // Set user profile immediately from native wallet
+            if (farcaster.user) {
+              setUserProfile({
+                fid: farcaster.user.fid,
+                username: farcaster.user.username,
+                displayName: farcaster.user.displayName,
+                pfp: { url: farcaster.user.pfp?.url }
+              });
             }
+            handleFarcasterAuth(farcaster.user.fid);
           } else {
-            toast.error("Farcaster native wallet not detected. Please use Farcaster app.");
+            toast.error("Please connect your Farcaster native wallet first");
           }
         } catch (error) {
           toast.error("Farcaster native wallet not detected. Please use Farcaster app.");
