@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -61,16 +61,16 @@ export default function FeedPage() {
         handleAuth(farcaster.user.fid);
       }
     }
-  }, []);
+  }, [handleAuth]);
 
-  const handleAuth = async (fid: number) => {
+  const handleAuth = useCallback(async (fid: number) => {
     setUserFid(fid);
     const signer = await getFarcasterSigner();
     if (signer) {
       setSigner(signer);
       loadInactiveUsers(fid);
     }
-  };
+  }, []);
 
   const loadInactiveUsers = async (fid: number) => {
     setIsLoading(true);

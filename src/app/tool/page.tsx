@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -69,16 +69,16 @@ export default function ToolPage() {
         handleAuth(farcaster.user.fid);
       }
     }
-  }, []);
+  }, [handleAuth]);
 
-  const handleAuth = async (fid: number) => {
+  const handleAuth = useCallback(async (fid: number) => {
     setUserFid(fid);
     const signer = await getFarcasterSigner();
     if (signer) {
       setSigner(signer);
       loadFollowingPage(fid, 0);
     }
-  };
+  }, []);
 
   const loadFollowingPage = async (fid: number, page: number = 0) => {
     setIsLoading(true);
