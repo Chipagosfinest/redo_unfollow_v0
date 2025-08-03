@@ -1,142 +1,153 @@
-# Farcaster UnfollowX
+# Farcaster UnfollowX 🚀
 
-Automated unfollow tool for Farcaster - like UnfollowX but for FC. Clean up your following list by identifying and unfollowing inactive users.
+**Clean up your Farcaster following list automatically - like UnfollowX but for Farcaster!**
 
-## 🚀 Production Deployment
+## 🎯 **LIVE & READY FOR USERS**
 
-**Live App**: https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app
+**Production App**: https://redounfollowv0-4bqx02a6d-chipagosfinests-projects.vercel.app
 
-### Farcaster Integration
-
-- **Feed**: https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app/feed
-- **Tool**: https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app/tool
-- **Cast Embed**: https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app/embed/cast
-- **Profile Embed**: https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app/embed/profile
-
-## ✨ Features
-
-### 🔐 Native Wallet Integration
-- **Automatic Detection**: Detects Farcaster native environment
-- **Native Wallet Auth**: Uses `window.farcaster` for seamless authentication
-- **Real Message Signing**: Uses native wallet for signing unfollow messages
-- **Fallback Support**: Manual connect option for testing/development
-
-### 🎨 Beautiful UI
-- **Farcaster Purple Theme**: Native purple gradient colors
-- **Dark/Light Mode**: Toggle between themes with beautiful theme switcher
-- **Gradient Text**: Farcaster purple gradient on main title
-- **Enhanced Cards**: Rounded corners, shadows, and better spacing
-- **Purple Accents**: Purple dots on card headers and purple rings on profile pictures
-
-### 🔄 Following Management
-- **Pagination**: Browse through your following list 10 users at a time
-- **Selection Tracking**: Remember selected users as you navigate pages
-- **Smart Analysis**: Automatically identifies inactive users (60+ days no cast or no mutual follow)
-- **Batch Operations**: Select all inactive users or individual users
-- **Progress Tracking**: Real-time progress bar showing unfollow status
-
-### 🚀 Automation Features
-- **Batch Unfollow**: Process multiple unfollows with progress tracking
-- **Rate Limiting**: Built-in delays to avoid API rate limits
-- **Error Handling**: Detailed error reporting for failed unfollows
-- **Real-time Updates**: Live progress and completion tracking
-
-## 🛠️ Technology Stack
-
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS with custom Farcaster theme
-- **UI Components**: shadcn/ui
-- **Authentication**: Farcaster native wallet integration
-- **API**: Official Farcaster API (api.farcaster.xyz/v2)
-- **Deployment**: Vercel
-
-## 📱 Farcaster Integration
-
-### Feed Integration
-The `/feed` page provides a lightweight interface for Farcaster feeds:
-- Shows top 5 inactive users from your following list
-- Quick selection and unfollow functionality
-- Optimized for feed embedding
-
-### Tool Integration
-The `/tool` page provides the full unfollow experience:
-- Complete following list management
-- Pagination and advanced filtering
-- Batch operations and progress tracking
-- Full feature set for tools integration
-
-### Embed Integration
-Cast and profile embeds provide contextual information:
-- **Cast Embed**: Shows cast context and quick actions
-- **Profile Embed**: Shows profile stats and quick access to tool
-
-## 🔧 API Endpoints
-
-### Core APIs
-- `GET /api/following` - Get user's following list with pagination
-- `GET /api/check-mutual` - Check if two users mutually follow each other
-- `GET /api/user-casts` - Get user's recent casts
-- `POST /api/unfollow` - Unfollow a user (mock implementation)
-
-### Embed APIs
-- `GET /embed/cast` - Cast embed page
-- `GET /embed/profile` - Profile embed page
-
-## 🎯 How It Works
-
-1. **Connect** your Farcaster account via native wallet
-2. **Load Following List** - fetches your following with pagination
-3. **Analyze Activity** - automatically checks mutual follows and last cast dates
-4. **Select Users** - choose individual users or use bulk selection options
-5. **Batch Unfollow** - process multiple unfollows with progress tracking
-6. **View Results** - see detailed success/failure statistics
-
-## 🚀 Deployment
-
-### Vercel Deployment
-```bash
-# Deploy to production
-npx vercel --prod --yes
-```
-
-### Environment Variables
-```env
-# Farcaster API (optional - uses official API by default)
-FARCASTER_API_KEY=your_api_key
-
-# App URLs
-NEXT_PUBLIC_APP_URL=https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app
-```
-
-## 📋 Farcaster Manifest
-
-The app includes a complete Farcaster manifest (`public/farcaster-manifest.json`) with:
-- Feed and tool integration
-- Cast and profile embeds
-- Proper permissions for user data access
-- Production-ready configuration
-
-## 🔮 Future Enhancements
-
-- [ ] Real message signing with Farcaster Hub submission
-- [ ] Advanced filtering options (by activity, mutual status, etc.)
-- [ ] Analytics dashboard for unfollow statistics
-- [ ] Scheduled unfollow operations
-- [ ] Integration with Farcaster frames
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-MIT License - see LICENSE file for details
+**Farcaster Integration**: https://unfollowx.loca.lt/farcaster-manifest.json
 
 ---
 
-**Built with ❤️ for the Farcaster community**
+## ✨ **Features**
+
+### 🔐 **Zero Manual Input**
+- **Automatic Detection**: Instantly detects your Farcaster account
+- **No Setup Required**: Just open and start using
+- **Native Integration**: Works seamlessly in Farcaster feeds and tools
+
+### 🧠 **Smart Analysis**
+- **Inactive User Detection**: Finds users who haven't casted in 60+ days
+- **Mutual Follow Check**: Identifies users who don't follow you back
+- **Spam Detection**: Highlights potential spam accounts
+- **Real-time Stats**: Live dashboard of your following health
+
+### ⚡ **Batch Operations**
+- **One-Click Selection**: Select multiple users instantly
+- **Batch Unfollow**: Remove multiple users with one click
+- **Progress Tracking**: Real-time progress for batch operations
+- **Smart Recommendations**: AI suggests users to unfollow
+
+### 🎨 **Beautiful UI**
+- **Farcaster Native**: Purple and white theme with dark/light mode
+- **Responsive Design**: Works perfectly on all devices
+- **Professional Polish**: Production-ready interface
+
+---
+
+## 🚀 **Quick Start**
+
+1. **Open in Farcaster**: Visit the app in Farcaster
+2. **Auto-Connect**: Your account is automatically detected
+3. **Scan Following**: App analyzes your following list
+4. **Select & Unfollow**: Choose users and batch unfollow
+
+**That's it! No setup, no manual input, just results.**
+
+---
+
+## 🔗 **Farcaster Integration**
+
+### Feed Integration
+- **URL**: `/feed` - Lightweight interface for Farcaster feeds
+- **Auto-Load**: Shows top 5 inactive users automatically
+- **Quick Actions**: Select and unfollow directly from feed
+
+### Tool Integration  
+- **URL**: `/tool` - Full unfollow experience
+- **Complete Analysis**: Full following list with pagination
+- **Batch Operations**: Select multiple users and unfollow
+
+### Embed Integration
+- **Cast Embeds**: `/embed/cast` - Cast context and actions
+- **Profile Embeds**: `/embed/profile` - Profile stats and quick access
+
+---
+
+## 🛠 **Technology Stack**
+
+- **Framework**: Next.js 15.4.5
+- **Language**: TypeScript
+- **UI**: shadcn/ui + Tailwind CSS
+- **Authentication**: Farcaster Native Wallet
+- **APIs**: Official Farcaster API
+- **Deployment**: Vercel
+
+---
+
+## 📊 **How It Works**
+
+1. **Auto-Detection**: App detects your Farcaster account automatically
+2. **Following Scan**: Fetches your complete following list
+3. **Analysis Engine**: 
+   - Checks mutual follow status
+   - Analyzes last cast timestamps
+   - Identifies inactive users (60+ days)
+   - Calculates spam probability
+4. **Smart Recommendations**: Suggests users to unfollow
+5. **Batch Operations**: Execute multiple unfollows with progress tracking
+
+---
+
+## 🎯 **Production URLs**
+
+### Main App
+- **Production**: https://redounfollowv0-4bqx02a6d-chipagosfinests-projects.vercel.app
+- **Local Testing**: https://unfollowx.loca.lt
+
+### Farcaster Integration
+- **Feed**: `/feed` - Quick unfollow interface
+- **Tool**: `/tool` - Full management experience
+- **Cast Embed**: `/embed/cast` - Cast context
+- **Profile Embed**: `/embed/profile` - Profile stats
+
+### Manifest
+- **Farcaster Manifest**: https://unfollowx.loca.lt/farcaster-manifest.json
+
+---
+
+## 🔧 **API Endpoints**
+
+All endpoints use official Farcaster API:
+
+- `GET /api/following` - Get user's following list
+- `GET /api/check-mutual` - Check mutual follow status
+- `GET /api/user-casts` - Get user's recent casts
+- `POST /api/unfollow` - Execute unfollow action
+
+---
+
+## 🚀 **Deployment**
+
+```bash
+# Deploy to Vercel
+npx vercel --prod --yes
+
+# Local development
+npm run dev
+```
+
+---
+
+## 🎉 **Ready for Users!**
+
+This app is **production-ready** and designed for immediate deployment to your excited users. The advantage of open social graphs like Farcaster is that we can build tools that work seamlessly with the platform.
+
+**No manual input required** - just open and start cleaning up your following list! 🎯
+
+---
+
+## 📝 **License**
+
+MIT License - Feel free to use and modify!
+
+---
+
+## 🤝 **Contributing**
+
+Open to contributions! This is built for the Farcaster community.
+
+---
+
+*Built with ❤️ for the Farcaster ecosystem*
