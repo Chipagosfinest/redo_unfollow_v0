@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Users, UserMinus, Activity, TrendingUp } from "lucide-react";
 import { getFarcasterSigner, FarcasterSigner } from "@/lib/farcaster-actions";
