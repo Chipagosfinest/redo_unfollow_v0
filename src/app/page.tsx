@@ -179,6 +179,8 @@ export default function Home() {
               onClick={handleDisconnect}
               variant="outline"
               size="sm"
+              id="disconnect-button"
+              name="disconnect-button"
             >
               Disconnect
             </Button>
@@ -203,6 +205,8 @@ export default function Home() {
             onClick={handleSelectAll}
             variant="outline"
             size="sm"
+            id="select-all-button"
+            name="select-all-button"
           >
             {selectedUsers.size === followingUsers.length ? "Deselect All" : "Select All"}
           </Button>
@@ -212,6 +216,8 @@ export default function Home() {
               onClick={handleBatchUnfollow}
               disabled={isLoading}
               className="bg-red-600 hover:bg-red-700"
+              id="batch-unfollow-button"
+              name="batch-unfollow-button"
             >
               <UserMinus className="w-4 h-4 mr-2" />
               Unfollow {selectedUsers.size}
@@ -228,8 +234,8 @@ export default function Home() {
                   <div className="flex items-center space-x-3">
                     <input
                       type="checkbox"
-                      id={`user-${user.fid}`}
-                      name={`user-${user.fid}`}
+                      id={`user-checkbox-${user.fid}`}
+                      name={`user-checkbox-${user.fid}`}
                       checked={selectedUsers.has(user.fid)}
                       onChange={() => handleSelectUser(user.fid)}
                       className="w-4 h-4 text-purple-600"
@@ -254,6 +260,8 @@ export default function Home() {
                       variant="outline"
                       size="sm"
                       className="text-red-600 hover:text-red-700"
+                      id={`unfollow-button-${user.fid}`}
+                      name={`unfollow-button-${user.fid}`}
                     >
                       <UserMinus className="w-4 h-4 mr-1" />
                       Unfollow

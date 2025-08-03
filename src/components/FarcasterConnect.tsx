@@ -133,6 +133,8 @@ export default function FarcasterConnect({
           onClick={onDisconnect}
           variant="outline"
           className="w-full"
+          id="farcaster-disconnect-button"
+          name="farcaster-disconnect-button"
         >
           <User className="w-4 h-4 mr-2" />
           Disconnect
@@ -167,6 +169,8 @@ export default function FarcasterConnect({
       }}
       disabled={isConnecting}
       className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+      id="farcaster-connect-button"
+      name="farcaster-connect-button"
     >
       {isConnecting ? (
         <div className="flex items-center">
