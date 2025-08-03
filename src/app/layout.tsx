@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Unfollow Tool",
-  description: "Automated unfollow tool for Farcaster - like UnfollowX but for FC",
+  description: "Clean up your Farcaster following list by identifying inactive users and mutual follows",
   other: {
     "fc:miniapp": "https://redounfollowv0.vercel.app",
     "fc:miniapp:icon": "https://redounfollowv0.vercel.app/icon.svg",
@@ -27,7 +27,7 @@ export default function RootLayout({
       <head>
         <meta 
           httpEquiv="Content-Security-Policy" 
-          content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.farcaster.xyz https://explorer-api.walletconnect.com; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';"
+          content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; connect-src 'self' https:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self';"
         />
       </head>
       <body className={`${inter.className} antialiased`}>
