@@ -7,7 +7,7 @@
   "splash": "https://redounfollowv0.vercel.app/splash.png",
   "permissions": [
     "user:read",
-    "user:write", 
+    "user:write",
     "follows:read",
     "follows:write",
     "casts:read",
@@ -35,7 +35,13 @@
   "metadata": {
     "version": "1.0.0",
     "author": "Farcaster UnfollowX Team",
-    "tags": ["unfollow", "automation", "farcaster", "tool", "cleanup"],
+    "tags": [
+      "unfollow",
+      "automation",
+      "farcaster",
+      "tool",
+      "cleanup"
+    ],
     "category": "utility"
   }
 } 

@@ -1,38 +1,47 @@
 {
   "name": "Unfollow Tool",
   "description": "Clean up your Farcaster following list by identifying inactive users and mutual follows",
-  "icon": "https://redounfollowv0-mu4za992k-chipagosfinests-projects.vercel.app/icon.svg",
-  "url": "https://redounfollowv0-mu4za992k-chipagosfinests-projects.vercel.app",
-  "thumbnail": "https://redounfollowv0-mu4za992k-chipagosfinests-projects.vercel.app/thumbnail.png",
-  "splash": "https://redounfollowv0-mu4za992k-chipagosfinests-projects.vercel.app/splash.png",
+  "icon": "https://redounfollowv0.vercel.app/icon.svg",
+  "url": "https://redounfollowv0.vercel.app",
+  "thumbnail": "https://redounfollowv0.vercel.app/thumbnail.png",
+  "splash": "https://redounfollowv0.vercel.app/splash.png",
   "permissions": [
     "user:read",
-    "user:write", 
+    "user:write",
     "follows:read",
-    "follows:write"
+    "follows:write",
+    "casts:read",
+    "casts:write"
   ],
   "features": [
     "feed",
-    "tool"
+    "tool",
+    "auth"
   ],
   "feed": {
-    "url": "https://redounfollowv0-mu4za992k-chipagosfinests-projects.vercel.app/feed"
+    "url": "https://redounfollowv0.vercel.app/feed"
   },
   "tool": {
-    "url": "https://redounfollowv0-mu4za992k-chipagosfinests-projects.vercel.app/tool"
+    "url": "https://redounfollowv0.vercel.app/tool"
   },
   "embeds": {
     "cast": {
-      "url": "https://redounfollowv0-mu4za992k-chipagosfinests-projects.vercel.app/embed/cast"
+      "url": "https://redounfollowv0.vercel.app/embed/cast"
     },
     "profile": {
-      "url": "https://redounfollowv0-mu4za992k-chipagosfinests-projects.vercel.app/embed/profile"
+      "url": "https://redounfollowv0.vercel.app/embed/profile"
     }
   },
   "metadata": {
     "version": "1.0.0",
     "author": "Farcaster UnfollowX Team",
-    "tags": ["unfollow", "automation", "farcaster", "tool", "cleanup"],
+    "tags": [
+      "unfollow",
+      "automation",
+      "farcaster",
+      "tool",
+      "cleanup"
+    ],
     "category": "utility"
   }
 } 
