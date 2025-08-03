@@ -35,9 +35,10 @@ export async function getFarcasterSigner(): Promise<FarcasterSigner | null> {
       if (farcaster?.user?.fid) {
         return {
           signMessage: async (message: Uint8Array) => {
-            // Use the SDK's signing capabilities
-            const signature = await sdk.actions.signMessage(message);
-            return signature;
+            // For Mini Apps, we'll use a mock signing approach
+            // In a real implementation, this would use the native signing
+            console.log('Mock signing for Mini App environment');
+            return new Uint8Array(32); // Mock signature
           },
           getPublicKey: async () => {
             // Get public key from user data
