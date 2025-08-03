@@ -41,7 +41,7 @@ export default function FarcasterUnfollowApp() {
       //   headers: { "Content-Type": "application/json" },
       //   body: JSON.stringify({ messageBytes, signature }),
       // });
-    } catch (error) {
+    } catch {
       toast.error("Authentication failed. Please try again.");
     }
   };
@@ -96,7 +96,6 @@ export default function FarcasterUnfollowApp() {
       });
 
       if (response.ok) {
-        const data = await response.json();
         setUnfollowedUsers(prev => new Set([...prev, user.fid]));
         toast.success(`Unfollow message created for @${user.username}`);
       } else {

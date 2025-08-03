@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { FollowRemoveMessage as FollowRemoveMessageType } from "@farcaster/core";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userFid, targetFid, signerUuid } = body;
+    const { userFid, targetFid } = body;
 
     if (!userFid || !targetFid) {
       return NextResponse.json(
@@ -13,27 +12,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create a FollowRemoveMessage to unfollow
-    const followRemoveMessage = new FollowRemoveMessageType({
-      fid: userFid,
-      targetFid: targetFid,
-      timestamp: Math.floor(Date.now() / 1000),
-    });
-
-    // TODO: Sign and submit the message to the hub
-    // This requires proper message signing implementation with a wallet
-    // For now, we'll simulate the unfollow action
+    // TODO: Implement real unfollow with Farcaster message signing
+    // For now, simulate successful unfollow
     
     console.log("Unfollow message created:", {
       userFid,
       targetFid,
       messageType: "FollowRemove",
-      timestamp: followRemoveMessage.data.timestamp
+      timestamp: Math.floor(Date.now() / 1000)
     });
 
     return NextResponse.json({
       success: true,
-      message: "Unfollow message created (requires signing)",
+      message: "Unfollow message created (mock)",
       targetFid,
       messageType: "FollowRemove"
     });
