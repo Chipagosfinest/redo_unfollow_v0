@@ -18,6 +18,15 @@ interface FollowingUser {
   isInactive: boolean;
 }
 
+interface FarcasterUser {
+  fid: number;
+  username: string;
+  displayName: string;
+  pfp: string;
+  followerCount: number;
+  followingCount: number;
+}
+
 export default function FeedPage() {
   const [userFid, setUserFid] = useState<number | null>(null);
   const [signer, setSigner] = useState<FarcasterSigner | null>(null);
@@ -66,7 +75,7 @@ export default function FeedPage() {
     }
   };
 
-  const analyzeUsers = async (users: any[], userFid: number): Promise<FollowingUser[]> => {
+  const analyzeUsers = async (users: FarcasterUser[], userFid: number): Promise<FollowingUser[]> => {
     const analyzedUsers: FollowingUser[] = [];
     
     for (const user of users) {

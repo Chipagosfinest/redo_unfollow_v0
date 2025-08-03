@@ -3,23 +3,26 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 
-interface CastEmbedProps {
-  castHash?: string;
-  authorFid?: number;
+interface CastData {
+  author?: {
+    displayName?: string;
+    username?: string;
+    pfp?: {
+      url?: string;
+    };
+  };
+  text?: string;
 }
 
 export default function CastEmbedPage() {
-  const [castData, setCastData] = useState<any>(null);
+  const [castData, setCastData] = useState<CastData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Get cast data from URL params or Farcaster context
     const urlParams = new URLSearchParams(window.location.search);
     const castHash = urlParams.get('castHash');
-    const authorFid = urlParams.get('authorFid');
 
     if (castHash) {
       loadCastData(castHash);

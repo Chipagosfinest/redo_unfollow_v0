@@ -3,16 +3,20 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 
-interface ProfileEmbedProps {
-  fid?: number;
+interface ProfileData {
+  displayName?: string;
   username?: string;
+  fid?: number;
+  pfp?: {
+    url?: string;
+  };
+  followerCount?: number;
+  followingCount?: number;
 }
 
 export default function ProfileEmbedPage() {
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
