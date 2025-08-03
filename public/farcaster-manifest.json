@@ -1,11 +1,11 @@
 {
   "name": "Farcaster UnfollowX",
-  "description": "Automated unfollow tool for Farcaster - like UnfollowX but for FC",
-  "icon": "/icon.svg",
-  "url": "https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app",
+  "description": "Clean up your Farcaster following list by identifying inactive users and mutual follows",
+  "icon": "https://unfollowx.loca.lt/icon.svg",
+  "url": "https://unfollowx.loca.lt",
   "permissions": [
     "user:read",
-    "user:write",
+    "user:write", 
     "follows:read",
     "follows:write"
   ],
@@ -14,24 +14,21 @@
     "tool"
   ],
   "feed": {
-    "type": "iframe",
-    "url": "https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app/feed"
+    "url": "https://unfollowx.loca.lt/feed"
   },
   "tool": {
-    "type": "iframe",
-    "url": "https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app/tool"
+    "url": "https://unfollowx.loca.lt/tool"
   },
   "embeds": {
     "cast": {
-      "url": "https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app/embed/cast"
+      "url": "https://unfollowx.loca.lt/embed/cast"
     },
     "profile": {
-      "url": "https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app/embed/profile"
+      "url": "https://unfollowx.loca.lt/embed/profile"
     }
   },
   "metadata": {
     "version": "1.0.0",
-    "author": "chipagosfinest",
-    "tags": ["unfollow", "automation", "farcaster", "tool"]
+    "author": "Farcaster UnfollowX Team"
   }
 } 

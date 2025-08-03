@@ -53,15 +53,6 @@ export default function FarcasterConnect({
     }
   };
 
-  const handleManualAuth = () => {
-    const fid = prompt("Enter your FID:");
-    if (fid && !isNaN(parseInt(fid))) {
-      handleFarcasterAuth(parseInt(fid));
-    } else {
-      toast.error("Please enter a valid FID");
-    }
-  };
-
   if (isAuthenticated && userFid) {
     return (
       <div className="space-y-4">
@@ -111,8 +102,8 @@ export default function FarcasterConnect({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Primary Connect Button */}
+    <div className="space-y-6">
+      {/* Connect Button */}
       <Button
         onClick={() => {
           if (typeof window !== 'undefined' && 'farcaster' in window) {
@@ -121,58 +112,67 @@ export default function FarcasterConnect({
             if (farcaster?.user?.fid) {
               handleFarcasterAuth(farcaster.user.fid);
             } else {
-              toast.info("Please open this app in Farcaster for the best experience");
-              handleManualAuth();
+              toast.error("Please connect your Farcaster wallet first");
             }
           } else {
-            handleManualAuth();
+            toast.error("Farcaster wallet not detected. Please use Farcaster app.");
           }
         }}
         disabled={isConnecting}
-        className="w-full farcaster-button-primary h-12 text-lg font-semibold"
+        className="w-full farcaster-button-primary h-12 text-lg"
       >
         {isConnecting ? (
-          <>
+          <div className="flex items-center">
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
             Connecting...
-          </>
+          </div>
         ) : (
           <>
             <Wallet className="w-5 h-5 mr-2" />
-            Connect with Farcaster Wallet
+            Connect Farcaster Wallet
           </>
         )}
       </Button>
 
       {/* Features List */}
-      <div className="space-y-3 pt-4">
-        <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
+      <div className="space-y-3">
+        <div className="flex items-center space-x-3">
           <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-          <span>Privacy-focused - your data stays local</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Automatically detect your Farcaster account
+          </span>
         </div>
-        <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
+        <div className="flex items-center space-x-3">
           <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-          <span>Real-time analysis of your following list</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Scan your following list for inactive users
+          </span>
         </div>
-        <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
+        <div className="flex items-center space-x-3">
           <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-          <span>Smart recommendations for inactive users</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Identify users who don't follow you back
+          </span>
+        </div>
+        <div className="flex items-center space-x-3">
+          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Batch unfollow with one click
+          </span>
         </div>
       </div>
 
-      {/* Manual Connect for Testing */}
-      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-3">
-          For best experience, use Farcaster&apos;s native app
+      {/* Info for Testing */}
+      <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+        <div className="flex items-center space-x-2 mb-2">
+          <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+            Testing Mode
+          </span>
+        </div>
+        <p className="text-xs text-blue-600 dark:text-blue-400">
+          Open this app in Farcaster to automatically connect and start managing your following list.
         </p>
-        <Button
-          onClick={handleManualAuth}
-          variant="outline"
-          className="w-full farcaster-button-secondary"
-        >
-          <Sparkles className="w-4 h-4 mr-2" />
-          Manual Connect (Testing)
-        </Button>
       </div>
     </div>
   );
