@@ -9,11 +9,14 @@
     "user:read",
     "user:write", 
     "follows:read",
-    "follows:write"
+    "follows:write",
+    "casts:read",
+    "casts:write"
   ],
   "features": [
     "feed",
-    "tool"
+    "tool",
+    "auth"
   ],
   "feed": {
     "url": "https://redounfollowv0.vercel.app/feed"

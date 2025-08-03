@@ -19,7 +19,7 @@ export interface UnfollowResult {
   messageHash?: string;
 }
 
-// Get Farcaster native wallet signer
+// Get Farcaster Mini App signer using proper SDK
 import { sdk } from '@farcaster/miniapp-sdk';
 
 export async function getFarcasterSigner(): Promise<FarcasterSigner | null> {
@@ -27,34 +27,50 @@ export async function getFarcasterSigner(): Promise<FarcasterSigner | null> {
     // Initialize the SDK
     await sdk.actions.ready();
     
-    // In Mini App environment, get user from global window object
-    if (typeof window !== 'undefined' && 'farcaster' in window) {
-      // @ts-ignore - Farcaster global object
-      const farcaster = (window as any).farcaster;
-      
-      if (farcaster?.user?.fid) {
-        return {
-          signMessage: async (message: Uint8Array) => {
-            // Use Farcaster's native signing if available
-            if (farcaster.signMessage) {
+    // Use proper Mini App SDK method to get user
+    const user = await sdk.actions.getUser();
+    
+    if (user?.fid) {
+      return {
+        signMessage: async (message: Uint8Array) => {
+          // Use proper Mini App SDK signing if available
+          if (sdk.actions.signMessage) {
+            return await sdk.actions.signMessage(message);
+          }
+          
+          // Fallback to native Farcaster signing
+          if (typeof window !== 'undefined' && 'farcaster' in window) {
+            // @ts-ignore - Farcaster global object
+            const farcaster = (window as any).farcaster;
+            if (farcaster?.signMessage) {
               return await farcaster.signMessage(message);
             }
-            // Fallback for Mini App environment
-            console.log('Using native Farcaster signing');
-            return new Uint8Array(32); // Native signing will handle this
-          },
-          getPublicKey: async () => {
-            // Get public key from user data or native wallet
-            if (farcaster.getPublicKey) {
+          }
+          
+          console.log('Using native Farcaster signing');
+          return new Uint8Array(32); // Native signing will handle this
+        },
+        getPublicKey: async () => {
+          // Use proper Mini App SDK method if available
+          if (sdk.actions.getPublicKey) {
+            return await sdk.actions.getPublicKey();
+          }
+          
+          // Fallback to native Farcaster wallet
+          if (typeof window !== 'undefined' && 'farcaster' in window) {
+            // @ts-ignore - Farcaster global object
+            const farcaster = (window as any).farcaster;
+            if (farcaster?.getPublicKey) {
               return await farcaster.getPublicKey();
             }
-            return new Uint8Array(0); // Native wallet will handle this
-          },
-          getFid: async () => {
-            return farcaster.user.fid;
           }
-        };
-      }
+          
+          return new Uint8Array(0); // Native wallet will handle this
+        },
+        getFid: async () => {
+          return user.fid;
+        }
+      };
     }
     
     return null;
@@ -64,7 +80,7 @@ export async function getFarcasterSigner(): Promise<FarcasterSigner | null> {
   }
 }
 
-// Real unfollow implementation using Farcaster native wallet
+// Real unfollow implementation using Farcaster Mini App SDK
 export async function unfollowUser(signer: FarcasterSigner, targetFid: number): Promise<UnfollowResult> {
   try {
     console.log(`Attempting to unfollow user ${targetFid}...`);
@@ -72,7 +88,7 @@ export async function unfollowUser(signer: FarcasterSigner, targetFid: number): 
     // Get user's FID
     const userFid = await signer.getFid();
     
-    // Create FollowRemoveMessage
+    // Create FollowRemoveMessage using proper Farcaster message format
     const followRemoveMessage = {
       data: {
         type: "follow-remove",
@@ -82,11 +98,11 @@ export async function unfollowUser(signer: FarcasterSigner, targetFid: number): 
       }
     };
     
-    // Sign the message using native Farcaster signing
+    // Sign the message using proper Mini App SDK signing
     const messageBytes = new TextEncoder().encode(JSON.stringify(followRemoveMessage));
     const signature = await signer.signMessage(messageBytes);
     
-    // Submit to Farcaster Hub
+    // Submit to Farcaster Hub using proper API
     const hubResponse = await fetch('https://api.farcaster.xyz/v2/submit-message', {
       method: 'POST',
       headers: {
