@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Users, UserMinus, Activity, TrendingUp, Shield, Sparkles } from "lucide-react";
+import { Users, UserMinus, Activity, TrendingUp, Sparkles } from "lucide-react";
 import FarcasterConnect from "@/components/FarcasterConnect";
 import { sdk } from '@farcaster/miniapp-sdk';
 
@@ -38,7 +38,7 @@ export default function HomePage() {
   const [isScanning, setIsScanning] = useState(false);
   const [followingUsers, setFollowingUsers] = useState<FollowingUser[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
-  const [unfollowedUsers, setUnfollowedUsers] = useState<Set<number>>(new Set());
+
   const [isUnfollowing, setIsUnfollowing] = useState(false);
   const [unfollowProgress, setUnfollowProgress] = useState({ current: 0, total: 0 });
 

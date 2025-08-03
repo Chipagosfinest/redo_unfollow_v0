@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Users, UserMinus, Activity, TrendingUp } from "lucide-react";
+
 import { getFarcasterSigner, FarcasterSigner, batchUnfollow } from "@/lib/farcaster-actions";
 import { sdk } from '@farcaster/miniapp-sdk';
 
@@ -39,7 +39,7 @@ export default function ToolPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isUnfollowing, setIsUnfollowing] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
-  const [unfollowedUsers, setUnfollowedUsers] = useState<Set<number>>(new Set());
+
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalFollowing, setTotalFollowing] = useState(0);

@@ -2,12 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Users, UserMinus, Activity, TrendingUp } from "lucide-react";
 import { getFarcasterSigner, FarcasterSigner } from "@/lib/farcaster-actions";
 import { sdk } from '@farcaster/miniapp-sdk';
 
@@ -35,7 +33,6 @@ export default function FeedPage() {
   const [signer, setSigner] = useState<FarcasterSigner | null>(null);
   const [inactiveUsers, setInactiveUsers] = useState<FollowingUser[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
-  const [unfollowedUsers, setUnfollowedUsers] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [isUnfollowing, setIsUnfollowing] = useState(false);
   const [unfollowProgress, setUnfollowProgress] = useState({ current: 0, total: 0 });

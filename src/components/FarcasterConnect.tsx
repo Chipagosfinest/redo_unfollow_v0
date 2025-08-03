@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -31,9 +31,9 @@ export default function FarcasterConnect({
         handleFarcasterAuth(farcaster.user.fid);
       }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, handleFarcasterAuth]);
 
-  const handleFarcasterAuth = async (fid: number) => {
+  const handleFarcasterAuth = useCallback(async (fid: number) => {
     setIsConnecting(true);
     try {
       // Try to get user profile from Farcaster API
@@ -51,7 +51,7 @@ export default function FarcasterConnect({
     } finally {
       setIsConnecting(false);
     }
-  };
+  }, [onAuth]);
 
   if (isAuthenticated && userFid) {
     return (
