@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     // For pagination, we need to fetch all users up to the current page
     // This is a limitation of the Farcaster API - we can't jump to specific pages
-    let allUsers: any[] = [];
+    let allUsers: FarcasterUser[] = [];
     let currentCursor = "";
     let currentPageCount = 0;
     const targetPage = page;
