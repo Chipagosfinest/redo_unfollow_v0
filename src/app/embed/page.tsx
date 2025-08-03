@@ -15,7 +15,7 @@ export default function EmbedPage() {
           <div className="flex items-center justify-center mb-4">
             <Sparkles className="w-8 h-8 text-purple-600 mr-3" />
             <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Farcaster UnfollowX
+              Unfollow Tool
             </h1>
           </div>
           <p className="text-lg text-gray-600 dark:text-gray-300">
@@ -37,7 +37,7 @@ export default function EmbedPage() {
             <CardContent className="space-y-4">
               <div>
                 <h3 className="font-semibold">Name</h3>
-                <p className="text-gray-600">Farcaster UnfollowX</p>
+                <p className="text-gray-600">Unfollow Tool</p>
               </div>
               <div>
                 <h3 className="font-semibold">Description</h3>

@@ -191,9 +191,9 @@ export default function HomePage() {
         <div className="text-center mb-12">
           <div className="flex items-center justify-center mb-4">
             <Sparkles className="w-8 h-8 text-purple-600 mr-3" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Farcaster UnfollowX
-            </h1>
+                                 <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                       Unfollow Tool
+                     </h1>
           </div>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
             Clean up your Farcaster following list automatically

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Farcaster UnfollowX",
+  title: "Unfollow Tool",
   description: "Automated unfollow tool for Farcaster - like UnfollowX but for FC",
 };
 

@@ -79,7 +79,7 @@ export default function CastEmbedPage() {
       <div className="p-4">
         <Card className="farcaster-card">
           <CardHeader>
-            <CardTitle className="farcaster-gradient-text">Farcaster UnfollowX</CardTitle>
+            <CardTitle className="farcaster-gradient-text">Unfollow Tool</CardTitle>
             <CardDescription>Cast embed - no cast data available</CardDescription>
           </CardHeader>
           <CardContent>

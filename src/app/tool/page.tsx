@@ -203,7 +203,7 @@ export default function ToolPage() {
       <div className="p-4">
         <Card className="farcaster-card">
           <CardHeader>
-            <CardTitle className="farcaster-gradient-text">Farcaster UnfollowX Tool</CardTitle>
+            <CardTitle className="farcaster-gradient-text">Unfollow Tool</CardTitle>
             <CardDescription>Connect to manage your following list</CardDescription>
           </CardHeader>
           <CardContent>

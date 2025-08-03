@@ -189,7 +189,7 @@ export default function FeedPage() {
       <div className="p-4">
         <Card className="farcaster-card">
           <CardHeader>
-            <CardTitle className="farcaster-gradient-text">Farcaster UnfollowX</CardTitle>
+            <CardTitle className="farcaster-gradient-text">Unfollow Tool</CardTitle>
             <CardDescription>Connect to see inactive users you should unfollow</CardDescription>
           </CardHeader>
           <CardContent>
