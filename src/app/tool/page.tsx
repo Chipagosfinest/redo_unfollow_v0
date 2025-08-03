@@ -171,7 +171,7 @@ export default function ToolPage() {
       const successfulFids = selectedFids.filter(fid => 
         !results.errors.find(error => error.fid === fid)
       );
-      setUnfollowedUsers(prev => new Set([...prev, ...successfulFids]));
+
       
       setSelectedUsers(new Set());
       toast.success(`Successfully unfollowed ${results.success} users`);
@@ -294,7 +294,7 @@ export default function ToolPage() {
                         onCheckedChange={(checked) => 
                           handleSelectUser(user.fid, checked as boolean)
                         }
-                        disabled={unfollowedUsers.has(user.fid)}
+                                                      disabled={false}
                       />
                       <img
                         src={user.pfp}
@@ -323,11 +323,7 @@ export default function ToolPage() {
                           Inactive
                         </Badge>
                       )}
-                      {unfollowedUsers.has(user.fid) && (
-                        <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400">
-                          Unfollowed
-                        </Badge>
-                      )}
+
                     </div>
                   </div>
                 ))}
