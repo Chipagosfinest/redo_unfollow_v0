@@ -1,0 +1,39 @@
+{
+  "name": "Farcaster Unfollow App",
+  "description": "Manage your Farcaster follows efficiently",
+  "icon": "https://redounfollowv0-xd7u1lti8-chipagosfinests-projects.vercel.app/icon.png",
+  "url": "https://redounfollowv0-xd7u1lti8-chipagosfinests-projects.vercel.app",
+  "app": {
+    "name": "Farcaster Unfollow App",
+    "description": "A tool to help you manage your Farcaster follows by searching and unfollowing users efficiently.",
+    "icon": "https://redounfollowv0-xd7u1lti8-chipagosfinests-projects.vercel.app/icon.png",
+    "url": "https://redounfollowv0-xd7u1lti8-chipagosfinests-projects.vercel.app"
+  },
+  "permissions": [
+    "farcaster://signer",
+    "farcaster://following",
+    "farcaster://user"
+  ],
+  "actions": [
+    {
+      "name": "unfollow",
+      "description": "Unfollow a user on Farcaster",
+      "parameters": {
+        "targetFid": {
+          "type": "number",
+          "description": "The FID of the user to unfollow"
+        }
+      }
+    },
+    {
+      "name": "search",
+      "description": "Search for users on Farcaster",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "description": "The username to search for"
+        }
+      }
+    }
+  ]
+} 

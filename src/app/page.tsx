@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import FarcasterConnect from "@/components/FarcasterConnect";
+import { unfollowUser } from "@/lib/farcaster-actions";
 
 interface User {
   fid: number;
@@ -21,29 +22,24 @@ interface User {
 export default function FarcasterUnfollowApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userFid, setUserFid] = useState<number | null>(null);
+  const [signer, setSigner] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isUnfollowing, setIsUnfollowing] = useState(false);
   const [unfollowedUsers, setUnfollowedUsers] = useState<Set<number>>(new Set());
 
-  const handleAuth = async () => {
-    try {
-      // TODO: Implement real Farcaster authentication with message signing
-      // This requires integration with a wallet or signer
-      toast.error("Authentication requires wallet integration. Please implement Farcaster Connect.");
-      return;
-      
-      // Example of what the real implementation would look like:
-      // const messageBytes = await signMessage(authMessage);
-      // const response = await fetch("/api/auth", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ messageBytes, signature }),
-      // });
-    } catch {
-      toast.error("Authentication failed. Please try again.");
-    }
+  const handleAuth = (fid: number) => {
+    setIsAuthenticated(true);
+    setUserFid(fid);
+  };
+
+  const handleDisconnect = () => {
+    setIsAuthenticated(false);
+    setUserFid(null);
+    setSigner(null);
+    setSearchResults([]);
+    setUnfollowedUsers(new Set());
   };
 
   const handleSearch = async () => {
@@ -77,30 +73,20 @@ export default function FarcasterUnfollowApp() {
   };
 
   const handleUnfollow = async (user: User) => {
-    if (!userFid) {
+    if (!signer) {
       toast.error("Please authenticate first");
       return;
     }
 
     setIsUnfollowing(true);
     try {
-      const response = await fetch("/api/unfollow", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userFid,
-          targetFid: user.fid,
-        }),
-      });
-
-      if (response.ok) {
+      const result = await unfollowUser(signer, user.fid);
+      
+      if (result.success) {
         setUnfollowedUsers(prev => new Set([...prev, user.fid]));
-        toast.success(`Unfollow message created for @${user.username}`);
+        toast.success(`Successfully unfollowed @${user.username}`);
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Unfollow failed");
+        throw new Error(result.error || "Unfollow failed");
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : `Failed to unfollow @${user.username}`);
@@ -110,7 +96,7 @@ export default function FarcasterUnfollowApp() {
   };
 
   const handleBulkUnfollow = async () => {
-    if (!userFid) {
+    if (!signer) {
       toast.error("Please authenticate first");
       return;
     }
@@ -124,23 +110,13 @@ export default function FarcasterUnfollowApp() {
     setIsUnfollowing(true);
     try {
       for (const user of usersToUnfollow) {
-        const response = await fetch("/api/unfollow", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userFid,
-            targetFid: user.fid,
-          }),
-        });
-
-        if (response.ok) {
+        const result = await unfollowUser(signer, user.fid);
+        
+        if (result.success) {
           setUnfollowedUsers(prev => new Set([...prev, user.fid]));
-          toast.success(`Unfollow message created for @${user.username}`);
+          toast.success(`Successfully unfollowed @${user.username}`);
         } else {
-          const errorData = await response.json();
-          throw new Error(errorData.error || `Failed to unfollow @${user.username}`);
+          throw new Error(result.error || `Failed to unfollow @${user.username}`);
         }
         
         // Add delay between unfollows to avoid rate limiting
@@ -170,31 +146,12 @@ export default function FarcasterUnfollowApp() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {!isAuthenticated ? (
-              <div className="space-y-4">
-                <Button onClick={handleAuth} className="w-full">
-                  Connect Farcaster Account
-                </Button>
-                <p className="text-sm text-gray-500 text-center">
-                  Requires wallet integration for message signing
-                </p>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Badge variant="secondary">Connected</Badge>
-                  <span className="text-sm text-gray-600">FID: {userFid}</span>
-                </div>
-                <Button variant="outline" onClick={() => {
-                  setIsAuthenticated(false);
-                  setUserFid(null);
-                  setSearchResults([]);
-                  setUnfollowedUsers(new Set());
-                }}>
-                  Disconnect
-                </Button>
-              </div>
-            )}
+            <FarcasterConnect
+              onAuth={handleAuth}
+              onDisconnect={handleDisconnect}
+              isAuthenticated={isAuthenticated}
+              userFid={userFid}
+            />
           </CardContent>
         </Card>
 
