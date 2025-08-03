@@ -22,6 +22,26 @@ export default function FarcasterConnect({
   const [isConnecting, setIsConnecting] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
 
+  const handleFarcasterAuth = useCallback(async (fid: number) => {
+    setIsConnecting(true);
+    try {
+      // Try to get user profile from Farcaster API
+      const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${fid}`);
+      if (response.ok) {
+        const data = await response.json();
+        setUserProfile(data.result?.user);
+      }
+      
+      onAuth(fid);
+      toast.success("Connected to Farcaster!");
+    } catch (error) {
+      console.error("Error connecting to Farcaster:", error);
+      toast.error("Failed to connect to Farcaster");
+    } finally {
+      setIsConnecting(false);
+    }
+  }, [onAuth]);
+
   useEffect(() => {
     // Auto-connect when in Farcaster native environment
     if (typeof window !== 'undefined' && 'farcaster' in window) {
@@ -32,8 +52,6 @@ export default function FarcasterConnect({
       }
     }
   }, [isAuthenticated, handleFarcasterAuth]);
-
-  const handleFarcasterAuth = useCallback(async (fid: number) => {
     setIsConnecting(true);
     try {
       // Try to get user profile from Farcaster API
