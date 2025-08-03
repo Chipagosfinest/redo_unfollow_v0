@@ -29,10 +29,8 @@ export default function RootLayout({
         className={`${geist.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider
-          attribute="class"
           defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
+          storageKey="farcaster-ui-theme"
         >
           {children}
         </ThemeProvider>
