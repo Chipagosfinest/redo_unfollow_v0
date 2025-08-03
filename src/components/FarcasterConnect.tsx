@@ -52,24 +52,6 @@ export default function FarcasterConnect({
       }
     }
   }, [isAuthenticated, handleFarcasterAuth]);
-    setIsConnecting(true);
-    try {
-      // Try to get user profile from Farcaster API
-      const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${fid}`);
-      if (response.ok) {
-        const data = await response.json();
-        setUserProfile(data.result?.user);
-      }
-      
-      onAuth(fid);
-      toast.success("Connected to Farcaster!");
-    } catch (error) {
-      console.error("Error connecting to Farcaster:", error);
-      toast.error("Failed to connect to Farcaster");
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [onAuth]);
 
   if (isAuthenticated && userFid) {
     return (
