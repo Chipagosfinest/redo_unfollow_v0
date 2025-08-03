@@ -25,6 +25,15 @@ interface FollowingUser {
   isInactive: boolean;
 }
 
+interface FarcasterUser {
+  fid: number;
+  username: string;
+  displayName: string;
+  pfp: string;
+  followerCount: number;
+  followingCount: number;
+}
+
 export default function FarcasterUnfollowApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userFid, setUserFid] = useState<number | null>(null);
