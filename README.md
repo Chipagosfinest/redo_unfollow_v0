@@ -4,9 +4,9 @@
 
 ## 🎯 **LIVE & READY FOR USERS**
 
-**Production App**: https://redounfollowv0-4bqx02a6d-chipagosfinests-projects.vercel.app
+**Production App**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app
 
-**Farcaster Integration**: https://unfollowx.loca.lt/farcaster-manifest.json
+**Farcaster App Registration**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app/embed
 
 ---
 
@@ -93,8 +93,8 @@
 ## 🎯 **Production URLs**
 
 ### Main App
-- **Production**: https://redounfollowv0-4bqx02a6d-chipagosfinests-projects.vercel.app
-- **Local Testing**: https://unfollowx.loca.lt
+- **Production**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app
+- **App Registration**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app/embed
 
 ### Farcaster Integration
 - **Feed**: `/feed` - Quick unfollow interface
@@ -102,8 +102,11 @@
 - **Cast Embed**: `/embed/cast` - Cast context
 - **Profile Embed**: `/embed/profile` - Profile stats
 
-### Manifest
-- **Farcaster Manifest**: https://unfollowx.loca.lt/farcaster-manifest.json
+### App Assets
+- **Manifest**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app/farcaster-manifest.json
+- **Icon**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app/icon.svg
+- **Thumbnail**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app/thumbnail.png
+- **Splash**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app/splash.png
 
 ---
 
