@@ -355,9 +355,7 @@ export default function HomePage() {
                               {user.isInactive && (
                                 <Badge variant="destructive" className="text-xs">Inactive</Badge>
                               )}
-                              {unfollowedUsers.has(user.fid) && (
-                                <Badge className="bg-green-100 text-green-800 text-xs">Unfollowed</Badge>
-                              )}
+
                             </div>
                             <p className="text-sm text-gray-600">
                               Last active: {formatLastCasted(user.lastCasted)}
