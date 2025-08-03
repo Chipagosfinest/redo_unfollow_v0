@@ -26,11 +26,25 @@ export default function FarcasterConnect({
   const handleFarcasterAuth = useCallback(async (fid: number) => {
     setIsConnecting(true);
     try {
-      // Try to get user profile from Farcaster API
-      const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${fid}`);
-      if (response.ok) {
-        const data = await response.json();
-        setUserProfile(data.result?.user);
+      // In Mini App environment, get user profile from global object
+      if (typeof window !== 'undefined' && 'farcaster' in window) {
+        // @ts-ignore - Farcaster global object
+        const farcaster = (window as any).farcaster;
+        if (farcaster?.user) {
+          setUserProfile({
+            fid: farcaster.user.fid,
+            username: farcaster.user.username,
+            displayName: farcaster.user.displayName,
+            pfp: { url: farcaster.user.pfp?.url }
+          });
+        } else {
+          // Fallback to API if global object doesn't have profile
+          const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${fid}`);
+          if (response.ok) {
+            const data = await response.json();
+            setUserProfile(data.result?.user);
+          }
+        }
       }
       
       onAuth(fid);
@@ -56,6 +70,15 @@ export default function FarcasterConnect({
           // @ts-ignore - Farcaster global object
           const farcaster = (window as any).farcaster;
           if (farcaster?.user?.fid && !isAuthenticated) {
+            // Set user profile immediately from global object
+            if (farcaster.user) {
+              setUserProfile({
+                fid: farcaster.user.fid,
+                username: farcaster.user.username,
+                displayName: farcaster.user.displayName,
+                pfp: { url: farcaster.user.pfp?.url }
+              });
+            }
             handleFarcasterAuth(farcaster.user.fid);
           }
         }
@@ -113,6 +136,15 @@ export default function FarcasterConnect({
             // @ts-ignore - Farcaster global object
             const farcaster = (window as any).farcaster;
             if (farcaster?.user?.fid) {
+              // Set user profile immediately from global object
+              if (farcaster.user) {
+                setUserProfile({
+                  fid: farcaster.user.fid,
+                  username: farcaster.user.username,
+                  displayName: farcaster.user.displayName,
+                  pfp: { url: farcaster.user.pfp?.url }
+                });
+              }
               handleFarcasterAuth(farcaster.user.fid);
             } else {
               toast.error("Please connect your Farcaster wallet first");
