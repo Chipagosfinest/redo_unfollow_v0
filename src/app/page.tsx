@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { unfollowUser, getFarcasterSigner } from "@/lib/farcaster-actions";
 import FarcasterConnect from "@/components/FarcasterConnect";
 import { Users, UserMinus, Activity, TrendingUp, Search, Filter } from "lucide-react";
@@ -232,13 +233,11 @@ export default function Home() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       id={`user-checkbox-${user.fid}`}
                       name={`user-checkbox-${user.fid}`}
                       checked={selectedUsers.has(user.fid)}
-                      onChange={() => handleSelectUser(user.fid)}
-                      className="w-4 h-4 text-purple-600"
+                      onCheckedChange={() => handleSelectUser(user.fid)}
                     />
                     
                     <img
