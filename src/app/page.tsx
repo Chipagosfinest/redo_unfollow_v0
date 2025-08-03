@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import FarcasterConnect from "@/components/FarcasterConnect";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { batchUnfollow, getFarcasterSigner, FarcasterSigner } from "@/lib/farcaster-actions";
 
 interface FollowingUser {
@@ -228,17 +229,28 @@ export default function FarcasterUnfollowApp() {
   const inactiveUsers = followingUsers.filter(u => u.isInactive);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-gray-900">Farcaster UnfollowX</h1>
-          <p className="text-gray-600">Automated unfollow tool for Farcaster - like UnfollowX but for FC</p>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="max-w-6xl mx-auto p-4 space-y-6">
+        {/* Header with Theme Toggle */}
+        <div className="flex items-center justify-between">
+          <div className="text-center flex-1">
+            <h1 className="text-4xl font-bold farcaster-gradient-text">
+              Farcaster UnfollowX
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Automated unfollow tool for Farcaster - like UnfollowX but for FC
+            </p>
+          </div>
+          <ThemeToggle />
         </div>
 
         {/* Authentication Section */}
-        <Card>
+        <Card className="farcaster-card">
           <CardHeader>
-            <CardTitle>Authentication</CardTitle>
+            <CardTitle className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span>Authentication</span>
+            </CardTitle>
             <CardDescription>
               Connect your Farcaster account to manage your following list
             </CardDescription>
@@ -255,9 +267,12 @@ export default function FarcasterUnfollowApp() {
 
         {/* Following Management Section */}
         {isAuthenticated && (
-          <Card>
+          <Card className="farcaster-card">
             <CardHeader>
-              <CardTitle>Following Management</CardTitle>
+              <CardTitle className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span>Following Management</span>
+              </CardTitle>
               <CardDescription>
                 Browse your following list and unfollow inactive users (10 users per page)
               </CardDescription>
@@ -267,13 +282,13 @@ export default function FarcasterUnfollowApp() {
                 <Button 
                   onClick={() => loadFollowingPage(0)} 
                   disabled={isLoading}
-                  className="w-full max-w-xs"
+                  className="farcaster-button-primary"
                 >
                   {isLoading ? "Loading..." : "Load Following List"}
                 </Button>
                 
                 {totalFollowing > 0 && (
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
                     {inactiveUsers.length} inactive on this page • {totalFollowing} total following
                   </div>
                 )}
@@ -292,7 +307,7 @@ export default function FarcasterUnfollowApp() {
 
               {/* Batch Results */}
               {batchResults && (
-                <div className="p-4 bg-gray-50 rounded-lg">
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <h4 className="font-semibold mb-2">Batch Unfollow Results:</h4>
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div className="text-center">
@@ -334,6 +349,7 @@ export default function FarcasterUnfollowApp() {
                         onClick={handleSelectAllInactive}
                         variant="outline"
                         size="sm"
+                        className="farcaster-button-secondary"
                       >
                         Select All Inactive
                       </Button>
@@ -341,14 +357,15 @@ export default function FarcasterUnfollowApp() {
                         onClick={handleSelectAllOnPage}
                         variant="outline"
                         size="sm"
+                        className="farcaster-button-secondary"
                       >
                         Select All on Page
                       </Button>
                       <Button 
                         onClick={handleUnfollowSelected}
                         disabled={isUnfollowing || selectedUsers.size === 0}
-                        variant="destructive"
                         size="sm"
+                        className="farcaster-button-destructive"
                       >
                         {isUnfollowing ? "Unfollowing..." : `Unfollow Selected (${selectedUsers.size})`}
                       </Button>
@@ -359,7 +376,7 @@ export default function FarcasterUnfollowApp() {
                     {followingUsers.map((user) => (
                       <div
                         key={user.fid}
-                        className="flex items-center justify-between p-3 border rounded-lg"
+                        className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
                       >
                         <div className="flex items-center space-x-3">
                           <Checkbox
@@ -372,12 +389,12 @@ export default function FarcasterUnfollowApp() {
                           <img
                             src={user.pfp}
                             alt={user.displayName}
-                            className="w-10 h-10 rounded-full"
+                            className="w-12 h-12 rounded-full ring-2 ring-purple-200 dark:ring-purple-800"
                           />
                           <div>
-                            <div className="font-medium">{user.displayName}</div>
-                            <div className="text-sm text-gray-500">@{user.username}</div>
-                            <div className="text-xs text-gray-400">
+                            <div className="font-medium text-gray-900 dark:text-gray-100">{user.displayName}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">@{user.username}</div>
+                            <div className="text-xs text-gray-400 dark:text-gray-500">
                               Last cast: {formatLastCasted(user.lastCasted)}
                               {!user.isMutualFollow && (
                                 <span className="ml-2 text-red-500">• No mutual follow</span>
@@ -387,13 +404,19 @@ export default function FarcasterUnfollowApp() {
                         </div>
                         <div className="flex items-center space-x-2">
                           {!user.isMutualFollow && (
-                            <Badge variant="secondary">No Mutual</Badge>
+                            <Badge variant="secondary" className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                              No Mutual
+                            </Badge>
                           )}
                           {user.lastCasted && user.lastCasted < (Date.now() / 1000 - 60 * 24 * 60 * 60) && (
-                            <Badge variant="destructive">Inactive</Badge>
+                            <Badge variant="destructive">
+                              Inactive
+                            </Badge>
                           )}
                           {unfollowedUsers.has(user.fid) && (
-                            <Badge variant="outline">Unfollowed</Badge>
+                            <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400">
+                              Unfollowed
+                            </Badge>
                           )}
                         </div>
                       </div>
@@ -408,10 +431,11 @@ export default function FarcasterUnfollowApp() {
                         disabled={currentPage === 0 || isLoading}
                         variant="outline"
                         size="sm"
+                        className="farcaster-button-secondary"
                       >
                         Previous
                       </Button>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
                         Page {currentPage + 1} of {totalPages}
                       </span>
                       <Button
@@ -419,6 +443,7 @@ export default function FarcasterUnfollowApp() {
                         disabled={currentPage === totalPages - 1 || isLoading}
                         variant="outline"
                         size="sm"
+                        className="farcaster-button-secondary"
                       >
                         Next
                       </Button>
@@ -432,29 +457,32 @@ export default function FarcasterUnfollowApp() {
 
         {/* Stats Section */}
         {unfollowedUsers.size > 0 && (
-          <Card>
+          <Card className="farcaster-card">
             <CardHeader>
-              <CardTitle>Unfollow Statistics</CardTitle>
+              <CardTitle className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span>Unfollow Statistics</span>
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                     {unfollowedUsers.size}
                   </div>
-                  <div className="text-sm text-gray-600">Users Unfollowed</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Users Unfollowed</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                     {totalFollowing}
                   </div>
-                  <div className="text-sm text-gray-600">Total Following</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Total Following</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                     {inactiveUsers.length}
                   </div>
-                  <div className="text-sm text-gray-600">Inactive on This Page</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Inactive on This Page</div>
                 </div>
               </div>
             </CardContent>
