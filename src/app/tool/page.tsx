@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Users, UserMinus, Activity, TrendingUp } from "lucide-react";
-import { getFarcasterSigner, FarcasterSigner } from "@/lib/farcaster-actions";
+import { getFarcasterSigner, FarcasterSigner, batchUnfollow } from "@/lib/farcaster-actions";
 import { sdk } from '@farcaster/miniapp-sdk';
 
 interface FollowingUser {
