@@ -3,6 +3,15 @@ export interface FarcasterSigner {
   getPublicKey: () => Promise<Uint8Array>;
 }
 
+export interface FarcasterUser {
+  fid: number;
+  username: string;
+  displayName?: string;
+  pfp?: { url?: string };
+  followerCount?: number;
+  followingCount?: number;
+}
+
 export interface UnfollowResult {
   success: boolean;
   error?: string;
