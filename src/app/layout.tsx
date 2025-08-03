@@ -32,10 +32,8 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} antialiased`}>
         <ThemeProvider
-          attribute="class"
           defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
+          storageKey="farcaster-ui-theme"
         >
           {children}
           <Toaster />
