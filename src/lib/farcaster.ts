@@ -1,5 +1,5 @@
-import { verifyMessage } from "@farcaster/quick-auth";
-import { FollowRemoveMessage } from "@farcaster/core";
+import { verifyMessage as verifyFarcasterMessage } from "@farcaster/quick-auth";
+import { FollowRemoveMessage as FollowRemoveMessageType } from "@farcaster/core";
 
 export interface FarcasterUser {
   fid: number;
@@ -16,7 +16,7 @@ export class FarcasterService {
   }
 
   async authenticateUser(messageBytes: string, signature: string): Promise<number> {
-    const verificationResult = await verifyMessage({
+    const verificationResult = await verifyFarcasterMessage({
       messageBytes,
       signature,
     });
@@ -62,7 +62,7 @@ export class FarcasterService {
   async unfollowUser(userFid: number, targetFid: number): Promise<boolean> {
     try {
       // Create a FollowRemoveMessage to unfollow
-      const followRemoveMessage = new FollowRemoveMessage({
+      const followRemoveMessage = new FollowRemoveMessageType({
         fid: userFid,
         targetFid: targetFid,
         timestamp: Math.floor(Date.now() / 1000),
@@ -94,7 +94,7 @@ export class FarcasterService {
         return [];
       }
 
-      return data.result.users.map((user: any) => ({
+      return data.result.users.map((user: { fid: number; username: string; displayName?: string; pfp?: { url?: string }; followerCount?: number; followingCount?: number }) => ({
         fid: user.fid,
         username: user.username,
         displayName: user.displayName || user.username,

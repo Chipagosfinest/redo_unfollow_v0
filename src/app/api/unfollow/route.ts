@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { FollowRemoveMessage } from "@farcaster/core";
+import { FollowRemoveMessage as FollowRemoveMessageType } from "@farcaster/core";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create a FollowRemoveMessage to unfollow
-    const followRemoveMessage = new FollowRemoveMessage({
+    const followRemoveMessage = new FollowRemoveMessageType({
       fid: userFid,
       targetFid: targetFid,
       timestamp: Math.floor(Date.now() / 1000),

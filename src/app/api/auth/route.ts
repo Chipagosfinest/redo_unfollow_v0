@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyMessage } from "@farcaster/quick-auth";
+import { verifyMessage as verifyFarcasterMessage } from "@farcaster/quick-auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the Farcaster message
-    const verificationResult = await verifyMessage({
+    const verificationResult = await verifyFarcasterMessage({
       messageBytes,
       signature,
     });
