@@ -11,6 +11,7 @@ import { Users, UserMinus, Activity, TrendingUp, Sparkles } from "lucide-react";
 import FarcasterConnect from "@/components/FarcasterConnect";
 import { sdk } from '@farcaster/miniapp-sdk';
 import { Input } from "@/components/ui/input";
+import { unfollowUser, getFarcasterSigner } from "@/lib/farcaster-actions";
 
 interface FarcasterUser {
   fid: number;
@@ -70,14 +71,24 @@ export default function Home() {
     if (!userFid) return;
     setIsLoading(true);
     try {
-      await sdk.actions.unfollow(userFid, fid);
-      toast.success(`Unfollowed user ${fid}`);
-      setFollowingUsers(prev => prev.filter(user => user.fid !== fid));
-      setSelectedUsers(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(fid);
-        return newSet;
-      });
+      const signer = await getFarcasterSigner();
+      if (!signer) {
+        toast.error("Unable to get Farcaster signer");
+        return;
+      }
+      
+      const result = await unfollowUser(signer, fid);
+      if (result.success) {
+        toast.success(`Unfollowed user ${fid}`);
+        setFollowingUsers(prev => prev.filter(user => user.fid !== fid));
+        setSelectedUsers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(fid);
+          return newSet;
+        });
+      } else {
+        toast.error(result.error || "Failed to unfollow user");
+      }
     } catch (error) {
       console.error("Error unfollowing user:", error);
       toast.error("Failed to unfollow user");
@@ -93,18 +104,34 @@ export default function Home() {
     }
     setIsLoading(true);
     try {
+      const signer = await getFarcasterSigner();
+      if (!signer) {
+        toast.error("Unable to get Farcaster signer");
+        return;
+      }
+
       const fids = Array.from(selectedUsers);
+      let successCount = 0;
+      
       for (let i = 0; i < fids.length; i++) {
         const fid = fids[i];
-        await sdk.actions.unfollow(userFid!, fid);
-        setFollowingUsers(prev => prev.filter(user => user.fid !== fid));
-        setSelectedUsers(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(fid);
-          return newSet;
-        });
+        const result = await unfollowUser(signer, fid);
+        if (result.success) {
+          successCount++;
+          setFollowingUsers(prev => prev.filter(user => user.fid !== fid));
+          setSelectedUsers(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(fid);
+            return newSet;
+          });
+        }
       }
-      toast.success(`Successfully unfollowed ${fids.length} users!`);
+      
+      if (successCount > 0) {
+        toast.success(`Successfully unfollowed ${successCount} users!`);
+      } else {
+        toast.error("Failed to unfollow any users");
+      }
     } catch (error) {
       console.error("Error batch unfollowing:", error);
       toast.error("Failed to unfollow some users");
