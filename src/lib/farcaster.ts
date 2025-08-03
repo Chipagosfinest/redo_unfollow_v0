@@ -1,5 +1,3 @@
-import { NextRequest, NextResponse } from "next/server";
-
 export interface FarcasterUser {
   fid: number;
   username: string;
@@ -10,131 +8,100 @@ export interface FarcasterUser {
 }
 
 export class FarcasterService {
-  constructor() {
-    // Using official Farcaster API
-  }
+  private baseUrl = "https://api.farcaster.xyz/v2";
 
-  async authenticateUser(): Promise<number> {
-    // TODO: Implement real Farcaster authentication
-    // For now, return mock FID
-    return 12345;
-  }
-
-  async searchUsers(query: string): Promise<FarcasterUser[]> {
+  async getUserByUsername(username: string) {
     try {
-      const response = await fetch(`https://api.farcaster.xyz/v2/user-by-username?username=${encodeURIComponent(query)}`);
+      const response = await fetch(`${this.baseUrl}/user-by-username?username=${username}`);
       
       if (!response.ok) {
-        throw new Error("Failed to search users");
+        throw new Error(`Failed to fetch user: ${response.statusText}`);
       }
 
       const data = await response.json();
-      
-      if (!data.result || !data.result.user) {
-        return [];
-      }
-
-      const user = data.result.user;
-      return [{
-        fid: user.fid,
-        username: user.username,
-        displayName: user.displayName || user.username,
-        pfp: user.pfp?.url || "https://via.placeholder.com/40",
-        followerCount: user.followerCount || 0,
-        followingCount: user.followingCount || 0,
-      }];
+      return data.result?.user || null;
     } catch (error) {
-      console.error("Search error:", error);
-      return [];
+      console.error("Error fetching user:", error);
+      throw error;
     }
   }
 
-  async getFollowingList(userFid: number): Promise<number[]> {
+  async getFollowers(fid: number) {
     try {
-      const response = await fetch(`https://api.farcaster.xyz/v2/following?fid=${userFid}&limit=100`);
+      const response = await fetch(`${this.baseUrl}/followers?fid=${fid}&limit=100`);
       
       if (!response.ok) {
-        throw new Error("Failed to get following list");
+        throw new Error(`Failed to fetch followers: ${response.statusText}`);
       }
 
       const data = await response.json();
-      
-      if (!data.result || !data.result.users) {
-        return [];
-      }
-
-      return data.result.users.map((user: { fid: number }) => user.fid);
+      return data.result?.users || [];
     } catch (error) {
-      console.error("Get following list error:", error);
-      return [];
+      console.error("Error fetching followers:", error);
+      throw error;
     }
   }
 
-  async getUserInfo(fid: number): Promise<FarcasterUser | null> {
+  async getFollowing(fid: number) {
     try {
-      const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${fid}`);
+      const response = await fetch(`${this.baseUrl}/following?fid=${fid}&limit=100`);
       
       if (!response.ok) {
-        throw new Error("Failed to get user info");
+        throw new Error(`Failed to fetch following: ${response.statusText}`);
       }
 
       const data = await response.json();
+      return data.result?.users || [];
+    } catch (error) {
+      console.error("Error fetching following:", error);
+      throw error;
+    }
+  }
+
+  async getUserCasts(fid: number, limit: number = 10) {
+    try {
+      const response = await fetch(`${this.baseUrl}/casts?fid=${fid}&limit=${limit}`);
       
-      if (!data.result || !data.result.user) {
-        return null;
+      if (!response.ok) {
+        throw new Error(`Failed to fetch casts: ${response.statusText}`);
       }
 
-      const user = data.result.user;
-      return {
-        fid: user.fid,
-        username: user.username,
-        displayName: user.displayName || user.username,
-        pfp: user.pfp?.url || "https://via.placeholder.com/40",
-        followerCount: user.followerCount || 0,
-        followingCount: user.followingCount || 0,
+      const data = await response.json();
+      return data.result?.casts || [];
+    } catch (error) {
+      console.error("Error fetching casts:", error);
+      throw error;
+    }
+  }
+
+  // Mock authentication - in production this would use real Farcaster Connect
+  async authenticateUser(fid: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Simulate authentication process
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "Authentication failed" 
       };
-    } catch (error) {
-      console.error("Get user info error:", error);
-      return null;
     }
   }
 
-  async getFollowerCount(fid: number): Promise<number> {
+  // Mock unfollow - in production this would sign and submit messages
+  async unfollowUser(targetFid: number): Promise<{ success: boolean; error?: string }> {
     try {
-      const response = await fetch(`https://api.farcaster.xyz/v2/followers?fid=${fid}&limit=1`);
+      // Simulate unfollow process
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (!response.ok) {
-        throw new Error("Failed to get follower count");
-      }
-
-      const data = await response.json();
-      return data.result?.users?.length || 0;
+      return { success: true };
     } catch (error) {
-      console.error("Get follower count error:", error);
-      return 0;
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "Unfollow failed" 
+      };
     }
-  }
-
-  async getFollowingCount(fid: number): Promise<number> {
-    try {
-      const response = await fetch(`https://api.farcaster.xyz/v2/following?fid=${fid}&limit=1`);
-      
-      if (!response.ok) {
-        throw new Error("Failed to get following count");
-      }
-
-      const data = await response.json();
-      return data.result?.users?.length || 0;
-    } catch (error) {
-      console.error("Get following count error:", error);
-      return 0;
-    }
-  }
-
-  async unfollowUser(): Promise<boolean> {
-    // TODO: Implement real unfollow with Farcaster message signing
-    // For now, simulate successful unfollow
-    return true;
   }
 }
 
