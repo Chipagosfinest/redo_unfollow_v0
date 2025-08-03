@@ -8,7 +8,7 @@ export interface UnfollowResult {
 
 export interface FarcasterSigner {
   getFid(): Promise<number>;
-  signMessage(message: any): Promise<string>;
+  signMessage(message: unknown): Promise<string>;
 }
 
 export async function unfollowUser(
