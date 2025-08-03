@@ -27,24 +27,27 @@ export async function getFarcasterSigner(): Promise<FarcasterSigner | null> {
     // Initialize the SDK
     await sdk.actions.ready();
     
-    // Get the current user from the SDK
-    const user = await sdk.actions.getUser();
-    
-    if (user?.fid) {
-      return {
-        signMessage: async (message: Uint8Array) => {
-          // Use the SDK's signing capabilities
-          const signature = await sdk.actions.signMessage(message);
-          return signature;
-        },
-        getPublicKey: async () => {
-          // Get public key from user data
-          return new Uint8Array(0); // Placeholder - SDK will handle this
-        },
-        getFid: async () => {
-          return user.fid;
-        }
-      };
+    // In Mini App environment, get user from global window object
+    if (typeof window !== 'undefined' && 'farcaster' in window) {
+      // @ts-ignore - Farcaster global object
+      const farcaster = (window as any).farcaster;
+      
+      if (farcaster?.user?.fid) {
+        return {
+          signMessage: async (message: Uint8Array) => {
+            // Use the SDK's signing capabilities
+            const signature = await sdk.actions.signMessage(message);
+            return signature;
+          },
+          getPublicKey: async () => {
+            // Get public key from user data
+            return new Uint8Array(0); // Placeholder - SDK will handle this
+          },
+          getFid: async () => {
+            return farcaster.user.fid;
+          }
+        };
+      }
     }
     
     return null;

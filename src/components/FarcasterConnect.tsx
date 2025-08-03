@@ -50,10 +50,14 @@ export default function FarcasterConnect({
         // Call ready() to initialize the SDK
         await sdk.actions.ready();
         
-        // Get the current user from the SDK
-        const user = await sdk.actions.getUser();
-        if (user?.fid && !isAuthenticated) {
-          handleFarcasterAuth(user.fid);
+        // In Mini App environment, the user is automatically authenticated
+        // We can get the user info from the global window object
+        if (typeof window !== 'undefined' && 'farcaster' in window) {
+          // @ts-ignore - Farcaster global object
+          const farcaster = (window as any).farcaster;
+          if (farcaster?.user?.fid && !isAuthenticated) {
+            handleFarcasterAuth(farcaster.user.fid);
+          }
         }
       } catch (error) {
         console.log('Not in Farcaster environment or user not authenticated');
@@ -104,12 +108,17 @@ export default function FarcasterConnect({
           // Call ready() to initialize the SDK
           await sdk.actions.ready();
           
-          // Get the current user from the SDK
-          const user = await sdk.actions.getUser();
-          if (user?.fid) {
-            handleFarcasterAuth(user.fid);
+          // In Mini App environment, the user is automatically authenticated
+          if (typeof window !== 'undefined' && 'farcaster' in window) {
+            // @ts-ignore - Farcaster global object
+            const farcaster = (window as any).farcaster;
+            if (farcaster?.user?.fid) {
+              handleFarcasterAuth(farcaster.user.fid);
+            } else {
+              toast.error("Please connect your Farcaster wallet first");
+            }
           } else {
-            toast.error("Please connect your Farcaster wallet first");
+            toast.error("Farcaster wallet not detected. Please use Farcaster app.");
           }
         } catch (error) {
           toast.error("Farcaster wallet not detected. Please use Farcaster app.");
