@@ -67,7 +67,6 @@ export default function HomePage() {
     setUserFid(null);
     setFollowingUsers([]);
     setSelectedUsers(new Set());
-    setUnfollowedUsers(new Set());
   };
 
   const handleScanFollowing = async () => {
@@ -160,7 +159,7 @@ export default function HomePage() {
         // Simulate unfollow action
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        setUnfollowedUsers(prev => new Set([...prev, fid]));
+
         setUnfollowProgress({ current: i + 1, total: selectedFids.length });
       }
       
