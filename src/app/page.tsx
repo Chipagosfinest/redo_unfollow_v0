@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import FarcasterConnect from "@/components/FarcasterConnect";
 import { unfollowUser, FarcasterSigner } from "@/lib/farcaster-actions";
 
-interface Follower {
+interface FollowingUser {
   fid: number;
   username: string;
   displayName: string;
@@ -35,11 +35,14 @@ export default function FarcasterUnfollowApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userFid, setUserFid] = useState<number | null>(null);
   const [signer, setSigner] = useState<FarcasterSigner | null>(null);
-  const [followers, setFollowers] = useState<Follower[]>([]);
-  const [isScanning, setIsScanning] = useState(false);
+  const [followingUsers, setFollowingUsers] = useState<FollowingUser[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [isUnfollowing, setIsUnfollowing] = useState(false);
-  const [selectedFollowers, setSelectedFollowers] = useState<Set<number>>(new Set());
+  const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
   const [unfollowedUsers, setUnfollowedUsers] = useState<Set<number>>(new Set());
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalFollowing, setTotalFollowing] = useState(0);
 
   const handleAuth = (fid: number) => {
     setIsAuthenticated(true);
@@ -50,50 +53,56 @@ export default function FarcasterUnfollowApp() {
     setIsAuthenticated(false);
     setUserFid(null);
     setSigner(null);
-    setFollowers([]);
-    setSelectedFollowers(new Set());
+    setFollowingUsers([]);
+    setSelectedUsers(new Set());
     setUnfollowedUsers(new Set());
+    setCurrentPage(0);
+    setTotalPages(0);
+    setTotalFollowing(0);
   };
 
-  const scanFollowers = async () => {
+  const loadFollowingPage = async (page: number = 0) => {
     if (!userFid) {
       toast.error("Please authenticate first");
       return;
     }
 
-    setIsScanning(true);
+    setIsLoading(true);
     try {
-      // Get user's followers
-      const response = await fetch(`/api/followers?fid=${userFid}`);
+      // Get following users with pagination
+      const response = await fetch(`/api/following?fid=${userFid}&page=${page}&limit=10`);
       
       if (response.ok) {
         const data = await response.json();
-        const followersWithActivity = await analyzeFollowers(data.followers);
-        setFollowers(followersWithActivity);
-        toast.success(`Found ${followersWithActivity.length} followers`);
+        const analyzedUsers = await analyzeFollowingUsers(data.following);
+        setFollowingUsers(analyzedUsers);
+        setTotalPages(data.totalPages);
+        setTotalFollowing(data.totalFollowing);
+        setCurrentPage(page);
+        toast.success(`Loaded page ${page + 1} of ${data.totalPages}`);
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to scan followers");
+        throw new Error(errorData.error || "Failed to load following users");
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to scan followers");
+      toast.error(error instanceof Error ? error.message : "Failed to load following users");
     } finally {
-      setIsScanning(false);
+      setIsLoading(false);
     }
   };
 
-  const analyzeFollowers = async (followers: FarcasterUser[]): Promise<Follower[]> => {
-    const analyzedFollowers: Follower[] = [];
+  const analyzeFollowingUsers = async (users: FarcasterUser[]): Promise<FollowingUser[]> => {
+    const analyzedUsers: FollowingUser[] = [];
     
-    for (const follower of followers) {
+    for (const user of users) {
       try {
         // Check if mutual follow
-        const mutualResponse = await fetch(`/api/check-mutual?userFid=${userFid}&targetFid=${follower.fid}`);
+        const mutualResponse = await fetch(`/api/check-mutual?userFid=${userFid}&targetFid=${user.fid}`);
         const mutualData = await mutualResponse.json();
         const isMutualFollow = mutualData.isMutualFollow;
 
         // Get last cast timestamp
-        const castsResponse = await fetch(`/api/user-casts?fid=${follower.fid}&limit=1`);
+        const castsResponse = await fetch(`/api/user-casts?fid=${user.fid}&limit=1`);
         const castsData = await castsResponse.json();
         const lastCasted = castsData.casts?.[0]?.timestamp || 0;
 
@@ -101,17 +110,17 @@ export default function FarcasterUnfollowApp() {
         const sixtyDaysAgo = Math.floor(Date.now() / 1000) - (60 * 24 * 60 * 60);
         const isInactive = !isMutualFollow || lastCasted < sixtyDaysAgo;
 
-        analyzedFollowers.push({
-          ...follower,
+        analyzedUsers.push({
+          ...user,
           lastCasted,
           isMutualFollow,
           isInactive,
         });
       } catch (error) {
-        console.error(`Error analyzing follower ${follower.username}:`, error);
+        console.error(`Error analyzing user ${user.username}:`, error);
         // Add with default values if analysis fails
-        analyzedFollowers.push({
-          ...follower,
+        analyzedUsers.push({
+          ...user,
           lastCasted: 0,
           isMutualFollow: false,
           isInactive: true,
@@ -119,14 +128,14 @@ export default function FarcasterUnfollowApp() {
       }
     }
 
-    return analyzedFollowers;
+    return analyzedUsers;
   };
 
-  const handleSelectFollower = (fid: number, checked: boolean) => {
+  const handleSelectUser = (fid: number, checked: boolean) => {
     if (checked) {
-      setSelectedFollowers(prev => new Set([...prev, fid]));
+      setSelectedUsers(prev => new Set([...prev, fid]));
     } else {
-      setSelectedFollowers(prev => {
+      setSelectedUsers(prev => {
         const newSet = new Set(prev);
         newSet.delete(fid);
         return newSet;
@@ -135,27 +144,32 @@ export default function FarcasterUnfollowApp() {
   };
 
   const handleSelectAllInactive = () => {
-    const inactiveFollowerIds = followers
-      .filter(f => f.isInactive)
-      .map(f => f.fid);
-    setSelectedFollowers(new Set(inactiveFollowerIds));
+    const inactiveUserIds = followingUsers
+      .filter(u => u.isInactive)
+      .map(u => u.fid);
+    setSelectedUsers(new Set(inactiveUserIds));
+  };
+
+  const handleSelectAllOnPage = () => {
+    const pageUserIds = followingUsers.map(u => u.fid);
+    setSelectedUsers(new Set(pageUserIds));
   };
 
   const handleUnfollowSelected = async () => {
-    if (!signer || selectedFollowers.size === 0) {
-      toast.error("Please select followers to unfollow");
+    if (!signer || selectedUsers.size === 0) {
+      toast.error("Please select users to unfollow");
       return;
     }
 
     setIsUnfollowing(true);
     try {
-      for (const fid of selectedFollowers) {
+      for (const fid of selectedUsers) {
         const result = await unfollowUser(signer, fid);
         
         if (result.success) {
           setUnfollowedUsers(prev => new Set([...prev, fid]));
-          const follower = followers.find(f => f.fid === fid);
-          toast.success(`Successfully unfollowed @${follower?.username || fid}`);
+          const user = followingUsers.find(u => u.fid === fid);
+          toast.success(`Successfully unfollowed @${user?.username || fid}`);
         } else {
           throw new Error(result.error || `Failed to unfollow ${fid}`);
         }
@@ -165,8 +179,11 @@ export default function FarcasterUnfollowApp() {
       }
       
       // Clear selection after successful unfollow
-      setSelectedFollowers(new Set());
-      toast.success(`Successfully unfollowed ${selectedFollowers.size} users`);
+      setSelectedUsers(new Set());
+      toast.success(`Successfully unfollowed ${selectedUsers.size} users`);
+      
+      // Reload current page to update the list
+      await loadFollowingPage(currentPage);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Bulk unfollow failed");
     } finally {
@@ -182,14 +199,17 @@ export default function FarcasterUnfollowApp() {
     return `${daysAgo} days ago`;
   };
 
-  const inactiveFollowers = followers.filter(f => f.isInactive);
+  const inactiveUsers = followingUsers.filter(u => u.isInactive);
+  const selectedInactiveCount = Array.from(selectedUsers).filter(fid => 
+    followingUsers.find(u => u.fid === fid)?.isInactive
+  ).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold text-gray-900">Farcaster Unfollow App</h1>
-          <p className="text-gray-600">Scan your followers and unfollow inactive users</p>
+          <p className="text-gray-600">Manage your following list and unfollow inactive users</p>
         </div>
 
         {/* Authentication Section */}
@@ -197,7 +217,7 @@ export default function FarcasterUnfollowApp() {
           <CardHeader>
             <CardTitle>Authentication</CardTitle>
             <CardDescription>
-              Connect your Farcaster account to scan your followers
+              Connect your Farcaster account to manage your following list
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -210,36 +230,36 @@ export default function FarcasterUnfollowApp() {
           </CardContent>
         </Card>
 
-        {/* Scan Followers Section */}
+        {/* Following Management Section */}
         {isAuthenticated && (
           <Card>
             <CardHeader>
-              <CardTitle>Scan Followers</CardTitle>
+              <CardTitle>Following Management</CardTitle>
               <CardDescription>
-                Scan your followers to identify inactive users (no mutual follow or haven&apos;t casted in 60+ days)
+                Browse your following list and unfollow inactive users (10 users per page)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <Button 
-                  onClick={scanFollowers} 
-                  disabled={isScanning}
+                  onClick={() => loadFollowingPage(0)} 
+                  disabled={isLoading}
                   className="w-full max-w-xs"
                 >
-                  {isScanning ? "Scanning Followers..." : "Scan Followers"}
+                  {isLoading ? "Loading..." : "Load Following List"}
                 </Button>
                 
-                {followers.length > 0 && (
+                {totalFollowing > 0 && (
                   <div className="text-sm text-gray-600">
-                    {inactiveFollowers.length} inactive out of {followers.length} total
+                    {inactiveUsers.length} inactive on this page • {totalFollowing} total following
                   </div>
                 )}
               </div>
 
-              {followers.length > 0 && (
+              {followingUsers.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Inactive Followers</h3>
+                    <h3 className="text-lg font-semibold">Following Users (Page {currentPage + 1} of {totalPages})</h3>
                     <div className="flex items-center space-x-2">
                       <Button 
                         onClick={handleSelectAllInactive}
@@ -249,60 +269,92 @@ export default function FarcasterUnfollowApp() {
                         Select All Inactive
                       </Button>
                       <Button 
+                        onClick={handleSelectAllOnPage}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Select All on Page
+                      </Button>
+                      <Button 
                         onClick={handleUnfollowSelected}
-                        disabled={isUnfollowing || selectedFollowers.size === 0}
+                        disabled={isUnfollowing || selectedUsers.size === 0}
                         variant="destructive"
                         size="sm"
                       >
-                        {isUnfollowing ? "Unfollowing..." : `Unfollow Selected (${selectedFollowers.size})`}
+                        {isUnfollowing ? "Unfollowing..." : `Unfollow Selected (${selectedUsers.size})`}
                       </Button>
                     </div>
                   </div>
                   
                   <div className="grid gap-3">
-                    {inactiveFollowers.map((follower) => (
+                    {followingUsers.map((user) => (
                       <div
-                        key={follower.fid}
+                        key={user.fid}
                         className="flex items-center justify-between p-3 border rounded-lg"
                       >
                         <div className="flex items-center space-x-3">
                           <Checkbox
-                            checked={selectedFollowers.has(follower.fid)}
+                            checked={selectedUsers.has(user.fid)}
                             onCheckedChange={(checked) => 
-                              handleSelectFollower(follower.fid, checked as boolean)
+                              handleSelectUser(user.fid, checked as boolean)
                             }
-                            disabled={unfollowedUsers.has(follower.fid)}
+                            disabled={unfollowedUsers.has(user.fid)}
                           />
                           <img
-                            src={follower.pfp}
-                            alt={follower.displayName}
+                            src={user.pfp}
+                            alt={user.displayName}
                             className="w-10 h-10 rounded-full"
                           />
                           <div>
-                            <div className="font-medium">{follower.displayName}</div>
-                            <div className="text-sm text-gray-500">@{follower.username}</div>
+                            <div className="font-medium">{user.displayName}</div>
+                            <div className="text-sm text-gray-500">@{user.username}</div>
                             <div className="text-xs text-gray-400">
-                              Last cast: {formatLastCasted(follower.lastCasted)}
-                              {!follower.isMutualFollow && (
+                              Last cast: {formatLastCasted(user.lastCasted)}
+                              {!user.isMutualFollow && (
                                 <span className="ml-2 text-red-500">• No mutual follow</span>
                               )}
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          {!follower.isMutualFollow && (
+                          {!user.isMutualFollow && (
                             <Badge variant="secondary">No Mutual</Badge>
                           )}
-                          {follower.lastCasted && follower.lastCasted < (Date.now() / 1000 - 60 * 24 * 60 * 60) && (
+                          {user.lastCasted && user.lastCasted < (Date.now() / 1000 - 60 * 24 * 60 * 60) && (
                             <Badge variant="destructive">Inactive</Badge>
                           )}
-                          {unfollowedUsers.has(follower.fid) && (
+                          {unfollowedUsers.has(user.fid) && (
                             <Badge variant="outline">Unfollowed</Badge>
                           )}
                         </div>
                       </div>
                     ))}
                   </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center space-x-2">
+                      <Button
+                        onClick={() => loadFollowingPage(currentPage - 1)}
+                        disabled={currentPage === 0 || isLoading}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-sm text-gray-600">
+                        Page {currentPage + 1} of {totalPages}
+                      </span>
+                      <Button
+                        onClick={() => loadFollowingPage(currentPage + 1)}
+                        disabled={currentPage === totalPages - 1 || isLoading}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -325,15 +377,15 @@ export default function FarcasterUnfollowApp() {
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">
-                    {followers.length}
+                    {totalFollowing}
                   </div>
-                  <div className="text-sm text-gray-600">Total Followers</div>
+                  <div className="text-sm text-gray-600">Total Following</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-orange-600">
-                    {inactiveFollowers.length}
+                    {inactiveUsers.length}
                   </div>
-                  <div className="text-sm text-gray-600">Inactive Found</div>
+                  <div className="text-sm text-gray-600">Inactive on This Page</div>
                 </div>
               </div>
             </CardContent>
