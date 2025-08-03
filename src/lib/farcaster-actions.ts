@@ -1,5 +1,3 @@
-import { FollowRemoveMessage } from "@farcaster/core";
-
 export interface UnfollowResult {
   success: boolean;
   hash?: string;
