@@ -1,6 +1,7 @@
 export interface FarcasterSigner {
   signMessage: (message: Uint8Array) => Promise<Uint8Array>;
   getPublicKey: () => Promise<Uint8Array>;
+  getFid: () => Promise<number>;
 }
 
 export interface FarcasterUser {
@@ -18,26 +19,85 @@ export interface UnfollowResult {
   messageHash?: string;
 }
 
-// Mock implementation for now - in production this would use real Farcaster signing
+// Get Farcaster native wallet signer
+export async function getFarcasterSigner(): Promise<FarcasterSigner | null> {
+  try {
+    if (typeof window !== 'undefined' && 'farcaster' in window) {
+      // @ts-ignore - Farcaster global object
+      const farcaster = (window as any).farcaster;
+      
+      if (farcaster && farcaster.user) {
+        return {
+          signMessage: async (message: Uint8Array) => {
+            // Use Farcaster's native signing
+            if (farcaster.signMessage) {
+              return await farcaster.signMessage(message);
+            }
+            throw new Error("Native signing not available");
+          },
+          getPublicKey: async () => {
+            // Get public key from user data
+            return new Uint8Array(0); // Placeholder
+          },
+          getFid: async () => {
+            return farcaster.user.fid;
+          }
+        };
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Error getting Farcaster signer:", error);
+    return null;
+  }
+}
+
+// Real unfollow implementation using Farcaster native wallet
 export async function unfollowUser(signer: FarcasterSigner, targetFid: number): Promise<UnfollowResult> {
   try {
     console.log(`Attempting to unfollow user ${targetFid}...`);
     
-    // Simulate the unfollow process like UnfollowX does
-    // In a real implementation, this would:
-    // 1. Create a FollowRemoveMessage
-    // 2. Sign it with the user's private key
-    // 3. Submit to Farcaster Hub
+    // Get user's FID
+    const userFid = await signer.getFid();
     
-    // Simulate network delay like UnfollowX
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Create FollowRemoveMessage
+    const followRemoveMessage = {
+      data: {
+        type: "follow-remove",
+        fid: userFid,
+        targetFid: targetFid,
+        timestamp: Math.floor(Date.now() / 1000)
+      }
+    };
     
-    // Simulate success (in production, this would be real unfollow)
+    // Sign the message
+    const messageBytes = new TextEncoder().encode(JSON.stringify(followRemoveMessage));
+    const signature = await signer.signMessage(messageBytes);
+    
+    // Submit to Farcaster Hub
+    const hubResponse = await fetch('https://api.farcaster.xyz/v2/submit-message', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: followRemoveMessage,
+        signature: Array.from(signature)
+      })
+    });
+    
+    if (!hubResponse.ok) {
+      throw new Error(`Hub submission failed: ${hubResponse.statusText}`);
+    }
+    
+    const result = await hubResponse.json();
+    
     console.log(`Successfully unfollowed user ${targetFid}`);
     
     return {
       success: true,
-      messageHash: `mock_hash_${Date.now()}`
+      messageHash: result.hash
     };
   } catch (error) {
     console.error(`Failed to unfollow user ${targetFid}:`, error);

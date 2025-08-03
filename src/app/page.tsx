@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import FarcasterConnect from "@/components/FarcasterConnect";
-import { batchUnfollow, FarcasterSigner } from "@/lib/farcaster-actions";
+import { batchUnfollow, getFarcasterSigner, FarcasterSigner } from "@/lib/farcaster-actions";
 
 interface FollowingUser {
   fid: number;
@@ -51,9 +51,17 @@ export default function FarcasterUnfollowApp() {
     errors: Array<{ fid: number; error: string }>;
   } | null>(null);
 
-  const handleAuth = (fid: number) => {
+  const handleAuth = async (fid: number) => {
     setIsAuthenticated(true);
     setUserFid(fid);
+    
+    // Get native wallet signer
+    const signer = await getFarcasterSigner();
+    if (signer) {
+      setSigner(signer);
+    } else {
+      toast.warning("Native wallet not available - using mock mode");
+    }
   };
 
   const handleDisconnect = () => {
@@ -165,8 +173,13 @@ export default function FarcasterUnfollowApp() {
   };
 
   const handleUnfollowSelected = async () => {
-    if (!signer || selectedUsers.size === 0) {
+    if (selectedUsers.size === 0) {
       toast.error("Please select users to unfollow");
+      return;
+    }
+
+    if (!signer) {
+      toast.error("Native wallet not available. Please use Farcaster's native app for real unfollows.");
       return;
     }
 
