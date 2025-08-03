@@ -37,6 +37,15 @@ export default function FeedPage() {
   const [isUnfollowing, setIsUnfollowing] = useState(false);
   const [unfollowProgress, setUnfollowProgress] = useState({ current: 0, total: 0 });
 
+  const handleAuth = useCallback(async (fid: number) => {
+    setUserFid(fid);
+    const signer = await getFarcasterSigner();
+    if (signer) {
+      setSigner(signer);
+      loadInactiveUsers(fid);
+    }
+  }, []);
+
   useEffect(() => {
     // Call ready() when the app is loaded
     const initializeApp = async () => {
@@ -62,15 +71,6 @@ export default function FeedPage() {
       }
     }
   }, [handleAuth]);
-
-  const handleAuth = useCallback(async (fid: number) => {
-    setUserFid(fid);
-    const signer = await getFarcasterSigner();
-    if (signer) {
-      setSigner(signer);
-      loadInactiveUsers(fid);
-    }
-  }, []);
 
   const loadInactiveUsers = async (fid: number) => {
     setIsLoading(true);

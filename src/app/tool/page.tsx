@@ -45,6 +45,15 @@ export default function ToolPage() {
   const [totalFollowing, setTotalFollowing] = useState(0);
   const [unfollowProgress, setUnfollowProgress] = useState({ current: 0, total: 0 });
 
+  const handleAuth = useCallback(async (fid: number) => {
+    setUserFid(fid);
+    const signer = await getFarcasterSigner();
+    if (signer) {
+      setSigner(signer);
+      loadFollowingPage(fid, 0);
+    }
+  }, []);
+
   useEffect(() => {
     // Call ready() when the app is loaded
     const initializeApp = async () => {
@@ -70,15 +79,6 @@ export default function ToolPage() {
       }
     }
   }, [handleAuth]);
-
-  const handleAuth = useCallback(async (fid: number) => {
-    setUserFid(fid);
-    const signer = await getFarcasterSigner();
-    if (signer) {
-      setSigner(signer);
-      loadFollowingPage(fid, 0);
-    }
-  }, []);
 
   const loadFollowingPage = async (fid: number, page: number = 0) => {
     setIsLoading(true);
