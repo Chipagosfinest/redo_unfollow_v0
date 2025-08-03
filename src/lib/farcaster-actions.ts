@@ -27,50 +27,35 @@ export async function getFarcasterSigner(): Promise<FarcasterSigner | null> {
     // Initialize the SDK
     await sdk.actions.ready();
     
-    // Use proper Mini App SDK method to get user
-    const user = await sdk.actions.getUser();
-    
-    if (user?.fid) {
-      return {
-        signMessage: async (message: Uint8Array) => {
-          // Use proper Mini App SDK signing if available
-          if (sdk.actions.signMessage) {
-            return await sdk.actions.signMessage(message);
-          }
-          
-          // Fallback to native Farcaster signing
-          if (typeof window !== 'undefined' && 'farcaster' in window) {
-            // @ts-ignore - Farcaster global object
-            const farcaster = (window as any).farcaster;
-            if (farcaster?.signMessage) {
+    // Use global Farcaster object for user data (current SDK approach)
+    if (typeof window !== 'undefined' && 'farcaster' in window) {
+      // @ts-ignore - Farcaster global object
+      const farcaster = (window as any).farcaster;
+      
+      if (farcaster?.user?.fid) {
+        return {
+          signMessage: async (message: Uint8Array) => {
+            // Use native Farcaster signing if available
+            if (farcaster.signMessage) {
               return await farcaster.signMessage(message);
             }
-          }
-          
-          console.log('Using native Farcaster signing');
-          return new Uint8Array(32); // Native signing will handle this
-        },
-        getPublicKey: async () => {
-          // Use proper Mini App SDK method if available
-          if (sdk.actions.getPublicKey) {
-            return await sdk.actions.getPublicKey();
-          }
-          
-          // Fallback to native Farcaster wallet
-          if (typeof window !== 'undefined' && 'farcaster' in window) {
-            // @ts-ignore - Farcaster global object
-            const farcaster = (window as any).farcaster;
-            if (farcaster?.getPublicKey) {
+            
+            console.log('Using native Farcaster signing');
+            return new Uint8Array(32); // Native signing will handle this
+          },
+          getPublicKey: async () => {
+            // Get public key from native wallet
+            if (farcaster.getPublicKey) {
               return await farcaster.getPublicKey();
             }
+            
+            return new Uint8Array(0); // Native wallet will handle this
+          },
+          getFid: async () => {
+            return farcaster.user.fid;
           }
-          
-          return new Uint8Array(0); // Native wallet will handle this
-        },
-        getFid: async () => {
-          return user.fid;
-        }
-      };
+        };
+      }
     }
     
     return null;

@@ -23,20 +23,13 @@ export default function FarcasterConnect({
   const [isConnecting, setIsConnecting] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
 
-  // Get Farcaster Mini App user using proper SDK
+  // Get Farcaster Mini App user using proper SDK methods
   const getFarcasterUser = useCallback(async () => {
     try {
       // Initialize SDK first
       await sdk.actions.ready();
       
-      // Use proper Mini App SDK method to get user
-      const user = await sdk.actions.getUser();
-      
-      if (user && user.fid) {
-        return user;
-      }
-      
-      // Fallback to global object if SDK method not available
+      // Use global Farcaster object for user data (current SDK approach)
       if (typeof window !== 'undefined' && 'farcaster' in window) {
         // @ts-ignore - Farcaster global object
         const farcaster = (window as any).farcaster;
