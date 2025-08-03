@@ -39,7 +39,7 @@ export default function FarcasterUnfollowApp() {
   const [followingUsers, setFollowingUsers] = useState<FollowingUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUnfollowing, setIsUnfollowing] = useState(false);
-  const [selectedUsers, setSelectedUsers] = new Set());
+  const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
   const [unfollowedUsers, setUnfollowedUsers] = useState<Set<number>>(new Set());
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
