@@ -174,7 +174,7 @@ export default function FarcasterUnfollowApp() {
     }
   };
 
-  const formatLastCasted = (timestamp: number) => {
+  const formatLastCasted = (timestamp: number | undefined) => {
     if (!timestamp) return "Never";
     const daysAgo = Math.floor((Date.now() / 1000 - timestamp) / (24 * 60 * 60));
     if (daysAgo === 0) return "Today";
