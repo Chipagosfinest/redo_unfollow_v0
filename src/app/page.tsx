@@ -190,6 +190,8 @@ export default function Home() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
+              id="search-users"
+              name="search-users"
               placeholder="Search users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -226,6 +228,8 @@ export default function Home() {
                   <div className="flex items-center space-x-3">
                     <input
                       type="checkbox"
+                      id={`user-${user.fid}`}
+                      name={`user-${user.fid}`}
                       checked={selectedUsers.has(user.fid)}
                       onChange={() => handleSelectUser(user.fid)}
                       className="w-4 h-4 text-purple-600"
