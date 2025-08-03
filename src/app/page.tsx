@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import FarcasterConnect from "@/components/FarcasterConnect";
-import { unfollowUser } from "@/lib/farcaster-actions";
+import { unfollowUser, FarcasterSigner } from "@/lib/farcaster-actions";
 
 interface User {
   fid: number;
@@ -22,7 +22,7 @@ interface User {
 export default function FarcasterUnfollowApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userFid, setUserFid] = useState<number | null>(null);
-  const [signer, setSigner] = useState<any>(null);
+  const [signer, setSigner] = useState<FarcasterSigner | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [isSearching, setIsSearching] = useState(false);
