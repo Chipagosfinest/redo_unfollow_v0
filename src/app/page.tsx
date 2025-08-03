@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,6 +20,15 @@ interface Follower {
   lastCasted?: number; // timestamp of last cast
   isMutualFollow: boolean;
   isInactive: boolean; // hasn't casted in 60+ days or no mutual follow
+}
+
+interface FarcasterUser {
+  fid: number;
+  username: string;
+  displayName: string;
+  pfp: string;
+  followerCount: number;
+  followingCount: number;
 }
 
 export default function FarcasterUnfollowApp() {
@@ -73,7 +82,7 @@ export default function FarcasterUnfollowApp() {
     }
   };
 
-  const analyzeFollowers = async (followers: any[]): Promise<Follower[]> => {
+  const analyzeFollowers = async (followers: FarcasterUser[]): Promise<Follower[]> => {
     const analyzedFollowers: Follower[] = [];
     
     for (const follower of followers) {
@@ -174,9 +183,6 @@ export default function FarcasterUnfollowApp() {
   };
 
   const inactiveFollowers = followers.filter(f => f.isInactive);
-  const selectedInactiveCount = Array.from(selectedFollowers).filter(fid => 
-    followers.find(f => f.fid === fid)?.isInactive
-  ).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-4">
@@ -210,7 +216,7 @@ export default function FarcasterUnfollowApp() {
             <CardHeader>
               <CardTitle>Scan Followers</CardTitle>
               <CardDescription>
-                Scan your followers to identify inactive users (no mutual follow or haven't casted in 60+ days)
+                Scan your followers to identify inactive users (no mutual follow or haven&apos;t casted in 60+ days)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
+interface FarcasterUser {
+  fid: number;
+  username: string;
+  displayName?: string;
+  pfp?: { url?: string };
+  followerCount?: number;
+  followingCount?: number;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -12,11 +21,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get followers using official Farcaster API
-    const response = await fetch(`https://api.farcaster.xyz/v2/followers?fid=${fid}&limit=100`);
+    const neynarApiKey = process.env.NEYNAR_API_KEY;
+    if (!neynarApiKey) {
+      return NextResponse.json(
+        { error: "Neynar API key not configured" },
+        { status: 500 }
+      );
+    }
+
+    // Get followers using Neynar API
+    const response = await fetch(`https://api.neynar.com/v2/farcaster/user/followers?fid=${fid}&limit=100`, {
+      headers: {
+        'api_key': neynarApiKey,
+        'Content-Type': 'application/json'
+      }
+    });
 
     if (!response.ok) {
-      console.error("Farcaster API error:", response.status, response.statusText);
+      console.error("Neynar API error:", response.status, response.statusText);
       return NextResponse.json(
         { error: "Failed to fetch followers" },
         { status: 500 }
@@ -25,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
-    if (!data.result || !data.result.users) {
+    if (!data.users) {
       return NextResponse.json({
         success: true,
         followers: [],
@@ -33,7 +55,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const followers = data.result.users.map((user: any) => ({
+    const followers = data.users.map((user: FarcasterUser) => ({
       fid: user.fid,
       username: user.username,
       displayName: user.displayName || user.username,

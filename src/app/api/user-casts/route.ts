@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
+interface FarcasterCast {
+  hash: string;
+  timestamp: number;
+  text: string;
+  embeds?: unknown[];
+  mentions?: number[];
+  mentionsPositions?: number[];
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -13,11 +22,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get user's recent casts using official Farcaster API
-    const response = await fetch(`https://api.farcaster.xyz/v2/casts?fid=${fid}&limit=${limit}`);
+    const neynarApiKey = process.env.NEYNAR_API_KEY;
+    if (!neynarApiKey) {
+      return NextResponse.json(
+        { error: "Neynar API key not configured" },
+        { status: 500 }
+      );
+    }
+
+    // Get user's recent casts using Neynar API
+    const response = await fetch(`https://api.neynar.com/v2/farcaster/cast/list?fid=${fid}&limit=${limit}`, {
+      headers: {
+        'api_key': neynarApiKey,
+        'Content-Type': 'application/json'
+      }
+    });
 
     if (!response.ok) {
-      console.error("Farcaster API error:", response.status, response.statusText);
+      console.error("Neynar API error:", response.status, response.statusText);
       return NextResponse.json(
         { error: "Failed to fetch user casts" },
         { status: 500 }
@@ -26,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
-    if (!data.result || !data.result.casts) {
+    if (!data.casts) {
       return NextResponse.json({
         success: true,
         casts: [],
@@ -34,7 +56,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const casts = data.result.casts.map((cast: any) => ({
+    const casts = data.casts.map((cast: FarcasterCast) => ({
       hash: cast.hash,
       timestamp: cast.timestamp,
       text: cast.text,
