@@ -63,7 +63,7 @@ export async function getFollowingList(userFid: number, cursor?: string): Promis
     const data = await response.json();
     
     return {
-      users: data.result?.users?.map((user: any) => ({
+      users: data.result?.users?.map((user: FarcasterUser) => ({
         fid: user.fid,
         username: user.username,
         displayName: user.displayName || user.username,

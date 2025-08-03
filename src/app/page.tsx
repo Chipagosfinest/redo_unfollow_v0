@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import FarcasterConnect from "@/components/FarcasterConnect";
-import { unfollowUser, batchUnfollow, FarcasterSigner } from "@/lib/farcaster-actions";
+import { batchUnfollow, FarcasterSigner } from "@/lib/farcaster-actions";
 
 interface FollowingUser {
   fid: number;
