@@ -13,31 +13,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const neynarApiKey = process.env.NEYNAR_API_KEY;
-    if (!neynarApiKey) {
-      return NextResponse.json(
-        { error: "Neynar API key not configured" },
-        { status: 500 }
-      );
-    }
+    // Check if user follows target using official Farcaster API
+    const userFollowsTargetResponse = await fetch(`https://api.farcaster.xyz/v2/following?fid=${userFid}&targetFid=${targetFid}&limit=1`);
+    const userFollowsTarget = userFollowsTargetResponse.ok && (await userFollowsTargetResponse.json()).result?.users?.length > 0;
 
-    // Check if user follows target using Neynar API
-    const userFollowsTargetResponse = await fetch(`https://api.neynar.com/v2/farcaster/user/following?fid=${userFid}&targetFid=${targetFid}&limit=1`, {
-      headers: {
-        'api_key': neynarApiKey,
-        'Content-Type': 'application/json'
-      }
-    });
-    const userFollowsTarget = userFollowsTargetResponse.ok && (await userFollowsTargetResponse.json()).users?.length > 0;
-
-    // Check if target follows user using Neynar API
-    const targetFollowsUserResponse = await fetch(`https://api.neynar.com/v2/farcaster/user/following?fid=${targetFid}&targetFid=${userFid}&limit=1`, {
-      headers: {
-        'api_key': neynarApiKey,
-        'Content-Type': 'application/json'
-      }
-    });
-    const targetFollowsUser = targetFollowsUserResponse.ok && (await targetFollowsUserResponse.json()).users?.length > 0;
+    // Check if target follows user using official Farcaster API
+    const targetFollowsUserResponse = await fetch(`https://api.farcaster.xyz/v2/following?fid=${targetFid}&targetFid=${userFid}&limit=1`);
+    const targetFollowsUser = targetFollowsUserResponse.ok && (await targetFollowsUserResponse.json()).result?.users?.length > 0;
 
     const isMutualFollow = userFollowsTarget && targetFollowsUser;
 

@@ -22,24 +22,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const neynarApiKey = process.env.NEYNAR_API_KEY;
-    if (!neynarApiKey) {
-      return NextResponse.json(
-        { error: "Neynar API key not configured" },
-        { status: 500 }
-      );
-    }
-
-    // Get user's recent casts using Neynar API
-    const response = await fetch(`https://api.neynar.com/v2/farcaster/cast/list?fid=${fid}&limit=${limit}`, {
-      headers: {
-        'api_key': neynarApiKey,
-        'Content-Type': 'application/json'
-      }
-    });
+    // Get user's recent casts using official Farcaster API
+    const response = await fetch(`https://api.farcaster.xyz/v2/casts?fid=${fid}&limit=${limit}`);
 
     if (!response.ok) {
-      console.error("Neynar API error:", response.status, response.statusText);
+      console.error("Farcaster API error:", response.status, response.statusText);
       return NextResponse.json(
         { error: "Failed to fetch user casts" },
         { status: 500 }
@@ -48,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json();
 
-    if (!data.casts) {
+    if (!data.result || !data.result.casts) {
       return NextResponse.json({
         success: true,
         casts: [],
@@ -56,7 +43,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const casts = data.casts.map((cast: FarcasterCast) => ({
+    const casts = data.result.casts.map((cast: FarcasterCast) => ({
       hash: cast.hash,
       timestamp: cast.timestamp,
       text: cast.text,
