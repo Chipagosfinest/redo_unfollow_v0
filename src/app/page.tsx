@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import FarcasterConnect from "@/components/FarcasterConnect";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { batchUnfollow, getFarcasterSigner, FarcasterSigner } from "@/lib/farcaster-actions";
+import { Users, UserMinus, Activity, TrendingUp, Shield, Sparkles } from "lucide-react";
 
 interface FollowingUser {
   fid: number;
@@ -19,18 +20,9 @@ interface FollowingUser {
   pfp: string;
   followerCount: number;
   followingCount: number;
-  lastCasted?: number; // timestamp of last cast
+  lastCasted?: number;
   isMutualFollow: boolean;
-  isInactive: boolean; // hasn't casted in 60+ days or no mutual follow
-}
-
-interface FarcasterUser {
-  fid: number;
-  username: string;
-  displayName: string;
-  pfp: string;
-  followerCount: number;
-  followingCount: number;
+  isInactive: boolean;
 }
 
 export default function FarcasterUnfollowApp() {
@@ -56,7 +48,6 @@ export default function FarcasterUnfollowApp() {
     setIsAuthenticated(true);
     setUserFid(fid);
     
-    // Get native wallet signer
     const signer = await getFarcasterSigner();
     if (signer) {
       setSigner(signer);
@@ -87,7 +78,6 @@ export default function FarcasterUnfollowApp() {
 
     setIsLoading(true);
     try {
-      // Get following users with pagination
       const response = await fetch(`/api/following?fid=${userFid}&page=${page}&limit=10`);
       
       if (response.ok) {
@@ -114,17 +104,14 @@ export default function FarcasterUnfollowApp() {
     
     for (const user of users) {
       try {
-        // Check if mutual follow
         const mutualResponse = await fetch(`/api/check-mutual?userFid=${userFid}&targetFid=${user.fid}`);
         const mutualData = await mutualResponse.json();
         const isMutualFollow = mutualData.isMutualFollow;
 
-        // Get last cast timestamp
         const castsResponse = await fetch(`/api/user-casts?fid=${user.fid}&limit=1`);
         const castsData = await castsResponse.json();
         const lastCasted = castsData.casts?.[0]?.timestamp || 0;
 
-        // Calculate if inactive (60+ days or no mutual follow)
         const sixtyDaysAgo = Math.floor(Date.now() / 1000) - (60 * 24 * 60 * 60);
         const isInactive = !isMutualFollow || lastCasted < sixtyDaysAgo;
 
@@ -136,7 +123,6 @@ export default function FarcasterUnfollowApp() {
         });
       } catch (error) {
         console.error(`Error analyzing user ${user.username}:`, error);
-        // Add with default values if analysis fails
         analyzedUsers.push({
           ...user,
           lastCasted: 0,
@@ -197,18 +183,15 @@ export default function FarcasterUnfollowApp() {
 
       setBatchResults(results);
       
-      // Update unfollowed users
       const successfulFids = selectedFids.filter(fid => 
         !results.errors.find(error => error.fid === fid)
       );
       setUnfollowedUsers(prev => new Set([...prev, ...successfulFids]));
       
-      // Clear selection after successful unfollow
       setSelectedUsers(new Set());
       
       toast.success(`Batch unfollow completed: ${results.success} successful, ${results.failed} failed`);
       
-      // Reload current page to update the list
       await loadFollowingPage(currentPage);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Batch unfollow failed");
@@ -227,266 +210,327 @@ export default function FarcasterUnfollowApp() {
   };
 
   const inactiveUsers = followingUsers.filter(u => u.isInactive);
+  const notMutualUsers = followingUsers.filter(u => !u.isMutualFollow);
+  const spamUsers = followingUsers.filter(u => u.followerCount < 10 && u.followingCount > 1000);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="max-w-6xl mx-auto p-4 space-y-6">
-        {/* Header with Theme Toggle */}
-        <div className="flex items-center justify-between">
-          <div className="text-center flex-1">
-            <h1 className="text-4xl font-bold farcaster-gradient-text">
-              Farcaster UnfollowX
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Automated unfollow tool for Farcaster - like UnfollowX but for FC
-            </p>
+      <div className="max-w-7xl mx-auto p-4 space-y-8">
+        {/* Hero Section */}
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center space-x-3 mb-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-5xl font-bold farcaster-gradient-text">
+                UnfollowX
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-400">
+                Clean up your Farcaster following list
+              </p>
+            </div>
           </div>
-          <ThemeToggle />
+          
+          <div className="flex items-center justify-center space-x-4">
+            <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+              <Shield className="w-4 h-4" />
+              <span>Privacy-focused</span>
+            </div>
+            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+            <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+              <Activity className="w-4 h-4" />
+              <span>Real-time analysis</span>
+            </div>
+            <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+            <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+              <TrendingUp className="w-4 h-4" />
+              <span>Smart recommendations</span>
+            </div>
+          </div>
+          
+          <div className="flex justify-center mt-4">
+            <ThemeToggle />
+          </div>
         </div>
 
         {/* Authentication Section */}
-        <Card className="farcaster-card">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              <span>Authentication</span>
-            </CardTitle>
-            <CardDescription>
-              Connect your Farcaster account to manage your following list
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FarcasterConnect
-              onAuth={handleAuth}
-              onDisconnect={handleDisconnect}
-              isAuthenticated={isAuthenticated}
-              userFid={userFid}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Following Management Section */}
-        {isAuthenticated && (
-          <Card className="farcaster-card">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span>Following Management</span>
-              </CardTitle>
-              <CardDescription>
-                Browse your following list and unfollow inactive users (10 users per page)
+        {!isAuthenticated && (
+          <Card className="max-w-md mx-auto farcaster-card border-0 shadow-xl">
+            <CardHeader className="text-center pb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Users className="w-8 h-8 text-white" />
+              </div>
+              <CardTitle className="text-2xl font-bold">Connect Your Wallet</CardTitle>
+              <CardDescription className="text-base">
+                Sign in with Farcaster to analyze your follows
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Button 
-                  onClick={() => loadFollowingPage(0)} 
-                  disabled={isLoading}
-                  className="farcaster-button-primary"
-                >
-                  {isLoading ? "Loading..." : "Load Following List"}
-                </Button>
-                
-                {totalFollowing > 0 && (
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {inactiveUsers.length} inactive on this page • {totalFollowing} total following
+            <CardContent>
+              <FarcasterConnect
+                onAuth={handleAuth}
+                onDisconnect={handleDisconnect}
+                isAuthenticated={isAuthenticated}
+                userFid={userFid}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Main Dashboard */}
+        {isAuthenticated && (
+          <div className="space-y-8">
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <Card className="farcaster-card border-0 shadow-lg">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                      <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Total Following</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalFollowing}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="farcaster-card border-0 shadow-lg">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
+                      <Activity className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">60+ Days Inactive</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{inactiveUsers.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="farcaster-card border-0 shadow-lg">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
+                      <UserMinus className="w-5 h-5 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Not Following Back</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{notMutualUsers.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="farcaster-card border-0 shadow-lg">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
+                      <Shield className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Potential Spam</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{spamUsers.length}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Following Management */}
+            <Card className="farcaster-card border-0 shadow-xl">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                      <UserMinus className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl">Following Management</CardTitle>
+                      <CardDescription>
+                        Browse your following list and unfollow inactive users
+                      </CardDescription>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => loadFollowingPage(0)} 
+                    disabled={isLoading}
+                    className="farcaster-button-primary"
+                  >
+                    {isLoading ? "Loading..." : "Load Following List"}
+                  </Button>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-6">
+                {/* Progress Bar for Batch Unfollow */}
+                {isUnfollowing && unfollowProgress.total > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm font-medium">
+                      <span>Unfollowing progress...</span>
+                      <span>{unfollowProgress.current} / {unfollowProgress.total}</span>
+                    </div>
+                    <Progress value={(unfollowProgress.current / unfollowProgress.total) * 100} className="h-2" />
                   </div>
                 )}
-              </div>
 
-              {/* Progress Bar for Batch Unfollow */}
-              {isUnfollowing && unfollowProgress.total > 0 && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Unfollowing progress...</span>
-                    <span>{unfollowProgress.current} / {unfollowProgress.total}</span>
-                  </div>
-                  <Progress value={(unfollowProgress.current / unfollowProgress.total) * 100} />
-                </div>
-              )}
-
-              {/* Batch Results */}
-              {batchResults && (
-                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <h4 className="font-semibold mb-2">Batch Unfollow Results:</h4>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div className="text-center">
-                      <div className="text-green-600 font-bold">{batchResults.success}</div>
-                      <div>Successful</div>
+                {/* Batch Results */}
+                {batchResults && (
+                  <div className="p-6 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                    <h4 className="font-semibold mb-4 text-green-800 dark:text-green-200">Batch Unfollow Results</h4>
+                    <div className="grid grid-cols-3 gap-6 text-center">
+                      <div>
+                        <div className="text-3xl font-bold text-green-600 dark:text-green-400">{batchResults.success}</div>
+                        <div className="text-sm text-green-700 dark:text-green-300">Successful</div>
+                      </div>
+                      <div>
+                        <div className="text-3xl font-bold text-red-600 dark:text-red-400">{batchResults.failed}</div>
+                        <div className="text-sm text-red-700 dark:text-red-300">Failed</div>
+                      </div>
+                      <div>
+                        <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{batchResults.errors.length}</div>
+                        <div className="text-sm text-blue-700 dark:text-blue-300">Errors</div>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-red-600 font-bold">{batchResults.failed}</div>
-                      <div>Failed</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-blue-600 font-bold">{batchResults.errors.length}</div>
-                      <div>Errors</div>
-                    </div>
-                  </div>
-                  {batchResults.errors.length > 0 && (
-                    <div className="mt-2">
-                      <details className="text-xs">
-                        <summary className="cursor-pointer">Show errors</summary>
-                        <div className="mt-2 space-y-1">
+                    {batchResults.errors.length > 0 && (
+                      <details className="mt-4">
+                        <summary className="cursor-pointer text-sm font-medium text-gray-600 dark:text-gray-400">
+                          Show error details
+                        </summary>
+                        <div className="mt-2 space-y-1 text-xs">
                           {batchResults.errors.map((error, index) => (
-                            <div key={index} className="text-red-600">
+                            <div key={index} className="text-red-600 dark:text-red-400">
                               FID {error.fid}: {error.error}
                             </div>
                           ))}
                         </div>
                       </details>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {followingUsers.length > 0 && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Following Users (Page {currentPage + 1} of {totalPages})</h3>
-                    <div className="flex items-center space-x-2">
-                      <Button 
-                        onClick={handleSelectAllInactive}
-                        variant="outline"
-                        size="sm"
-                        className="farcaster-button-secondary"
-                      >
-                        Select All Inactive
-                      </Button>
-                      <Button 
-                        onClick={handleSelectAllOnPage}
-                        variant="outline"
-                        size="sm"
-                        className="farcaster-button-secondary"
-                      >
-                        Select All on Page
-                      </Button>
-                      <Button 
-                        onClick={handleUnfollowSelected}
-                        disabled={isUnfollowing || selectedUsers.size === 0}
-                        size="sm"
-                        className="farcaster-button-destructive"
-                      >
-                        {isUnfollowing ? "Unfollowing..." : `Unfollow Selected (${selectedUsers.size})`}
-                      </Button>
-                    </div>
+                    )}
                   </div>
-                  
-                  <div className="grid gap-3">
-                    {followingUsers.map((user) => (
-                      <div
-                        key={user.fid}
-                        className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <Checkbox
-                            checked={selectedUsers.has(user.fid)}
-                            onCheckedChange={(checked) => 
-                              handleSelectUser(user.fid, checked as boolean)
-                            }
-                            disabled={unfollowedUsers.has(user.fid)}
-                          />
-                          <img
-                            src={user.pfp}
-                            alt={user.displayName}
-                            className="w-12 h-12 rounded-full ring-2 ring-purple-200 dark:ring-purple-800"
-                          />
-                          <div>
-                            <div className="font-medium text-gray-900 dark:text-gray-100">{user.displayName}</div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">@{user.username}</div>
-                            <div className="text-xs text-gray-400 dark:text-gray-500">
-                              Last cast: {formatLastCasted(user.lastCasted)}
-                              {!user.isMutualFollow && (
-                                <span className="ml-2 text-red-500">• No mutual follow</span>
-                              )}
+                )}
+
+                {followingUsers.length > 0 && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">Following Users (Page {currentPage + 1} of {totalPages})</h3>
+                      <div className="flex items-center space-x-3">
+                        <Button 
+                          onClick={handleSelectAllInactive}
+                          variant="outline"
+                          size="sm"
+                          className="farcaster-button-secondary"
+                        >
+                          Select All Inactive
+                        </Button>
+                        <Button 
+                          onClick={handleSelectAllOnPage}
+                          variant="outline"
+                          size="sm"
+                          className="farcaster-button-secondary"
+                        >
+                          Select All on Page
+                        </Button>
+                        <Button 
+                          onClick={handleUnfollowSelected}
+                          disabled={isUnfollowing || selectedUsers.size === 0}
+                          size="sm"
+                          className="farcaster-button-destructive"
+                        >
+                          {isUnfollowing ? "Unfollowing..." : `Unfollow Selected (${selectedUsers.size})`}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="grid gap-4">
+                      {followingUsers.map((user) => (
+                        <div
+                          key={user.fid}
+                          className="flex items-center justify-between p-6 border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-200"
+                        >
+                          <div className="flex items-center space-x-4">
+                            <Checkbox
+                              checked={selectedUsers.has(user.fid)}
+                              onCheckedChange={(checked) => 
+                                handleSelectUser(user.fid, checked as boolean)
+                              }
+                              disabled={unfollowedUsers.has(user.fid)}
+                              className="w-5 h-5"
+                            />
+                            <img
+                              src={user.pfp}
+                              alt={user.displayName}
+                              className="w-14 h-14 rounded-full ring-4 ring-purple-200 dark:ring-purple-800 shadow-lg"
+                            />
+                            <div>
+                              <div className="font-semibold text-lg text-gray-900 dark:text-gray-100">
+                                {user.displayName}
+                              </div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                @{user.username}
+                              </div>
+                              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                Last cast: {formatLastCasted(user.lastCasted)}
+                                {!user.isMutualFollow && (
+                                  <span className="ml-2 text-red-500 font-medium">• No mutual follow</span>
+                                )}
+                              </div>
                             </div>
                           </div>
+                          <div className="flex items-center space-x-3">
+                            {!user.isMutualFollow && (
+                              <Badge variant="secondary" className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 border-0">
+                                No Mutual
+                              </Badge>
+                            )}
+                            {user.lastCasted && user.lastCasted < (Date.now() / 1000 - 60 * 24 * 60 * 60) && (
+                              <Badge variant="destructive" className="border-0">
+                                Inactive
+                              </Badge>
+                            )}
+                            {unfollowedUsers.has(user.fid) && (
+                              <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20">
+                                Unfollowed
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          {!user.isMutualFollow && (
-                            <Badge variant="secondary" className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-                              No Mutual
-                            </Badge>
-                          )}
-                          {user.lastCasted && user.lastCasted < (Date.now() / 1000 - 60 * 24 * 60 * 60) && (
-                            <Badge variant="destructive">
-                              Inactive
-                            </Badge>
-                          )}
-                          {unfollowedUsers.has(user.fid) && (
-                            <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400">
-                              Unfollowed
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-center space-x-2">
-                      <Button
-                        onClick={() => loadFollowingPage(currentPage - 1)}
-                        disabled={currentPage === 0 || isLoading}
-                        variant="outline"
-                        size="sm"
-                        className="farcaster-button-secondary"
-                      >
-                        Previous
-                      </Button>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        Page {currentPage + 1} of {totalPages}
-                      </span>
-                      <Button
-                        onClick={() => loadFollowingPage(currentPage + 1)}
-                        disabled={currentPage === totalPages - 1 || isLoading}
-                        variant="outline"
-                        size="sm"
-                        className="farcaster-button-secondary"
-                      >
-                        Next
-                      </Button>
+                      ))}
                     </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Stats Section */}
-        {unfollowedUsers.size > 0 && (
-          <Card className="farcaster-card">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span>Unfollow Statistics</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                    {unfollowedUsers.size}
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-center space-x-4">
+                        <Button
+                          onClick={() => loadFollowingPage(currentPage - 1)}
+                          disabled={currentPage === 0 || isLoading}
+                          variant="outline"
+                          size="sm"
+                          className="farcaster-button-secondary"
+                        >
+                          Previous
+                        </Button>
+                        <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                          Page {currentPage + 1} of {totalPages}
+                        </span>
+                        <Button
+                          onClick={() => loadFollowingPage(currentPage + 1)}
+                          disabled={currentPage === totalPages - 1 || isLoading}
+                          variant="outline"
+                          size="sm"
+                          className="farcaster-button-secondary"
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Users Unfollowed</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    {totalFollowing}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Total Following</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                    {inactiveUsers.length}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Inactive on This Page</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
       <Toaster />
