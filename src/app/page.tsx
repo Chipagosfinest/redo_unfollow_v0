@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Users, UserMinus, Activity, TrendingUp, Sparkles } from "lucide-react";
 import FarcasterConnect from "@/components/FarcasterConnect";
@@ -17,20 +17,6 @@ interface FarcasterUser {
   username: string;
   displayName: string;
   pfp: string;
-  followerCount: number;
-  followingCount: number;
-}
-
-interface FollowingUser {
-  fid: number;
-  username: string;
-  displayName: string;
-  pfp: string;
-  followerCount: number;
-  followingCount: number;
-  lastCasted?: number;
-  isMutualFollow: boolean;
-  isInactive: boolean;
 }
 
 export default function Home() {
@@ -46,27 +32,10 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
 
-  const [isUnfollowing, setIsUnfollowing] = useState(false);
-  const [unfollowProgress, setUnfollowProgress] = useState({ current: 0, total: 0 });
-
-  useEffect(() => {
-    // Call ready() when the app is loaded
-    const initializeApp = async () => {
-      try {
-        await sdk.actions.ready();
-        console.log('Farcaster SDK ready called successfully');
-      } catch (error) {
-        console.error('Error calling Farcaster SDK ready:', error);
-      }
-    };
-
-    initializeApp();
-  }, []);
-
   const handleAuth = (fid: number) => {
     setUserFid(fid);
     setIsAuthenticated(true);
-    toast.success("Connected! Ready to scan your following list.");
+    handleScanFollowing(fid);
   };
 
   const handleDisconnect = () => {
@@ -76,108 +45,24 @@ export default function Home() {
     setSelectedUsers(new Set());
   };
 
-  const handleScanFollowing = async () => {
-    if (!userFid) return;
+  const handleScanFollowing = async (fid: number) => {
+    if (!fid) return;
     
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/following?fid=${userFid}&page=0&limit=50`);
+      const response = await fetch(`/api/following?fid=${fid}&page=0&limit=50`);
       if (response.ok) {
         const data = await response.json();
-        const analyzedUsers = await analyzeFollowingUsers(data.following, userFid);
-        setFollowingUsers(analyzedUsers);
-        toast.success(`Found ${analyzedUsers.length} users to review`);
+        setFollowingUsers(data.users || []);
+        toast.success(`Found ${data.users?.length || 0} users you're following`);
+      } else {
+        toast.error("Failed to fetch following list");
       }
     } catch (error) {
       console.error("Error scanning following:", error);
       toast.error("Failed to scan following list");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const analyzeFollowingUsers = async (users: FarcasterUser[], userFid: number): Promise<FollowingUser[]> => {
-    const analyzedUsers: FollowingUser[] = [];
-    
-    for (const user of users) {
-      try {
-        // Check if mutual follow
-        const mutualResponse = await fetch(`/api/check-mutual?userFid=${userFid}&targetFid=${user.fid}`);
-        const mutualData = await mutualResponse.json();
-        const isMutualFollow = mutualData.isMutualFollow;
-
-        // Get last cast timestamp
-        const castsResponse = await fetch(`/api/user-casts?fid=${user.fid}&limit=1`);
-        const castsData = await castsResponse.json();
-        const lastCasted = castsData.casts?.[0]?.timestamp || 0;
-
-        // Calculate if inactive (60+ days or no mutual follow)
-        const sixtyDaysAgo = Math.floor(Date.now() / 1000) - (60 * 24 * 60 * 60);
-        const isInactive = !isMutualFollow || lastCasted < sixtyDaysAgo;
-
-        analyzedUsers.push({
-          ...user,
-          lastCasted,
-          isMutualFollow,
-          isInactive,
-        });
-      } catch (error) {
-        console.error(`Error analyzing user ${user.username}:`, error);
-      }
-    }
-
-    return analyzedUsers;
-  };
-
-  const handleSelectUser = (fid: number, checked: boolean) => {
-    if (checked) {
-      setSelectedUsers(prev => new Set([...prev, fid]));
-    } else {
-      setSelectedUsers(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(fid);
-        return newSet;
-      });
-    }
-  };
-
-  const handleSelectAllInactive = () => {
-    const inactiveUserIds = followingUsers
-      .filter(u => u.isInactive)
-      .map(u => u.fid);
-    setSelectedUsers(new Set(inactiveUserIds));
-  };
-
-  const handleUnfollowSelected = async () => {
-    if (selectedUsers.size === 0) {
-      toast.error("Please select users to unfollow");
-      return;
-    }
-
-    setIsUnfollowing(true);
-    setUnfollowProgress({ current: 0, total: selectedUsers.size });
-
-    try {
-      const selectedFids = Array.from(selectedUsers);
-      
-      for (let i = 0; i < selectedFids.length; i++) {
-        const fid = selectedFids[i];
-        
-        // Simulate unfollow action
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-
-        setUnfollowProgress({ current: i + 1, total: selectedFids.length });
-      }
-      
-      setSelectedUsers(new Set());
-      toast.success(`Successfully unfollowed ${selectedFids.length} users!`);
-    } catch (error) {
-      console.error("Error unfollowing users:", error);
-      toast.error("Failed to unfollow some users");
-    } finally {
-      setIsUnfollowing(false);
-      setUnfollowProgress({ current: 0, total: 0 });
     }
   };
 
@@ -218,7 +103,6 @@ export default function Home() {
           newSet.delete(fid);
           return newSet;
         });
-        setUnfollowProgress(prev => ({ ...prev, current: prev.current + 1 }));
       }
       toast.success(`Successfully unfollowed ${fids.length} users!`);
     } catch (error) {
@@ -226,16 +110,7 @@ export default function Home() {
       toast.error("Failed to unfollow some users");
     } finally {
       setIsLoading(false);
-      setUnfollowProgress({ current: 0, total: 0 });
     }
-  };
-
-  const formatLastCasted = (timestamp: number | undefined) => {
-    if (!timestamp) return "Never";
-    const days = Math.floor((Date.now() / 1000 - timestamp) / (24 * 60 * 60));
-    if (days === 0) return "Today";
-    if (days === 1) return "Yesterday";
-    return `${days} days ago`;
   };
 
   const filteredUsers = followingUsers.filter(user => 
