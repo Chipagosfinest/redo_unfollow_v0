@@ -1,39 +1,37 @@
 {
-  "name": "Farcaster Unfollow App",
-  "description": "Manage your Farcaster follows efficiently",
-  "icon": "https://redounfollowv0-xd7u1lti8-chipagosfinests-projects.vercel.app/icon.png",
-  "url": "https://redounfollowv0-xd7u1lti8-chipagosfinests-projects.vercel.app",
-  "app": {
-    "name": "Farcaster Unfollow App",
-    "description": "A tool to help you manage your Farcaster follows by searching and unfollowing users efficiently.",
-    "icon": "https://redounfollowv0-xd7u1lti8-chipagosfinests-projects.vercel.app/icon.png",
-    "url": "https://redounfollowv0-xd7u1lti8-chipagosfinests-projects.vercel.app"
-  },
+  "name": "Farcaster UnfollowX",
+  "description": "Automated unfollow tool for Farcaster - like UnfollowX but for FC",
+  "icon": "/icon.svg",
+  "url": "https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app",
   "permissions": [
-    "farcaster://signer",
-    "farcaster://following",
-    "farcaster://user"
+    "user:read",
+    "user:write",
+    "follows:read",
+    "follows:write"
   ],
-  "actions": [
-    {
-      "name": "unfollow",
-      "description": "Unfollow a user on Farcaster",
-      "parameters": {
-        "targetFid": {
-          "type": "number",
-          "description": "The FID of the user to unfollow"
-        }
-      }
+  "features": [
+    "feed",
+    "tool"
+  ],
+  "feed": {
+    "type": "iframe",
+    "url": "https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app/feed"
+  },
+  "tool": {
+    "type": "iframe",
+    "url": "https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app/tool"
+  },
+  "embeds": {
+    "cast": {
+      "url": "https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app/embed/cast"
     },
-    {
-      "name": "search",
-      "description": "Search for users on Farcaster",
-      "parameters": {
-        "query": {
-          "type": "string",
-          "description": "The username to search for"
-        }
-      }
+    "profile": {
+      "url": "https://redounfollowv0-qybv2kphz-chipagosfinests-projects.vercel.app/embed/profile"
     }
-  ]
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "author": "chipagosfinest",
+    "tags": ["unfollow", "automation", "farcaster", "tool"]
+  }
 } 
