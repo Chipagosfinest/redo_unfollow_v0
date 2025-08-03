@@ -26,6 +26,9 @@ export default function FarcasterConnect({
   const handleFarcasterAuth = useCallback(async (fid: number) => {
     setIsConnecting(true);
     try {
+      // Initialize SDK first
+      await sdk.actions.ready();
+      
       // In Mini App environment, get user profile from global object
       if (typeof window !== 'undefined' && 'farcaster' in window) {
         // @ts-ignore - Farcaster global object
@@ -58,19 +61,18 @@ export default function FarcasterConnect({
   }, [onAuth]);
 
   useEffect(() => {
-    // Auto-connect when in Farcaster native environment using Mini App SDK
+    // Auto-connect when in Farcaster native environment
     const initializeAuth = async () => {
       try {
-        // Call ready() to initialize the SDK
+        // Initialize SDK
         await sdk.actions.ready();
         
-        // In Mini App environment, the user is automatically authenticated
-        // We can get the user info from the global window object
+        // Check for native Farcaster environment
         if (typeof window !== 'undefined' && 'farcaster' in window) {
           // @ts-ignore - Farcaster global object
           const farcaster = (window as any).farcaster;
           if (farcaster?.user?.fid && !isAuthenticated) {
-            // Set user profile immediately from global object
+            // Set user profile immediately from native wallet
             if (farcaster.user) {
               setUserProfile({
                 fid: farcaster.user.fid,
@@ -83,7 +85,7 @@ export default function FarcasterConnect({
           }
         }
       } catch (error) {
-        console.log('Not in Farcaster environment or user not authenticated');
+        console.log('Not in Farcaster native environment or user not authenticated');
       }
     };
 
@@ -128,15 +130,15 @@ export default function FarcasterConnect({
     <Button
       onClick={async () => {
         try {
-          // Call ready() to initialize the SDK
+          // Initialize SDK
           await sdk.actions.ready();
           
-          // In Mini App environment, the user is automatically authenticated
+          // Check for native Farcaster wallet
           if (typeof window !== 'undefined' && 'farcaster' in window) {
             // @ts-ignore - Farcaster global object
             const farcaster = (window as any).farcaster;
             if (farcaster?.user?.fid) {
-              // Set user profile immediately from global object
+              // Set user profile immediately from native wallet
               if (farcaster.user) {
                 setUserProfile({
                   fid: farcaster.user.fid,
@@ -147,13 +149,13 @@ export default function FarcasterConnect({
               }
               handleFarcasterAuth(farcaster.user.fid);
             } else {
-              toast.error("Please connect your Farcaster wallet first");
+              toast.error("Please connect your Farcaster native wallet first");
             }
           } else {
-            toast.error("Farcaster wallet not detected. Please use Farcaster app.");
+            toast.error("Farcaster native wallet not detected. Please use Farcaster app.");
           }
         } catch (error) {
-          toast.error("Farcaster wallet not detected. Please use Farcaster app.");
+          toast.error("Farcaster native wallet not detected. Please use Farcaster app.");
         }
       }}
       disabled={isConnecting}
@@ -167,7 +169,7 @@ export default function FarcasterConnect({
       ) : (
         <>
           <Wallet className="w-4 h-4 mr-2" />
-          Connect Farcaster Wallet
+          Connect Farcaster Native Wallet
         </>
       )}
     </Button>
