@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Users, UserMinus, Activity, TrendingUp, Shield, Sparkles } from "lucide-react";
 import FarcasterConnect from "@/components/FarcasterConnect";
+import { sdk } from '@farcaster/miniapp-sdk';
 
 interface FarcasterUser {
   fid: number;
@@ -40,6 +41,20 @@ export default function HomePage() {
   const [unfollowedUsers, setUnfollowedUsers] = useState<Set<number>>(new Set());
   const [isUnfollowing, setIsUnfollowing] = useState(false);
   const [unfollowProgress, setUnfollowProgress] = useState({ current: 0, total: 0 });
+
+  useEffect(() => {
+    // Call ready() when the app is loaded
+    const initializeApp = async () => {
+      try {
+        await sdk.actions.ready();
+        console.log('Farcaster SDK ready called successfully');
+      } catch (error) {
+        console.error('Error calling Farcaster SDK ready:', error);
+      }
+    };
+
+    initializeApp();
+  }, []);
 
   const handleAuth = (fid: number) => {
     setUserFid(fid);

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { sdk } from '@farcaster/miniapp-sdk';
 
 interface ProfileData {
   displayName?: string;
@@ -18,6 +19,20 @@ interface ProfileData {
 export default function ProfileEmbedPage() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Call ready() when the app is loaded
+    const initializeApp = async () => {
+      try {
+        await sdk.actions.ready();
+        console.log('Farcaster SDK ready called successfully');
+      } catch (error) {
+        console.error('Error calling Farcaster SDK ready:', error);
+      }
+    };
+
+    initializeApp();
+  }, []);
 
   useEffect(() => {
     // Get profile data from URL params or Farcaster context

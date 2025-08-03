@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { batchUnfollow, getFarcasterSigner, FarcasterSigner } from "@/lib/farcaster-actions";
+import { Users, UserMinus, Activity, TrendingUp } from "lucide-react";
+import { getFarcasterSigner, FarcasterSigner } from "@/lib/farcaster-actions";
+import { sdk } from '@farcaster/miniapp-sdk';
 
 interface FollowingUser {
   fid: number;
@@ -31,10 +33,25 @@ export default function FeedPage() {
   const [userFid, setUserFid] = useState<number | null>(null);
   const [signer, setSigner] = useState<FarcasterSigner | null>(null);
   const [inactiveUsers, setInactiveUsers] = useState<FollowingUser[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
+  const [unfollowedUsers, setUnfollowedUsers] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [isUnfollowing, setIsUnfollowing] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
   const [unfollowProgress, setUnfollowProgress] = useState({ current: 0, total: 0 });
+
+  useEffect(() => {
+    // Call ready() when the app is loaded
+    const initializeApp = async () => {
+      try {
+        await sdk.actions.ready();
+        console.log('Farcaster SDK ready called successfully');
+      } catch (error) {
+        console.error('Error calling Farcaster SDK ready:', error);
+      }
+    };
+
+    initializeApp();
+  }, []);
 
   useEffect(() => {
     // Auto-detect user from Farcaster context

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { sdk } from '@farcaster/miniapp-sdk';
 
 interface CastData {
   author?: {
@@ -18,6 +19,20 @@ interface CastData {
 export default function CastEmbedPage() {
   const [castData, setCastData] = useState<CastData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Call ready() when the app is loaded
+    const initializeApp = async () => {
+      try {
+        await sdk.actions.ready();
+        console.log('Farcaster SDK ready called successfully');
+      } catch (error) {
+        console.error('Error calling Farcaster SDK ready:', error);
+      }
+    };
+
+    initializeApp();
+  }, []);
 
   useEffect(() => {
     // Get cast data from URL params or Farcaster context

@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { batchUnfollow, getFarcasterSigner, FarcasterSigner } from "@/lib/farcaster-actions";
+import { Users, UserMinus, Activity, TrendingUp } from "lucide-react";
+import { getFarcasterSigner, FarcasterSigner } from "@/lib/farcaster-actions";
+import { sdk } from '@farcaster/miniapp-sdk';
 
 interface FollowingUser {
   fid: number;
@@ -42,6 +44,20 @@ export default function ToolPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [totalFollowing, setTotalFollowing] = useState(0);
   const [unfollowProgress, setUnfollowProgress] = useState({ current: 0, total: 0 });
+
+  useEffect(() => {
+    // Call ready() when the app is loaded
+    const initializeApp = async () => {
+      try {
+        await sdk.actions.ready();
+        console.log('Farcaster SDK ready called successfully');
+      } catch (error) {
+        console.error('Error calling Farcaster SDK ready:', error);
+      }
+    };
+
+    initializeApp();
+  }, []);
 
   useEffect(() => {
     // Auto-detect user from Farcaster context
