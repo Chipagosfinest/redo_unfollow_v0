@@ -70,6 +70,20 @@ export async function GET(request: NextRequest) {
     const clientIP = request.headers.get('x-forwarded-for') || 'unknown';
     console.log('Neynar following API - Client info', { clientIP, fid });
     
+    // IMPORTANT: The Neynar v2 API doesn't have a following endpoint
+    // This is a limitation of the current Neynar API
+    console.error('Neynar v2 API does not have a following endpoint');
+    
+    return NextResponse.json({ 
+      error: 'Following endpoint not available',
+      message: 'The Neynar v2 API does not currently support fetching following lists. This feature is not available.',
+      users: [],
+      demoMode: true,
+      apiLimitation: true
+    }, { status: 501 });
+    
+    // The following code is commented out because the endpoint doesn't exist
+    /*
     const neynarUrl = `https://api.neynar.com/v2/farcaster/user/following?fid=${fid}&viewer_fid=${fid}`;
     console.log('Neynar following API - Making request', { 
       url: neynarUrl,
@@ -141,6 +155,7 @@ export async function GET(request: NextRequest) {
       ...data,
       demoMode: false
     }, { headers: responseHeaders });
+    */
   } catch (error) {
     console.error('Error fetching following data:', error);
     

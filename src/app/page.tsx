@@ -155,46 +155,49 @@ export default function Home() {
       });
       
       // Check if we're in demo mode or have an error
-      if (followingData.demoMode || followingData.error || !followingData.users || followingData.users.length === 0) {
-        console.log('Using demo data due to:', {
-          demoMode: followingData.demoMode,
-          error: followingData.error,
-          userCount: followingData.users?.length || 0
-        });
-        
-        const demoUsers: FarcasterUser[] = Array.from({ length: 20 }, (_, i) => ({
-          fid: 1000 + i,
-          username: `user${i + 1}`,
-          displayName: `Demo User ${i + 1}`,
-          pfp: `https://via.placeholder.com/40/4F46E5/FFFFFF?text=${i + 1}`,
-          followerCount: Math.floor(Math.random() * 1000) + 50,
-          followingCount: Math.floor(Math.random() * 500) + 20,
-          isMutualFollow: Math.random() > 0.3,
-          isInactive: Math.random() > 0.8
-        }));
-        
-        setAllFollowingUsers(demoUsers);
-        
-        const results = {
-          totalFollows: demoUsers.length,
-          inactive60Days: demoUsers.filter(u => u.isInactive).length,
-          notFollowingBack: demoUsers.filter(u => !u.isMutualFollow).length,
-          spamAccounts: demoUsers.filter(u => u.followerCount < 10 && u.followingCount > 100).length,
-        };
-        
-        setScanResults(results);
-        setCurrentStep('results');
-        setIsScanning(false);
-        
-        if (followingData.demoMode) {
-          toast.success("Scan completed with demo data - configure NEYNAR_API_KEY for real data!");
-        } else if (followingData.error) {
-          toast.error(`API Error: ${followingData.message || followingData.error}`);
-        } else {
-          toast.success("Scan completed with demo data for testing!");
+              if (followingData.demoMode || followingData.error || followingData.apiLimitation || !followingData.users || followingData.users.length === 0) {
+          console.log('Using demo data due to:', {
+            demoMode: followingData.demoMode,
+            error: followingData.error,
+            apiLimitation: followingData.apiLimitation,
+            userCount: followingData.users?.length || 0
+          });
+          
+          const demoUsers: FarcasterUser[] = Array.from({ length: 20 }, (_, i) => ({
+            fid: 1000 + i,
+            username: `user${i + 1}`,
+            displayName: `Demo User ${i + 1}`,
+            pfp: `https://via.placeholder.com/40/4F46E5/FFFFFF?text=${i + 1}`,
+            followerCount: Math.floor(Math.random() * 1000) + 50,
+            followingCount: Math.floor(Math.random() * 500) + 20,
+            isMutualFollow: Math.random() > 0.3,
+            isInactive: Math.random() > 0.8
+          }));
+          
+          setAllFollowingUsers(demoUsers);
+          
+          const results = {
+            totalFollows: demoUsers.length,
+            inactive60Days: demoUsers.filter(u => u.isInactive).length,
+            notFollowingBack: demoUsers.filter(u => !u.isMutualFollow).length,
+            spamAccounts: demoUsers.filter(u => u.followerCount < 10 && u.followingCount > 100).length,
+          };
+          
+          setScanResults(results);
+          setCurrentStep('results');
+          setIsScanning(false);
+          
+          if (followingData.apiLimitation) {
+            toast.error("Neynar API limitation: Following lists not available in v2 API");
+          } else if (followingData.demoMode) {
+            toast.success("Scan completed with demo data - configure NEYNAR_API_KEY for real data!");
+          } else if (followingData.error) {
+            toast.error(`API Error: ${followingData.message || followingData.error}`);
+          } else {
+            toast.success("Scan completed with demo data for testing!");
+          }
+          return;
         }
-        return;
-      }
         
         // Analyze users for inactivity and mutual follows
         const analyzedUsers = await Promise.all(
@@ -583,10 +586,10 @@ Try it yourself: ${window.location.origin}/embed`;
                 <div>
                   <h3 className="text-lg font-semibold text-yellow-800">Demo Mode</h3>
                   <p className="text-sm text-yellow-700">
-                    This is sample data for testing. To see your real Farcaster data, you need to configure the Neynar API key in the Vercel deployment.
+                    This is sample data for testing. The Neynar v2 API currently doesn't support fetching following lists, so we're using demo data.
                   </p>
                   <div className="mt-2 text-xs text-yellow-600">
-                    <strong>For Production:</strong> Add NEYNAR_API_KEY to your Vercel environment variables
+                    <strong>API Limitation:</strong> Neynar v2 API doesn't have a following endpoint yet
                   </div>
                 </div>
               </div>
