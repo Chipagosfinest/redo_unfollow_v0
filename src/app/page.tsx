@@ -9,7 +9,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Users, UserMinus, Activity, TrendingUp, Search, Filter, Share2, Crown, Sparkles, Rocket, X, CheckCircle, AlertCircle, Clock, UserCheck, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import NeynarAuth from "@/components/NeynarAuth";
-import ProfileUpload from "@/components/ProfileUpload";
 
 // Fix SVG rendering issues by providing proper size props
 const IconWrapper = ({ children, size = 16 }: { children: React.ReactNode; size?: number }) => (
@@ -75,7 +74,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
-  const [currentStep, setCurrentStep] = useState<'auth' | 'profile' | 'upload' | 'scan' | 'results'>('auth');
+  const [currentStep, setCurrentStep] = useState<'auth' | 'profile' | 'scan' | 'results'>('auth');
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -134,12 +133,6 @@ export default function Home() {
     setUserFid(user.fid);
     setUserProfile(user);
     setIsAuthenticated(true);
-    setCurrentStep('upload');
-  }, []);
-
-  const handleProfileUpdate = useCallback((profile: { pfp: string; bio: string }) => {
-    setCustomPfp(profile.pfp);
-    setCustomBio(profile.bio);
     setCurrentStep('profile');
   }, []);
 
@@ -442,18 +435,7 @@ Try it yourself: ${window.location.origin}/embed`;
     return <NeynarAuth onAuthenticated={handleAuthenticated} onDisconnect={handleDisconnect} />;
   }
 
-  // Profile Upload Screen
-  if (currentStep === 'upload') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <ProfileUpload 
-          onProfileUpdate={handleProfileUpdate}
-          currentPfp={userProfile?.pfp_url}
-          currentBio={userProfile?.bio?.text}
-        />
-      </div>
-    );
-  }
+
 
   // Profile Screen - Simplified
   if (currentStep === 'profile') {
