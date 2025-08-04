@@ -7,13 +7,10 @@ import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Unfollow Tool",
-  description: "Clean up your Farcaster following list by identifying inactive users and mutual follows",
-  other: {
-    "fc:miniapp": "https://redounfollowv0.vercel.app",
-    "fc:miniapp:icon": "https://redounfollowv0.vercel.app/icon.svg",
-    "fc:miniapp:name": "Unfollow Tool",
-    "fc:miniapp:description": "Clean up your Farcaster following list by identifying inactive users and mutual follows",
+  title: "Farcaster Unfollow Tool",
+  description: "Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users.",
+  icons: {
+    icon: "/icon.svg",
   },
 };
 
@@ -25,16 +22,29 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta 
-          httpEquiv="Content-Security-Policy" 
-          content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; connect-src 'self' https: wss: blob: https://explorer-api.walletconnect.com https://api.farcaster.xyz https://farcaster.xyz https://client.farcaster.xyz https://warpcast.com https://client.warpcast.com https://*.wrpcd.net https://privy.farcaster.xyz https://privy.warpcast.com https://auth.privy.io https://rpc.privy.systems https://cloudflareinsights.com https://api.neynar.com https://redounfollowv0.vercel.app; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self';"
-        />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#6366f1" />
+        <meta name="description" content="Clean up your Farcaster feed with our intelligent unfollow tool" />
+        
+        {/* Farcaster Mini App Meta Tags */}
+        <meta name="farcaster:app" content="unfollow-tool" />
+        <meta name="farcaster:frame" content="vNext" />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content="Farcaster Unfollow Tool" />
+        <meta property="og:description" content="Clean up your Farcaster feed by identifying and unfollowing inactive accounts" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://redounfollowv0-a86wlidhi-chipagosfinests-projects.vercel.app" />
+        <meta property="og:image" content="/thumbnail.png" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Farcaster Unfollow Tool" />
+        <meta name="twitter:description" content="Clean up your Farcaster feed with intelligent unfollow recommendations" />
+        <meta name="twitter:image" content="/thumbnail.png" />
       </head>
       <body className={`${inter.className} antialiased`}>
-        <ThemeProvider
-          defaultTheme="system"
-          storageKey="farcaster-ui-theme"
-        >
+        <ThemeProvider defaultTheme="system" storageKey="farcaster-ui-theme">
           {children}
           <Toaster />
         </ThemeProvider>

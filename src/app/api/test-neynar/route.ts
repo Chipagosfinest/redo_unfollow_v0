@@ -1,19 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { env } from '@/lib/env';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const testType = searchParams.get('type') || 'user';
     
-    const apiKey = process.env.NEYNAR_API_KEY;
+    const apiKey = env.neynarApiKey;
     if (!apiKey) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Neynar API key not configured' 
+        error: 'Neynar API key not configured',
+        environment: {
+          nodeEnv: process.env.NODE_ENV,
+          hasApiKey: false,
+          envValidation: 'failed'
+        }
       });
     }
 
-    const results: any = {};
+    const results: any = {
+      environment: {
+        nodeEnv: process.env.NODE_ENV,
+        hasApiKey: true,
+        apiKeyLength: apiKey.length,
+        envValidation: 'passed'
+      }
+    };
 
     switch (testType) {
       case 'user':
@@ -48,9 +61,9 @@ export async function GET(request: NextRequest) {
         break;
 
       case 'following':
-        // Test following list for a known user
+        // Test following endpoint
         try {
-          const response = await fetch(`https://api.neynar.com/v2/farcaster/user/following?fid=12345&viewer_fid=12345`, {
+          const response = await fetch(`https://api.neynar.com/v2/farcaster/user/following?fid=194&viewer_fid=194`, {
             headers: { 'api_key': apiKey }
           });
           
@@ -58,8 +71,8 @@ export async function GET(request: NextRequest) {
             const data = await response.json();
             results.following = {
               success: true,
-              count: data.users?.length || 0,
-              sample: data.users?.slice(0, 5) || []
+              userCount: data.users?.length || 0,
+              hasUsers: !!data.users
             };
           } else {
             results.following = {
@@ -76,83 +89,37 @@ export async function GET(request: NextRequest) {
         }
         break;
 
-      case 'casts':
-        // Test getting user casts
-        try {
-          const response = await fetch(`https://api.neynar.com/v2/farcaster/cast/user?fid=12345&viewer_fid=12345`, {
-            headers: { 'api_key': apiKey }
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            results.casts = {
-              success: true,
-              count: data.casts?.length || 0,
-              sample: data.casts?.slice(0, 3) || []
-            };
-          } else {
-            results.casts = {
-              success: false,
-              status: response.status,
-              error: `HTTP ${response.status}`
-            };
+      case 'environment':
+        // Return environment information
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Environment info',
+          environment: {
+            nodeEnv: process.env.NODE_ENV,
+            hasNeynarKey: !!apiKey,
+            neynarKeyLength: apiKey.length,
+            envValidation: 'passed'
           }
-        } catch (error) {
-          results.casts = {
-            success: false,
-            error: error instanceof Error ? error.message : String(error)
-          };
-        }
-        break;
-
-      case 'mutual':
-        // Test mutual follow checking
-        try {
-          const response = await fetch(`https://api.neynar.com/v2/farcaster/user/followers?fid=12345&viewer_fid=194`, {
-            headers: { 'api_key': apiKey }
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            const isMutual = data.users?.some((user: any) => user.fid === 194);
-            results.mutual = {
-              success: true,
-              isMutual,
-              followerCount: data.users?.length || 0
-            };
-          } else {
-            results.mutual = {
-              success: false,
-              status: response.status,
-              error: `HTTP ${response.status}`
-            };
-          }
-        } catch (error) {
-          results.mutual = {
-            success: false,
-            error: error instanceof Error ? error.message : String(error)
-          };
-        }
-        break;
-
+        });
+        
       default:
         return NextResponse.json({ 
           success: false, 
-          error: 'Invalid test type. Use: user, following, casts, or mutual' 
+          message: 'Invalid action',
+          availableActions: ['user', 'following', 'environment']
         });
     }
 
-    return NextResponse.json({
-      success: true,
-      testType,
-      timestamp: new Date().toISOString(),
-      results
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Test completed',
+      results 
     });
-
   } catch (error) {
     return NextResponse.json({ 
       success: false, 
-      error: error instanceof Error ? error.message : String(error) 
+      message: 'Test endpoint error',
+      error: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
 } 

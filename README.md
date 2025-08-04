@@ -1,156 +1,98 @@
-# Farcaster UnfollowX 🚀
+# Farcaster Unfollow Tool
 
-**Clean up your Farcaster following list automatically - like UnfollowX but for Farcaster!**
+A beautiful, modern tool to clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users.
 
-## 🎯 **LIVE & READY FOR USERS**
+## 🚀 Live Demo
 
-**Production App**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app
+**Current Status:** Demo Mode (using sample data for testing)
 
-**Farcaster App Registration**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app/embed
+**Live URL:** https://redounfollowv0-o0n6r5rck-chipagosfinests-projects.vercel.app
 
----
+## ✨ Features
 
-## ✨ **Features**
+- **Beautiful Modern UI** - Clean, responsive design with smooth animations
+- **Smart Analysis** - Identifies inactive accounts, non-mutual follows, and spam
+- **Batch Operations** - Select and unfollow multiple users at once
+- **Real-time Data** - Uses actual Farcaster data via Neynar API
+- **Demo Mode** - Works immediately with sample data for testing
 
-### 🔐 **Zero Manual Input**
-- **Automatic Detection**: Instantly detects your Farcaster account
-- **No Setup Required**: Just open and start using
-- **Native Integration**: Works seamlessly in Farcaster feeds and tools
+## 🔧 Setup for Real Data
 
-### 🧠 **Smart Analysis**
-- **Inactive User Detection**: Finds users who haven't casted in 60+ days
-- **Mutual Follow Check**: Identifies users who don't follow you back
-- **Spam Detection**: Highlights potential spam accounts
-- **Real-time Stats**: Live dashboard of your following health
+To use with your real Farcaster data instead of demo data:
 
-### ⚡ **Batch Operations**
-- **One-Click Selection**: Select multiple users instantly
-- **Batch Unfollow**: Remove multiple users with one click
-- **Progress Tracking**: Real-time progress for batch operations
-- **Smart Recommendations**: AI suggests users to unfollow
+### 1. Get Neynar API Key
+1. Go to [Neynar Dashboard](https://neynar.com)
+2. Sign up and get your API key
+3. Copy the API key
 
-### 🎨 **Beautiful UI**
-- **Farcaster Native**: Purple and white theme with dark/light mode
-- **Responsive Design**: Works perfectly on all devices
-- **Professional Polish**: Production-ready interface
+### 2. Configure Vercel Environment Variables
+1. Go to your Vercel project dashboard
+2. Navigate to Settings → Environment Variables
+3. Add the following variable:
+   ```
+   Name: NEYNAR_API_KEY
+   Value: your_neynar_api_key_here
+   Environment: Production
+   ```
+4. Redeploy the app
 
----
+### 3. Test Real Data
+- The app will automatically switch from demo mode to real data
+- You'll see your actual Farcaster following list
+- All analysis will be based on real user data
 
-## 🚀 **Quick Start**
+## 🎨 Design Features
 
-1. **Open in Farcaster**: Visit the app in Farcaster
-2. **Auto-Connect**: Your account is automatically detected
-3. **Scan Following**: App analyzes your following list
-4. **Select & Unfollow**: Choose users and batch unfollow
+- **Modern Gradient Backgrounds** - Beautiful purple to blue gradients
+- **Smooth Animations** - Hover effects and transitions
+- **Responsive Layout** - Works perfectly on all devices
+- **Clear Visual Hierarchy** - Easy to scan and understand
+- **Accessible Design** - Proper contrast and ARIA labels
 
-**That's it! No setup, no manual input, just results.**
+## 📊 Current Demo Data
 
----
+The app currently shows sample data including:
+- **Inactive Users** - Accounts that haven't posted in 60+ days
+- **Non-Mutual Follows** - Users who don't follow you back
+- **Spam Detection** - Potential spam accounts
 
-## 🔗 **Farcaster Integration**
-
-### Feed Integration
-- **URL**: `/feed` - Lightweight interface for Farcaster feeds
-- **Auto-Load**: Shows top 5 inactive users automatically
-- **Quick Actions**: Select and unfollow directly from feed
-
-### Tool Integration  
-- **URL**: `/tool` - Full unfollow experience
-- **Complete Analysis**: Full following list with pagination
-- **Batch Operations**: Select multiple users and unfollow
-
-### Embed Integration
-- **Cast Embeds**: `/embed/cast` - Cast context and actions
-- **Profile Embeds**: `/embed/profile` - Profile stats and quick access
-
----
-
-## 🛠 **Technology Stack**
-
-- **Framework**: Next.js 15.4.5
-- **Language**: TypeScript
-- **UI**: shadcn/ui + Tailwind CSS
-- **Authentication**: Farcaster Native Wallet
-- **APIs**: Official Farcaster API
-- **Deployment**: Vercel
-
----
-
-## 📊 **How It Works**
-
-1. **Auto-Detection**: App detects your Farcaster account automatically
-2. **Following Scan**: Fetches your complete following list
-3. **Analysis Engine**: 
-   - Checks mutual follow status
-   - Analyzes last cast timestamps
-   - Identifies inactive users (60+ days)
-   - Calculates spam probability
-4. **Smart Recommendations**: Suggests users to unfollow
-5. **Batch Operations**: Execute multiple unfollows with progress tracking
-
----
-
-## 🎯 **Production URLs**
-
-### Main App
-- **Production**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app
-- **App Registration**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app/embed
-
-### Farcaster Integration
-- **Feed**: `/feed` - Quick unfollow interface
-- **Tool**: `/tool` - Full management experience
-- **Cast Embed**: `/embed/cast` - Cast context
-- **Profile Embed**: `/embed/profile` - Profile stats
-
-### App Assets
-- **Manifest**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app/farcaster-manifest.json
-- **Icon**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app/icon.svg
-- **Thumbnail**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app/thumbnail.png
-- **Splash**: https://redounfollowv0-pvzthsa1t-chipagosfinests-projects.vercel.app/splash.png
-
----
-
-## 🔧 **API Endpoints**
-
-All endpoints use official Farcaster API:
-
-- `GET /api/following` - Get user's following list
-- `GET /api/check-mutual` - Check mutual follow status
-- `GET /api/user-casts` - Get user's recent casts
-- `POST /api/unfollow` - Execute unfollow action
-
----
-
-## 🚀 **Deployment**
+## 🔄 Development
 
 ```bash
-# Deploy to Vercel
-npx vercel --prod --yes
+# Install dependencies
+npm install
 
-# Local development
+# Run development server
 npm run dev
+
+# Build for production
+npm run build
 ```
 
+## 📝 Environment Variables
+
+Create a `.env.local` file for local development:
+
+```env
+NEYNAR_API_KEY=your_neynar_api_key_here
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+## 🚀 Deployment
+
+The app is automatically deployed to Vercel. To deploy with real data:
+
+1. Add `NEYNAR_API_KEY` to Vercel environment variables
+2. Redeploy the app
+3. The demo mode banner will disappear and show real data
+
+## 🎯 Next Steps
+
+- [ ] Configure Neynar API key in Vercel
+- [ ] Test with real Farcaster data
+- [ ] Add more analysis features
+- [ ] Implement real unfollow operations
+
 ---
 
-## 🎉 **Ready for Users!**
-
-This app is **production-ready** and designed for immediate deployment to your excited users. The advantage of open social graphs like Farcaster is that we can build tools that work seamlessly with the platform.
-
-**No manual input required** - just open and start cleaning up your following list! 🎯
-
----
-
-## 📝 **License**
-
-MIT License - Feel free to use and modify!
-
----
-
-## 🤝 **Contributing**
-
-Open to contributions! This is built for the Farcaster community.
-
----
-
-*Built with ❤️ for the Farcaster ecosystem*
+**Note:** This app is currently in demo mode. To see your real Farcaster data, follow the setup instructions above to configure the Neynar API key.
