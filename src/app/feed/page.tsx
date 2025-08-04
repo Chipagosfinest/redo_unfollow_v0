@@ -231,6 +231,8 @@ export default function FeedPage() {
                     <div className="flex items-center space-x-3">
                       <input
                         type="checkbox"
+                        id={`inactive-user-checkbox-${user.fid}`}
+                        name={`inactive-user-checkbox-${user.fid}`}
                         checked={selectedUsers.has(user.fid)}
                         onChange={(e) => handleSelectUser(user.fid, e.target.checked)}
                         className="rounded border-gray-300"
