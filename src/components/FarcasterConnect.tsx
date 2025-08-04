@@ -26,30 +26,51 @@ export default function FarcasterConnect({
   // Get Farcaster native wallet user (Privy-based)
   const getFarcasterUser = useCallback(async () => {
     try {
-      // Initialize SDK first
-      await sdk.actions.ready();
+      // Check if we're in Farcaster environment
+      const isInIframe = window.self !== window.top;
+      const farcaster = (window as any).farcaster;
       
-      // Check for native Farcaster environment with Privy wallet
-      if (typeof window !== 'undefined' && 'farcaster' in window) {
-        // @ts-ignore - Farcaster global object
-        const farcaster = (window as any).farcaster;
+      console.log('FarcasterConnect: Environment check', {
+        isInIframe,
+        hasFarcasterObject: !!farcaster,
+        hasUser: !!farcaster?.user,
+        hasFid: !!farcaster?.user?.fid
+      });
+      
+      // If user is already available, return it
+      if (farcaster?.user?.fid) {
+        console.log('FarcasterConnect: Found existing user:', farcaster.user);
+        return farcaster.user;
+      }
+      
+      // If we're in iframe, try to initialize SDK
+      if (isInIframe) {
+        console.log('FarcasterConnect: Initializing SDK in iframe');
+        await sdk.actions.ready();
         
-        // Check if we're in native Farcaster environment
+        // Wait for SDK to initialize
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Check again for user
         if (farcaster?.user?.fid) {
+          console.log('FarcasterConnect: Found user after SDK init:', farcaster.user);
           return farcaster.user;
         }
         
         // Check for Privy wallet integration
         if (farcaster?.privy?.user) {
+          console.log('FarcasterConnect: Found Privy user:', farcaster.privy.user);
           return farcaster.privy.user;
         }
         
         // Check for WalletConnect integration
         if (farcaster?.walletConnect?.user) {
+          console.log('FarcasterConnect: Found WalletConnect user:', farcaster.walletConnect.user);
           return farcaster.walletConnect.user;
         }
       }
       
+      console.log('FarcasterConnect: No user found');
       return null;
     } catch (error) {
       console.error("Error getting Farcaster user:", error);
@@ -173,10 +194,21 @@ export default function FarcasterConnect({
             
             handleFarcasterAuth(user.fid);
           } else {
-            toast.error("Please connect your Farcaster native wallet first");
+            const isInIframe = window.self !== window.top;
+            if (isInIframe) {
+              toast.error("Please connect your Farcaster wallet first");
+            } else {
+              toast.error("Please open this app in Farcaster to connect your wallet");
+            }
           }
         } catch (error) {
-          toast.error("Farcaster native wallet not detected. Please use Farcaster app.");
+          console.error('Connection error:', error);
+          const isInIframe = window.self !== window.top;
+          if (isInIframe) {
+            toast.error("Failed to connect to Farcaster wallet");
+          } else {
+            toast.error("Please open this app in Farcaster to connect your wallet");
+          }
         }
       }}
       disabled={isConnecting}
@@ -192,7 +224,7 @@ export default function FarcasterConnect({
       ) : (
         <>
           <Wallet className="w-4 h-4 mr-2" />
-          Connect Farcaster Native Wallet
+          {window.self !== window.top ? 'Connect Farcaster Wallet' : 'Open in Farcaster App'}
         </>
       )}
     </Button>

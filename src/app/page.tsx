@@ -76,10 +76,28 @@ export default function Home() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        await sdk.actions.ready();
-        console.log('Farcaster SDK ready called successfully');
+        logToVercel('info', 'Initializing Farcaster SDK');
+        
+        // Check if we're in a Farcaster environment
+        const isInIframe = window.self !== window.top;
+        const hasFarcaster = !!(window as any).farcaster;
+        
+        logToVercel('info', 'SDK initialization check', { 
+          isInIframe, 
+          hasFarcaster,
+          userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server'
+        });
+        
+        if (isInIframe || hasFarcaster) {
+          await sdk.actions.ready();
+          logToVercel('info', 'Farcaster SDK ready called successfully');
+        } else {
+          logToVercel('info', 'Not in Farcaster environment, skipping SDK initialization');
+        }
       } catch (error) {
-        console.error('Error calling Farcaster SDK ready:', error);
+        logToVercel('error', 'Error calling Farcaster SDK ready', { 
+          error: error instanceof Error ? error.message : String(error) 
+        });
       }
     };
 
@@ -91,43 +109,48 @@ export default function Home() {
     const checkFarcasterAuth = async () => {
       logToVercel('info', 'Auto-detecting Farcaster authentication');
       
-      if (typeof window !== 'undefined' && 'farcaster' in window) {
-        // @ts-ignore - Farcaster global object
-        const farcaster = (window as any).farcaster;
-        logToVercel('info', 'Farcaster object found in auto-detection', { 
-          hasUser: !!farcaster?.user,
-          hasFid: !!farcaster?.user?.fid 
-        });
-        
-        // If user is already authenticated, proceed
-        if (farcaster?.user?.fid) {
-          logToVercel('info', 'User already authenticated in auto-detection', { fid: farcaster.user.fid });
-          handleAuth();
-        } else {
-          logToVercel('info', 'No user found in auto-detection, trying Quick Auth');
-          // Try to initialize SDK and get user
-          try {
-            logToVercel('info', 'Calling sdk.actions.ready() in auto-detection');
-            await sdk.actions.ready();
-            logToVercel('info', 'SDK ready called successfully in auto-detection');
-            
-            // Wait for SDK to initialize
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Check again for user
-            logToVercel('info', 'Checking for user after SDK ready in auto-detection');
-            if (farcaster?.user?.fid) {
-              logToVercel('info', 'User found after SDK ready in auto-detection', { fid: farcaster.user.fid });
-              handleAuth();
-            } else {
-              logToVercel('warn', 'Still no user after SDK ready in auto-detection');
-            }
-          } catch (error) {
-            logToVercel('warn', 'Farcaster SDK not ready yet in auto-detection', { error: error instanceof Error ? error.message : String(error) });
+      // Check if we're in Farcaster environment
+      const isInIframe = window.self !== window.top;
+      const farcaster = (window as any).farcaster;
+      
+      logToVercel('info', 'Environment check', { 
+        isInIframe,
+        hasFarcasterObject: !!farcaster,
+        hasUser: !!farcaster?.user,
+        hasFid: !!farcaster?.user?.fid 
+      });
+      
+      // If user is already authenticated, proceed
+      if (farcaster?.user?.fid) {
+        logToVercel('info', 'User already authenticated in auto-detection', { fid: farcaster.user.fid });
+        handleAuth();
+        return;
+      }
+      
+      // If we're in iframe but no user, try to initialize SDK
+      if (isInIframe) {
+        logToVercel('info', 'In Farcaster iframe, trying to initialize SDK');
+        try {
+          logToVercel('info', 'Calling sdk.actions.ready() in auto-detection');
+          await sdk.actions.ready();
+          logToVercel('info', 'SDK ready called successfully in auto-detection');
+          
+          // Wait for SDK to initialize
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          
+          // Check again for user
+          logToVercel('info', 'Checking for user after SDK ready in auto-detection');
+          if (farcaster?.user?.fid) {
+            logToVercel('info', 'User found after SDK ready in auto-detection', { fid: farcaster.user.fid });
+            handleAuth();
+          } else {
+            logToVercel('warn', 'Still no user after SDK ready in auto-detection');
           }
+        } catch (error) {
+          logToVercel('warn', 'Farcaster SDK not ready yet in auto-detection', { error: error instanceof Error ? error.message : String(error) });
         }
       } else {
-        logToVercel('info', 'No Farcaster object found in window during auto-detection');
+        logToVercel('info', 'Not in Farcaster iframe, skipping auto-auth');
       }
     };
 
@@ -143,88 +166,162 @@ export default function Home() {
   const handleAuth = useCallback(async () => {
     try {
       setIsLoading(true);
+      logToVercel('info', 'Starting authentication process');
       
       // Check if we're in an iframe (Farcaster Mini App environment)
       const isInIframe = window.self !== window.top;
+      logToVercel('info', 'Environment check', { isInIframe });
       
-      if (isInIframe) {
-        // We're in a Farcaster Mini App - try real authentication
-        try {
-          const farcaster = (window as any).farcaster;
+      // Check for Farcaster global object
+      const farcaster = (window as any).farcaster;
+      logToVercel('info', 'Farcaster object check', { 
+        hasFarcaster: !!farcaster,
+        hasUser: !!farcaster?.user,
+        hasFid: !!farcaster?.user?.fid,
+        userData: farcaster?.user
+      });
+      
+      // First, try to initialize the SDK
+      try {
+        logToVercel('info', 'Initializing Farcaster SDK');
+        await sdk.actions.ready();
+        logToVercel('info', 'SDK ready called successfully');
+        
+        // Wait a bit for SDK to fully initialize
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Check again for user after SDK initialization
+        const updatedFarcaster = (window as any).farcaster;
+        logToVercel('info', 'After SDK ready check', { 
+          hasFarcaster: !!updatedFarcaster,
+          hasUser: !!updatedFarcaster?.user,
+          hasFid: !!updatedFarcaster?.user?.fid,
+          userData: updatedFarcaster?.user
+        });
+        
+        if (updatedFarcaster?.user?.fid) {
+          const user = updatedFarcaster.user;
+          logToVercel('info', 'Found authenticated user after SDK ready', { fid: user.fid });
           
-          if (farcaster?.user?.fid) {
-            // User already authenticated
-            const user = farcaster.user;
-            setUserFid(user.fid);
-            setIsAuthenticated(true);
-            setCurrentStep('profile');
-            
-            // Load real profile using Neynar API
-            try {
-              const response = await fetch(`/api/neynar/user?fid=${user.fid}`);
-              if (response.ok) {
-                const data = await response.json();
-                setUserProfile(data.users[0]);
-              }
-            } catch (error) {
-              console.error('Failed to load profile:', error);
-              // Fallback to mock data
-              const mockUser = {
+          setUserFid(user.fid);
+          setIsAuthenticated(true);
+          setCurrentStep('profile');
+          
+          // Load real profile using Neynar API
+          try {
+            logToVercel('info', 'Loading profile from Neynar API', { fid: user.fid });
+            const response = await fetch(`/api/neynar/user?fid=${user.fid}`);
+            if (response.ok) {
+              const data = await response.json();
+              logToVercel('info', 'Profile loaded successfully', { data });
+              setUserProfile(data.users[0]);
+            } else {
+              logToVercel('warn', 'Failed to load profile from Neynar', { status: response.status });
+              // Fallback to user data from Farcaster object
+              setUserProfile({
                 fid: user.fid,
-                username: 'user.eth',
-                displayName: 'User',
-                bio: 'Farcaster user',
-                followerCount: 1000,
-                followingCount: 500
-              };
-              setUserProfile(mockUser);
+                username: user.username || 'user.eth',
+                displayName: user.displayName || 'Farcaster User',
+                bio: user.bio || 'Farcaster user',
+                followerCount: user.followerCount || 1000,
+                followingCount: user.followingCount || 500
+              });
             }
-            
-            toast.success("Connected to Farcaster!");
-            return;
+          } catch (error) {
+            logToVercel('error', 'Error loading profile from Neynar', { error: error instanceof Error ? error.message : String(error) });
+            // Fallback to user data from Farcaster object
+            setUserProfile({
+              fid: user.fid,
+              username: user.username || 'user.eth',
+              displayName: user.displayName || 'Farcaster User',
+              bio: user.bio || 'Farcaster user',
+              followerCount: user.followerCount || 1000,
+              followingCount: user.followingCount || 500
+            });
           }
           
-          // Try to authenticate
-          await sdk.actions.ready();
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          const user = farcaster?.user;
-          if (user?.fid) {
-            setUserFid(user.fid);
-            setIsAuthenticated(true);
-            setCurrentStep('profile');
-            toast.success("Connected to Farcaster!");
-            return;
-          }
-          
-          toast.error("Please connect your Farcaster wallet");
-          return;
-          
-        } catch (error) {
-          console.error('Farcaster auth failed:', error);
-          toast.error("Failed to connect to Farcaster");
+          toast.success("Connected to Farcaster!");
           return;
         }
+      } catch (error) {
+        logToVercel('error', 'SDK initialization failed', { error: error instanceof Error ? error.message : String(error) });
       }
       
-      // Fallback for development/testing
-      const mockUser = {
-        fid: 12345,
-        username: 'alec.eth',
-        displayName: 'alec.eth',
-        bio: 'Building interesting things on Farcaster',
-        followerCount: 7219,
-        followingCount: 897
-      };
+      // Check if user was already authenticated before SDK call
+      if (farcaster?.user?.fid) {
+        const user = farcaster.user;
+        logToVercel('info', 'Found pre-authenticated user', { fid: user.fid });
+        
+        setUserFid(user.fid);
+        setIsAuthenticated(true);
+        setCurrentStep('profile');
+        
+        // Load real profile using Neynar API
+        try {
+          logToVercel('info', 'Loading profile for pre-authenticated user', { fid: user.fid });
+          const response = await fetch(`/api/neynar/user?fid=${user.fid}`);
+          if (response.ok) {
+            const data = await response.json();
+            setUserProfile(data.users[0]);
+          } else {
+            setUserProfile({
+              fid: user.fid,
+              username: user.username || 'user.eth',
+              displayName: user.displayName || 'Farcaster User',
+              bio: user.bio || 'Farcaster user',
+              followerCount: user.followerCount || 1000,
+              followingCount: user.followingCount || 500
+            });
+          }
+        } catch (error) {
+          logToVercel('error', 'Error loading profile for pre-authenticated user', { error: error instanceof Error ? error.message : String(error) });
+          setUserProfile({
+            fid: user.fid,
+            username: user.username || 'user.eth',
+            displayName: user.displayName || 'Farcaster User',
+            bio: user.bio || 'Farcaster user',
+            followerCount: user.followerCount || 1000,
+            followingCount: user.followingCount || 500
+          });
+        }
+        
+        toast.success("Connected to Farcaster!");
+        return;
+      }
       
-      setUserFid(mockUser.fid);
-      setIsAuthenticated(true);
-      setUserProfile(mockUser);
-      setCurrentStep('profile');
-      toast.success("Connected successfully!");
+      // If we're in iframe but no user found, show error
+      if (isInIframe) {
+        logToVercel('warn', 'In iframe but no user found');
+        toast.error("Please connect your Farcaster wallet first");
+        return;
+      }
+      
+      // Fallback for development/testing (only when not in iframe)
+      logToVercel('info', 'Using fallback mock data for development');
+      
+      // Check if we're in development and not in Farcaster environment
+      if (process.env.NODE_ENV === 'development' && !isInIframe) {
+        const mockUser = {
+          fid: 12345,
+          username: 'alec.eth',
+          displayName: 'alec.eth',
+          bio: 'Building interesting things on Farcaster',
+          followerCount: 7219,
+          followingCount: 897
+        };
+        
+        setUserFid(mockUser.fid);
+        setIsAuthenticated(true);
+        setUserProfile(mockUser);
+        setCurrentStep('profile');
+        toast.success("Connected successfully (Development Mode)");
+      } else {
+        // In Farcaster environment but no user found
+        toast.error("Please connect your Farcaster wallet first");
+      }
       
     } catch (error) {
-      console.error('Auth error:', error);
+      logToVercel('error', 'Authentication error', { error: error instanceof Error ? error.message : String(error) });
       toast.error("Failed to authenticate");
     } finally {
       setIsLoading(false);
@@ -248,6 +345,14 @@ export default function Home() {
     try {
       if (!userFid) {
         toast.error("Please authenticate first");
+        setIsScanning(false);
+        return;
+      }
+      
+      // Check if we're using mock data
+      const isInIframe = window.self !== window.top;
+      if (userFid === 12345 && isInIframe) {
+        toast.error("Please connect your real Farcaster wallet. Mock data cannot be used in Farcaster app.");
         setIsScanning(false);
         return;
       }
@@ -516,6 +621,26 @@ Try it yourself: ${window.location.origin}/embed`;
             </div>
           </div>
 
+          {/* Debug Info (only in development) */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="bg-gray-50 p-4 rounded-xl mb-8">
+              <div className="flex items-center space-x-2 text-gray-700 mb-2">
+                <IconWrapper size={16}>
+                  <span className="text-xs">🐛</span>
+                </IconWrapper>
+                <span className="text-sm font-medium">Debug Info</span>
+              </div>
+              <div className="text-xs text-gray-600 space-y-1">
+                <div>Environment: {typeof window !== 'undefined' ? (window.self !== window.top ? 'Farcaster Mini App' : 'Web Browser') : 'Server'}</div>
+                <div>Farcaster Object: {typeof window !== 'undefined' && 'farcaster' in window ? 'Available' : 'Not Available'}</div>
+                <div>User Authenticated: {typeof window !== 'undefined' && (window as any).farcaster?.user?.fid ? 'Yes' : 'No'}</div>
+                {typeof window !== 'undefined' && (window as any).farcaster?.user?.fid && (
+                  <div>FID: {(window as any).farcaster.user.fid}</div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Continue Button */}
           <Button 
             onClick={handleAuth}
@@ -534,6 +659,26 @@ Try it yourself: ${window.location.origin}/embed`;
               </>
             )}
           </Button>
+          
+          {/* Test Button (only in development) */}
+          {process.env.NODE_ENV === 'development' && (
+            <Button 
+              onClick={() => {
+                logToVercel('info', 'Manual test button clicked');
+                const farcaster = (window as any).farcaster;
+                logToVercel('info', 'Manual test - Farcaster object', { 
+                  hasFarcaster: !!farcaster,
+                  hasUser: !!farcaster?.user,
+                  hasFid: !!farcaster?.user?.fid,
+                  userData: farcaster?.user
+                });
+                toast.info('Check console for debug info');
+              }}
+              className="w-full mt-4 bg-gray-500 text-white hover:bg-gray-600 h-10 text-sm"
+            >
+              🧪 Test Farcaster Connection
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -579,6 +724,45 @@ Try it yourself: ${window.location.origin}/embed`;
               Analyze your follows to find inactive accounts
             </div>
           </div>
+
+          {/* Debug Info (only in development) */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="bg-gray-50 p-4 rounded-xl mb-6">
+              <div className="flex items-center space-x-2 text-gray-700 mb-2">
+                <IconWrapper size={16}>
+                  <span className="text-xs">🐛</span>
+                </IconWrapper>
+                <span className="text-sm font-medium">Debug Info</span>
+              </div>
+              <div className="text-xs text-gray-600 space-y-1">
+                <div>Environment: {typeof window !== 'undefined' ? (window.self !== window.top ? 'Farcaster Mini App' : 'Web Browser') : 'Server'}</div>
+                <div>Farcaster Object: {typeof window !== 'undefined' && 'farcaster' in window ? 'Available' : 'Not Available'}</div>
+                <div>User Authenticated: {typeof window !== 'undefined' && (window as any).farcaster?.user?.fid ? 'Yes' : 'No'}</div>
+                {typeof window !== 'undefined' && (window as any).farcaster?.user?.fid && (
+                  <div>FID: {(window as any).farcaster.user.fid}</div>
+                )}
+                <div>Current User FID: {userFid || 'None'}</div>
+                {userFid === 12345 && (
+                  <div className="text-orange-600 font-medium">⚠️ Using Mock Data (FID: 12345)</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Warning for mock data in Farcaster environment */}
+          {userFid === 12345 && window.self !== window.top && (
+            <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl mb-6">
+              <div className="flex items-center space-x-2 text-orange-700 mb-2">
+                <IconWrapper size={16}>
+                  <span className="text-xs">⚠️</span>
+                </IconWrapper>
+                <span className="text-sm font-medium">Mock Data Detected</span>
+              </div>
+              <div className="text-xs text-orange-600">
+                You're using mock data (FID: 12345). Please connect your real Farcaster wallet to use the app properly.
+              </div>
+            </div>
+          )}
 
           {/* Your Profile Section */}
           <div className="mb-6">

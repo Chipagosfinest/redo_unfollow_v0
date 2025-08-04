@@ -44,7 +44,11 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
-      throw new Error(`Neynar API error: ${response.status}`);
+      console.error(`Neynar API error for FID ${fid}: ${response.status} ${response.statusText}`);
+      if (response.status === 404) {
+        throw new Error(`User with FID ${fid} not found in Neynar API. This might be a test/mock FID.`);
+      }
+      throw new Error(`Neynar API error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
