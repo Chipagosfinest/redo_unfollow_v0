@@ -683,7 +683,7 @@ Try it yourself: ${window.location.origin}/embed`;
           {/* Continue Button */}
           <Button 
             onClick={handleAuth}
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 h-14 text-lg font-semibold rounded-xl shadow-lg"
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 h-14 text-lg font-semibold rounded-xl shadow-lg flex items-center justify-center"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -713,7 +713,7 @@ Try it yourself: ${window.location.origin}/embed`;
                 });
                 toast.info('Check console for debug info');
               }}
-              className="w-full mt-4 bg-gray-500 text-white hover:bg-gray-600 h-10 text-sm rounded-xl"
+              className="w-full mt-4 bg-gray-500 text-white hover:bg-gray-600 h-10 text-sm rounded-xl flex items-center justify-center"
             >
               🧪 Test Farcaster Connection
             </Button>
@@ -872,7 +872,7 @@ Try it yourself: ${window.location.origin}/embed`;
             
             <Button 
               onClick={handleStartScan}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 h-14 text-lg font-semibold rounded-xl shadow-lg"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 h-14 text-lg font-semibold rounded-xl shadow-lg flex items-center justify-center"
             >
               Start Scan
             </Button>
@@ -963,34 +963,34 @@ Try it yourself: ${window.location.origin}/embed`;
               <Button 
                 onClick={handleSelectAllInactive}
                 variant="outline"
-                className="w-full hover:bg-orange-50 transition-colors border-orange-200 h-12 text-base"
+                className="w-full hover:bg-orange-50 transition-colors border-orange-200 h-12 text-base flex items-center justify-start px-4"
               >
                 <IconWrapper size={18}>
                   <Activity size={18} className="text-orange-600" />
                 </IconWrapper>
-                <span className="ml-3">Select Inactive (60+ days)</span>
+                <span className="ml-3 flex-1 text-left">Select Inactive (60+ days)</span>
               </Button>
               
               <Button 
                 onClick={handleSelectAllNotFollowingBack}
                 variant="outline"
-                className="w-full hover:bg-red-50 transition-colors border-red-200 h-12 text-base"
+                className="w-full hover:bg-red-50 transition-colors border-red-200 h-12 text-base flex items-center justify-start px-4"
               >
                 <IconWrapper size={18}>
                   <UserMinus size={18} className="text-red-600" />
                 </IconWrapper>
-                <span className="ml-3">Select Not Following Back</span>
+                <span className="ml-3 flex-1 text-left">Select Not Following Back</span>
               </Button>
               
               <Button 
                 onClick={handleSelectAll}
                 variant="outline"
-                className="w-full hover:bg-purple-50 transition-colors border-purple-200 h-12 text-base"
+                className="w-full hover:bg-purple-50 transition-colors border-purple-200 h-12 text-base flex items-center justify-start px-4"
               >
                 <IconWrapper size={18}>
                   <Users size={18} className="text-purple-600" />
                 </IconWrapper>
-                <span className="ml-3">Select All</span>
+                <span className="ml-3 flex-1 text-left">Select All</span>
               </Button>
             </div>
 
@@ -999,7 +999,7 @@ Try it yourself: ${window.location.origin}/embed`;
               <Button 
                 onClick={handleUnfollowSelected}
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white mb-6 h-14 text-lg font-semibold rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105"
+                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white mb-6 h-14 text-lg font-semibold rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105 flex items-center justify-center"
               >
                 {isLoading ? (
                   <>
@@ -1020,7 +1020,7 @@ Try it yourself: ${window.location.origin}/embed`;
             {/* Viral Share Button */}
             <Button 
               onClick={handleShareApp}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white h-14 text-lg font-semibold rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105 animate-pulse"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white h-14 text-lg font-semibold rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105 animate-pulse flex items-center justify-center"
             >
               <IconWrapper size={18}>
                 <Share2 size={18} />
@@ -1084,7 +1084,7 @@ Try it yourself: ${window.location.origin}/embed`;
                         onClick={() => handleSelectUser(user.fid)}
                         variant="outline"
                         size="sm"
-                        className="text-red-600 hover:text-red-700 border-red-200 h-10"
+                        className="text-red-600 hover:text-red-700 border-red-200 h-10 flex items-center justify-center"
                       >
                         <IconWrapper size={16}>
                           <UserMinus size={16} />
