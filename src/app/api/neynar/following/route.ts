@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/lib/env';
 
+// Deployment timestamp to force fresh deployment
+const DEPLOYMENT_TIMESTAMP = '2025-08-04-03-55';
+
 // Security middleware
 function validateRequest(request: NextRequest) {
   // Check if request is from our domain
@@ -79,7 +82,8 @@ export async function GET(request: NextRequest) {
       message: 'The Neynar v2 API does not currently support fetching following lists. This feature is not available.',
       users: [],
       demoMode: true,
-      apiLimitation: true
+      apiLimitation: true,
+      deploymentTimestamp: DEPLOYMENT_TIMESTAMP
     }, { status: 501 });
     
     // The following code is commented out because the endpoint doesn't exist
