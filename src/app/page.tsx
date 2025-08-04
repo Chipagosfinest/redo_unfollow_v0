@@ -203,7 +203,7 @@ export default function Home() {
         
         // Analyze users for inactivity and mutual follows
         const analyzedUsers = await Promise.all(
-          followingUsers.slice(0, 50).map(async (user: any) => {
+          followingData.users.slice(0, 50).map(async (user: any) => {
             // Check mutual follow status
             const mutualResponse = await fetch(`/api/check-mutual?userFid=${userFid}&targetFid=${user.fid}`);
             
