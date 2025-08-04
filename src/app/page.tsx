@@ -576,94 +576,154 @@ Try it yourself: ${window.location.origin}/embed`;
   if (currentStep === 'auth') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-        {/* Farcaster Mini App Header */}
-        <div className="bg-black text-white px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <button className="text-white text-lg">✕</button>
-            <button className="text-white text-lg">⌄</button>
-          </div>
-          <div className="text-center">
-            <div className="font-semibold text-base">Unfollow App</div>
-            <div className="text-xs text-gray-300">by alec.eth ✓</div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <button className="text-white text-lg">⋯</button>
-            <button className="text-white text-lg">☀</button>
+        {/* Modern Desktop Header */}
+        <div className="bg-white border-b border-gray-200 px-8 py-6">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white text-lg font-bold">✓</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Unfollow App</h1>
+                <p className="text-sm text-gray-600">by alec.eth</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-600">The most advanced Farcaster unfollow tool</div>
+            </div>
           </div>
         </div>
 
-        <div className="px-6 py-12">
-          {/* Welcome Section */}
-          <div className="text-center mb-12">
-            <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg">
-              <IconWrapper size={32}>
-                <span className="text-white text-2xl font-bold">✓</span>
-              </IconWrapper>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              Welcome to Unfollow App
+        <div className="max-w-4xl mx-auto px-8 py-16">
+          {/* Hero Section */}
+          <div className="text-center mb-16">
+            <h1 className="text-5xl font-bold text-gray-900 mb-6">
+              Clean Up Your Farcaster Feed
             </h1>
-            <p className="text-lg text-gray-600 leading-relaxed max-w-md mx-auto">
-              The most advanced Farcaster unfollow tool with real API integration, smart analysis, and batch operations
+            <p className="text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto mb-8">
+              Advanced AI-powered analysis to identify inactive accounts, spam, and non-mutual follows. 
+              Batch unfollow with real Farcaster API integration.
             </p>
+            <div className="flex items-center justify-center space-x-8 text-sm text-gray-500">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>Real Farcaster API</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span>Smart Analysis</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span>Batch Operations</span>
+              </div>
+            </div>
           </div>
 
           {/* Feature Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <IconWrapper size={20}>
-                    <Search size={20} className="text-blue-600" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <IconWrapper size={24}>
+                    <Search size={24} className="text-blue-600" />
                   </IconWrapper>
                 </div>
-                <span className="font-bold text-gray-900 text-lg">Smart Analysis</span>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Smart Analysis</h3>
+                  <p className="text-blue-600 font-medium">AI-Powered Detection</p>
+                </div>
               </div>
-              <p className="text-gray-600 mb-3">AI-powered detection of inactive accounts, spam, and non-mutual follows</p>
-              <div className="text-xs text-blue-600 font-medium">• 60+ day inactivity detection</div>
-              <div className="text-xs text-blue-600 font-medium">• Mutual follow analysis</div>
-              <div className="text-xs text-blue-600 font-medium">• Spam account identification</div>
+              <p className="text-gray-600 mb-4 text-lg">Advanced algorithms detect inactive accounts, spam patterns, and non-mutual follows with high accuracy.</p>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                  <span>60+ day inactivity detection</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                  <span>Mutual follow analysis</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                  <span>Spam account identification</span>
+                </div>
+              </div>
             </div>
             
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <IconWrapper size={20}>
-                    <UserMinus size={20} className="text-green-600" />
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                  <IconWrapper size={24}>
+                    <UserMinus size={24} className="text-green-600" />
                   </IconWrapper>
                 </div>
-                <span className="font-bold text-gray-900 text-lg">Batch Operations</span>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Batch Operations</h3>
+                  <p className="text-green-600 font-medium">Real Farcaster Integration</p>
+                </div>
               </div>
-              <p className="text-gray-600 mb-3">Unfollow multiple users simultaneously with real Farcaster integration</p>
-              <div className="text-xs text-green-600 font-medium">• Real Farcaster API integration</div>
-              <div className="text-xs text-green-600 font-medium">• Batch unfollow operations</div>
-              <div className="text-xs text-green-600 font-medium">• Native wallet support</div>
+              <p className="text-gray-600 mb-4 text-lg">Unfollow multiple users simultaneously using the official Farcaster protocol and API.</p>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                  <span>Real Farcaster API integration</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                  <span>Batch unfollow operations</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                  <span>Native wallet support</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* App Status */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
-            <div className="flex items-center space-x-3 text-purple-700 mb-3">
-              <IconWrapper size={20}>
-                <Rocket size={20} />
-              </IconWrapper>
-              <span className="text-lg font-semibold">Unfollow App Ready</span>
-            </div>
-            <div className="text-gray-600">
-              Connect your Farcaster wallet to get started
+          {/* CTA Section */}
+          <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 mb-8">
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-3 text-purple-700 mb-4">
+                <IconWrapper size={24}>
+                  <Rocket size={24} />
+                </IconWrapper>
+                <span className="text-2xl font-bold">Ready to Clean Your Feed?</span>
+              </div>
+              <p className="text-gray-600 text-lg mb-6">
+                Connect your Farcaster wallet to start analyzing your follows
+              </p>
+              
+              <Button 
+                onClick={handleAuth}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 h-16 text-xl font-bold rounded-xl shadow-lg px-12"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <span className="mr-3 text-2xl">✓</span>
+                    Connect Farcaster Wallet
+                  </>
+                )}
+              </Button>
             </div>
           </div>
 
           {/* Debug Info (only in development) */}
           {process.env.NODE_ENV === 'development' && (
-            <div className="bg-gray-50 p-4 rounded-xl mb-8">
-              <div className="flex items-center space-x-2 text-gray-700 mb-2">
-                <IconWrapper size={16}>
-                  <span className="text-xs">🐛</span>
+            <div className="bg-gray-50 p-6 rounded-xl">
+              <div className="flex items-center space-x-3 text-gray-700 mb-4">
+                <IconWrapper size={20}>
+                  <span className="text-lg">🐛</span>
                 </IconWrapper>
-                <span className="text-sm font-medium">Debug Info</span>
+                <span className="text-lg font-semibold">Debug Info</span>
               </div>
-              <div className="text-xs text-gray-600 space-y-1">
+              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                 <div>Environment: {typeof window !== 'undefined' ? (window.self !== window.top ? 'Farcaster Mini App' : 'Web Browser') : 'Server'}</div>
                 <div>Farcaster Object: {typeof window !== 'undefined' && 'farcaster' in window ? 'Available' : 'Not Available'}</div>
                 <div>User Authenticated: {typeof window !== 'undefined' && (window as any).farcaster?.user?.fid ? 'Yes' : 'No'}</div>
@@ -672,45 +732,6 @@ Try it yourself: ${window.location.origin}/embed`;
                 )}
               </div>
             </div>
-          )}
-
-          {/* Continue Button */}
-          <Button 
-            onClick={handleAuth}
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 h-14 text-lg font-semibold rounded-xl shadow-lg flex items-center justify-center"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                Connecting...
-              </>
-            ) : (
-              <>
-                <span className="mr-3 text-xl">✓</span>
-                Continue with Farcaster
-              </>
-            )}
-          </Button>
-          
-          {/* Test Button (only in development) */}
-          {process.env.NODE_ENV === 'development' && (
-            <Button 
-              onClick={() => {
-                logToVercel('info', 'Manual test button clicked');
-                const farcaster = (window as any).farcaster;
-                logToVercel('info', 'Manual test - Farcaster object', { 
-                  hasFarcaster: !!farcaster,
-                  hasUser: !!farcaster?.user,
-                  hasFid: !!farcaster?.user?.fid,
-                  userData: farcaster?.user
-                });
-                toast.info('Check console for debug info');
-              }}
-              className="w-full mt-4 bg-gray-500 text-white hover:bg-gray-600 h-10 text-sm rounded-xl flex items-center justify-center"
-            >
-              🧪 Test Farcaster Connection
-            </Button>
           )}
         </div>
       </div>
@@ -721,41 +742,32 @@ Try it yourself: ${window.location.origin}/embed`;
   if (currentStep === 'profile') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-        {/* Farcaster Mini App Header */}
-        <div className="bg-black text-white px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <button className="text-white text-lg">✕</button>
-            <button className="text-white text-lg">⌄</button>
-          </div>
-          <div className="text-center">
-            <div className="font-semibold text-base">Unfollow App</div>
-            <div className="text-xs text-gray-300">by alec.eth ✓</div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <button className="text-white text-lg">⋯</button>
-            <button className="text-white text-lg">☀</button>
+        {/* Modern Desktop Header */}
+        <div className="bg-white border-b border-gray-200 px-8 py-6">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white text-lg font-bold">✓</span>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Unfollow App</h1>
+                <p className="text-sm text-gray-600">by alec.eth</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-600">Ready to analyze your follows</div>
+            </div>
           </div>
         </div>
 
-        <div className="px-6 py-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Unfollow Tool
-          </h1>
-          <p className="text-lg text-gray-600 mb-8">
-            Scan your Farcaster follows and identify who to unfollow
-          </p>
-
-          {/* App Status */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
-            <div className="flex items-center space-x-3 text-purple-700 mb-3">
-              <IconWrapper size={20}>
-                <Rocket size={20} />
-              </IconWrapper>
-              <span className="text-lg font-semibold">Ready to Scan</span>
-            </div>
-            <div className="text-gray-600">
-              Analyze your follows to find inactive accounts
-            </div>
+        <div className="max-w-4xl mx-auto px-8 py-12">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Ready to Clean Your Feed?
+            </h1>
+            <p className="text-xl text-gray-600">
+              Let's analyze your Farcaster follows and identify who to unfollow
+            </p>
           </div>
 
           {/* Debug Info (only in development) */}
@@ -797,79 +809,92 @@ Try it yourself: ${window.location.origin}/embed`;
             </div>
           )}
 
-          {/* Your Profile Section */}
-          <div className="mb-8">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="font-semibold text-gray-900 text-lg">Your Profile</span>
+          {/* Profile and Scan Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Your Profile Section */}
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="font-bold text-gray-900 text-xl">Your Profile</span>
+              </div>
+              
+              <div className="flex items-center space-x-6 mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white text-2xl font-bold">?</span>
+                </div>
+                <div>
+                  <div className="flex items-center space-x-3">
+                    <span className="font-bold text-gray-900 text-2xl">
+                      {userProfile?.displayName || 'Loading...'}
+                    </span>
+                    <Crown className="w-6 h-6 text-yellow-500" />
+                  </div>
+                  <div className="text-gray-600 text-lg">
+                    @{userProfile?.username || 'Loading...'}
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-gray-600 mb-6 text-lg">
+                {userProfile?.bio || 'Loading profile...'}
+              </p>
+              
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <div className="text-center p-4 bg-gray-50 rounded-xl">
+                  <div className="font-bold text-gray-900 text-2xl">
+                    {userProfile?.followerCount || '0'}
+                  </div>
+                  <div className="text-sm text-gray-600">Followers</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-xl">
+                  <div className="font-bold text-gray-900 text-2xl">
+                    {userProfile?.followingCount || '897'}
+                  </div>
+                  <div className="text-sm text-gray-600">Following</div>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={handleDisconnect}
+                variant="outline"
+                className="w-full h-12"
+              >
+                Sign Out
+              </Button>
             </div>
-            
-            <Card className="bg-white border border-gray-200 shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-lg font-semibold">?</span>
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <span className="font-bold text-gray-900 text-lg">
-                        {userProfile?.displayName || 'Loading...'}
-                      </span>
-                      <Crown className="w-5 h-5 text-yellow-500" />
-                    </div>
-                    <div className="text-gray-600">
-                      @{userProfile?.username || 'Loading...'}
-                    </div>
-                  </div>
-                </div>
-                
-                <p className="text-gray-600 mb-4">
-                  {userProfile?.bio || 'Loading profile...'}
-                </p>
-                
-                <div className="flex space-x-6 mb-4">
-                  <div>
-                    <div className="font-bold text-gray-900 text-xl">
-                      {userProfile?.followerCount || '0'}
-                    </div>
-                    <div className="text-sm text-gray-600">Followers</div>
-                  </div>
-                  <div>
-                    <div className="font-bold text-gray-900 text-xl">
-                      {userProfile?.followingCount || '897'}
-                    </div>
-                    <div className="text-sm text-gray-600">Following</div>
-                  </div>
-                </div>
-                
-                <Button 
-                  onClick={handleDisconnect}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  Sign Out
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
 
-          {/* Scan Your Follows Section */}
-          <div className="mb-6">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span className="font-semibold text-gray-900 text-lg">Scan Your Follows</span>
+            {/* Scan Section */}
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="font-bold text-gray-900 text-xl">Start Analysis</span>
+              </div>
+              
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">What we'll analyze:</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-gray-600">Inactive accounts (60+ days)</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    <span className="text-gray-600">Non-mutual follows</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                    <span className="text-gray-600">Spam accounts</span>
+                  </div>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={handleStartScan}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 h-16 text-xl font-bold rounded-xl shadow-lg"
+              >
+                Start Analysis
+              </Button>
             </div>
-            <p className="text-gray-600 mb-6">
-              Analyze your follows to find inactive and spam accounts
-            </p>
-            
-            <Button 
-              onClick={handleStartScan}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 h-14 text-lg font-semibold rounded-xl shadow-lg flex items-center justify-center"
-            >
-              Start Scan
-            </Button>
           </div>
         </div>
       </div>
