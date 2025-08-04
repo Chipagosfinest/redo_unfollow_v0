@@ -57,22 +57,76 @@ export default function Home() {
 
   // Auto-detect user from Farcaster context
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'farcaster' in window) {
-      // @ts-ignore - Farcaster global object
-      const farcaster = (window as any).farcaster;
-      if (farcaster?.user?.fid) {
-        handleAuth();
+    const checkFarcasterAuth = async () => {
+      if (typeof window !== 'undefined' && 'farcaster' in window) {
+        // @ts-ignore - Farcaster global object
+        const farcaster = (window as any).farcaster;
+        
+        // If user is already authenticated, proceed
+        if (farcaster?.user?.fid) {
+          handleAuth();
+        } else {
+          // Try to initialize SDK and get user
+          try {
+            await sdk.actions.ready();
+            
+            // Wait for SDK to initialize
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Check again for user
+            if (farcaster?.user?.fid) {
+              handleAuth();
+            }
+          } catch (error) {
+            console.log("Farcaster SDK not ready yet:", error);
+          }
+        }
       }
-    }
+    };
+
+    // Check immediately
+    checkFarcasterAuth();
+    
+    // Also check after a delay to handle slow SDK initialization
+    const timeoutId = setTimeout(checkFarcasterAuth, 2000);
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const handleAuth = useCallback(async () => {
     try {
-      // Get user from Farcaster SDK
-      const user = (window as any).farcaster?.user;
-      if (!user?.fid) {
-        toast.error("Please connect your Farcaster wallet first");
+      // Check if we're in a Farcaster Mini App environment
+      const farcaster = (window as any).farcaster;
+      
+      if (!farcaster) {
+        toast.error("Please open this app in Farcaster");
         return;
+      }
+
+      // Try to get user from Farcaster SDK
+      let user = farcaster.user;
+      
+      // If no user, try to authenticate
+      if (!user?.fid) {
+        try {
+          // Request authentication from Farcaster
+          await sdk.actions.ready();
+          
+          // Wait a bit for the SDK to initialize
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Try to get user again
+          user = farcaster.user;
+          
+          if (!user?.fid) {
+            toast.error("Please connect your Farcaster wallet");
+            return;
+          }
+        } catch (error) {
+          console.error("Error during Farcaster authentication:", error);
+          toast.error("Failed to connect to Farcaster");
+          return;
+        }
       }
       
       setUserFid(user.fid);
@@ -85,9 +139,13 @@ export default function Home() {
         if (response.ok) {
           const data = await response.json();
           setUserProfile(data.result?.user);
+        } else {
+          console.error("Failed to load user profile:", response.status);
+          toast.error("Failed to load user profile");
         }
       } catch (error) {
         console.error("Error loading user profile:", error);
+        toast.error("Failed to load user profile");
       }
     } catch (error) {
       console.error("Error during authentication:", error);
@@ -348,9 +406,19 @@ Try it yourself: ${window.location.origin}/embed`;
             onClick={handleAuth}
             className="w-full bg-black text-white hover:bg-gray-800"
             size="lg"
+            disabled={isLoading}
           >
-            <span className="mr-2">✓</span>
-            Continue with Farcaster
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Connecting...
+              </>
+            ) : (
+              <>
+                <span className="mr-2">✓</span>
+                Continue with Farcaster
+              </>
+            )}
           </Button>
         </div>
       </div>
