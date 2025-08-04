@@ -11,6 +11,30 @@ import { sdk } from '@farcaster/miniapp-sdk';
 import { Users, UserMinus, Activity, TrendingUp, Search, Filter, Share2, Crown, Sparkles, Rocket } from "lucide-react";
 import { toast } from "sonner";
 
+// Logging utility for production debugging
+const logToVercel = (level: 'info' | 'error' | 'warn', message: string, data?: any) => {
+  const logData = {
+    timestamp: new Date().toISOString(),
+    level,
+    message,
+    data,
+    url: typeof window !== 'undefined' ? window.location.href : 'server',
+    userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server'
+  };
+  
+  // Log to console for development
+  console.log(`[${level.toUpperCase()}] ${message}`, data);
+  
+  // Send to Vercel logs in production
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+    fetch('/api/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(logData)
+    }).catch(err => console.error('Failed to send log to Vercel:', err));
+  }
+};
+
 interface FarcasterUser {
   fid: number;
   username: string;
@@ -58,42 +82,45 @@ export default function Home() {
   // Auto-detect user from Farcaster context
   useEffect(() => {
     const checkFarcasterAuth = async () => {
-      console.log("🔍 Checking Farcaster authentication...");
+      logToVercel('info', 'Auto-detecting Farcaster authentication');
       
       if (typeof window !== 'undefined' && 'farcaster' in window) {
         // @ts-ignore - Farcaster global object
         const farcaster = (window as any).farcaster;
-        console.log("🌐 Found Farcaster object:", farcaster);
+        logToVercel('info', 'Farcaster object found in auto-detection', { 
+          hasUser: !!farcaster?.user,
+          hasFid: !!farcaster?.user?.fid 
+        });
         
         // If user is already authenticated, proceed
         if (farcaster?.user?.fid) {
-          console.log("✅ User already authenticated:", farcaster.user);
+          logToVercel('info', 'User already authenticated in auto-detection', { fid: farcaster.user.fid });
           handleAuth();
         } else {
-          console.log("🔑 No user found, trying SDK initialization...");
+          logToVercel('info', 'No user found in auto-detection, trying Quick Auth');
           // Try to initialize SDK and get user
           try {
-            console.log("📞 Calling sdk.actions.ready()...");
+            logToVercel('info', 'Calling sdk.actions.ready() in auto-detection');
             await sdk.actions.ready();
-            console.log("✅ SDK ready called successfully");
+            logToVercel('info', 'SDK ready called successfully in auto-detection');
             
             // Wait for SDK to initialize
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 2000));
             
             // Check again for user
-            console.log("👤 Checking for user after SDK ready...");
+            logToVercel('info', 'Checking for user after SDK ready in auto-detection');
             if (farcaster?.user?.fid) {
-              console.log("✅ User found after SDK ready:", farcaster.user);
+              logToVercel('info', 'User found after SDK ready in auto-detection', { fid: farcaster.user.fid });
               handleAuth();
             } else {
-              console.log("❌ Still no user after SDK ready");
+              logToVercel('warn', 'Still no user after SDK ready in auto-detection');
             }
           } catch (error) {
-            console.log("⚠️ Farcaster SDK not ready yet:", error);
+            logToVercel('warn', 'Farcaster SDK not ready yet in auto-detection', { error: error instanceof Error ? error.message : String(error) });
           }
         }
       } else {
-        console.log("❌ No Farcaster object found in window");
+        logToVercel('info', 'No Farcaster object found in window during auto-detection');
       }
     };
 
@@ -101,7 +128,7 @@ export default function Home() {
     checkFarcasterAuth();
     
     // Also check after a delay to handle slow SDK initialization
-    const timeoutId = setTimeout(checkFarcasterAuth, 3000);
+    const timeoutId = setTimeout(checkFarcasterAuth, 5000);
     
     return () => clearTimeout(timeoutId);
   }, []);
@@ -109,76 +136,86 @@ export default function Home() {
   const handleAuth = useCallback(async () => {
     try {
       setIsLoading(true);
-      console.log("🔐 Starting authentication...");
+      logToVercel('info', 'Starting Farcaster authentication');
       
       // Check if we're in a Farcaster Mini App environment
       const farcaster = (window as any).farcaster;
-      console.log("🌐 Farcaster object:", farcaster);
+      logToVercel('info', 'Farcaster object status', { 
+        exists: !!farcaster, 
+        hasUser: !!farcaster?.user,
+        hasFid: !!farcaster?.user?.fid 
+      });
       
       if (!farcaster) {
-        console.log("❌ No Farcaster object found");
+        logToVercel('error', 'No Farcaster object found - not in Mini App environment');
         toast.error("Please open this app in Farcaster");
         return;
       }
 
       // Try to get user from Farcaster SDK
       let user = farcaster.user;
-      console.log("👤 Initial user object:", user);
+      logToVercel('info', 'Initial user object', { user });
       
-      // If no user, try to authenticate
+      // If no user, try to authenticate using Quick Auth
       if (!user?.fid) {
-        console.log("🔑 No user found, attempting authentication...");
+        logToVercel('info', 'No user found, attempting Quick Auth');
         try {
-          // Request authentication from Farcaster
-          console.log("📞 Calling sdk.actions.ready()...");
+          // Use Quick Auth as per Farcaster Mini App docs
+          logToVercel('info', 'Calling sdk.actions.ready() for Quick Auth');
           await sdk.actions.ready();
-          console.log("✅ SDK ready called successfully");
+          logToVercel('info', 'SDK ready called successfully');
           
-          // Wait a bit for the SDK to initialize
-          console.log("⏳ Waiting for SDK initialization...");
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Wait for SDK to initialize and user to be available
+          logToVercel('info', 'Waiting for Quick Auth to complete');
+          await new Promise(resolve => setTimeout(resolve, 3000));
           
           // Try to get user again
           user = farcaster.user;
-          console.log("👤 User after SDK ready:", user);
+          logToVercel('info', 'User after Quick Auth', { user });
           
           if (!user?.fid) {
-            console.log("❌ Still no user after SDK ready");
+            logToVercel('error', 'Quick Auth failed - no user after SDK ready');
             toast.error("Please connect your Farcaster wallet");
             return;
           }
         } catch (error) {
-          console.error("❌ Error during Farcaster authentication:", error);
+          logToVercel('error', 'Quick Auth failed', { error: error instanceof Error ? error.message : String(error) });
           toast.error("Failed to connect to Farcaster");
           return;
         }
       }
       
-      console.log("✅ User authenticated:", user);
+      logToVercel('info', 'User authenticated successfully', { fid: user.fid });
       setUserFid(user.fid);
       setIsAuthenticated(true);
       setCurrentStep('profile');
       
-      // Load user profile
+      // Load user profile from Farcaster API
       try {
-        console.log("📥 Loading user profile for FID:", user.fid);
+        logToVercel('info', 'Loading user profile from Farcaster API', { fid: user.fid });
         const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${user.fid}`);
-        console.log("📊 Profile response status:", response.status);
+        logToVercel('info', 'Profile API response', { status: response.status });
         
         if (response.ok) {
           const data = await response.json();
-          console.log("📋 Profile data:", data);
+          logToVercel('info', 'Profile loaded successfully', { 
+            username: data.result?.user?.username,
+            displayName: data.result?.user?.displayName 
+          });
           setUserProfile(data.result?.user);
         } else {
-          console.error("❌ Failed to load user profile:", response.status);
+          logToVercel('error', 'Failed to load user profile from API', { 
+            status: response.status,
+            statusText: response.statusText 
+          });
           toast.error("Failed to load user profile");
         }
       } catch (error) {
-        console.error("❌ Error loading user profile:", error);
+        logToVercel('error', 'Error loading user profile', { error: error instanceof Error ? error.message : String(error) });
         toast.error("Failed to load user profile");
       }
     } catch (error) {
-      console.error("❌ Error during authentication:", error);
+      logToVercel('error', 'Authentication flow failed', { error: error instanceof Error ? error.message : String(error) });
       toast.error("Failed to authenticate with Farcaster");
     } finally {
       setIsLoading(false);
