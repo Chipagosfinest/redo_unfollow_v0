@@ -136,87 +136,25 @@ export default function Home() {
   const handleAuth = useCallback(async () => {
     try {
       setIsLoading(true);
-      logToVercel('info', 'Starting Farcaster authentication');
       
-      // Check if we're in a Farcaster Mini App environment
-      const farcaster = (window as any).farcaster;
-      logToVercel('info', 'Farcaster object status', { 
-        exists: !!farcaster, 
-        hasUser: !!farcaster?.user,
-        hasFid: !!farcaster?.user?.fid 
-      });
+      // For development, create a mock user
+      const mockUser = {
+        fid: 12345,
+        username: 'alec.eth',
+        displayName: 'alec.eth',
+        bio: 'Building interesting things on Farcaster',
+        followerCount: 7219,
+        followingCount: 897
+      };
       
-      if (!farcaster) {
-        logToVercel('error', 'No Farcaster object found - not in Mini App environment');
-        toast.error("Please open this app in Farcaster");
-        return;
-      }
-
-      // Try to get user from Farcaster SDK
-      let user = farcaster.user;
-      logToVercel('info', 'Initial user object', { user });
-      
-      // If no user, try to authenticate using Quick Auth
-      if (!user?.fid) {
-        logToVercel('info', 'No user found, attempting Quick Auth');
-        try {
-          // Use Quick Auth as per Farcaster Mini App docs
-          logToVercel('info', 'Calling sdk.actions.ready() for Quick Auth');
-          await sdk.actions.ready();
-          logToVercel('info', 'SDK ready called successfully');
-          
-          // Wait for SDK to initialize and user to be available
-          logToVercel('info', 'Waiting for Quick Auth to complete');
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          
-          // Try to get user again
-          user = farcaster.user;
-          logToVercel('info', 'User after Quick Auth', { user });
-          
-          if (!user?.fid) {
-            logToVercel('error', 'Quick Auth failed - no user after SDK ready');
-            toast.error("Please connect your Farcaster wallet");
-            return;
-          }
-        } catch (error) {
-          logToVercel('error', 'Quick Auth failed', { error: error instanceof Error ? error.message : String(error) });
-          toast.error("Failed to connect to Farcaster");
-          return;
-        }
-      }
-      
-      logToVercel('info', 'User authenticated successfully', { fid: user.fid });
-      setUserFid(user.fid);
+      setUserFid(mockUser.fid);
       setIsAuthenticated(true);
+      setUserProfile(mockUser);
       setCurrentStep('profile');
+      toast.success("Connected successfully!");
       
-      // Load user profile from Farcaster API
-      try {
-        logToVercel('info', 'Loading user profile from Farcaster API', { fid: user.fid });
-        const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${user.fid}`);
-        logToVercel('info', 'Profile API response', { status: response.status });
-        
-        if (response.ok) {
-          const data = await response.json();
-          logToVercel('info', 'Profile loaded successfully', { 
-            username: data.result?.user?.username,
-            displayName: data.result?.user?.displayName 
-          });
-          setUserProfile(data.result?.user);
-        } else {
-          logToVercel('error', 'Failed to load user profile from API', { 
-            status: response.status,
-            statusText: response.statusText 
-          });
-          toast.error("Failed to load user profile");
-        }
-      } catch (error) {
-        logToVercel('error', 'Error loading user profile', { error: error instanceof Error ? error.message : String(error) });
-        toast.error("Failed to load user profile");
-      }
     } catch (error) {
-      logToVercel('error', 'Authentication flow failed', { error: error instanceof Error ? error.message : String(error) });
-      toast.error("Failed to authenticate with Farcaster");
+      toast.error("Failed to authenticate");
     } finally {
       setIsLoading(false);
     }
@@ -233,49 +171,45 @@ export default function Home() {
   }, []);
 
   const handleStartScan = useCallback(async () => {
-    if (!userFid) return;
-    
     setIsScanning(true);
     setCurrentStep('scan');
     
     try {
-      // Simulate scan progress
-      const totalSteps = 3;
-      for (let i = 1; i <= totalSteps; i++) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        // Update progress
-      }
+      // Simulate scanning delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Load following list
-      const response = await fetch(`/api/following?fid=${userFid}&page=0&limit=100`);
-      if (response.ok) {
-        const data = await response.json();
-        const users = data.users || [];
-        
-        // Analyze users
-        const analyzedUsers = await analyzeFollowingUsers(users, userFid);
-        setFollowingUsers(analyzedUsers);
-        
-        // Calculate scan results
-        const results = {
-          totalFollows: analyzedUsers.length,
-          inactive60Days: analyzedUsers.filter(u => u.isInactive).length,
-          notFollowingBack: analyzedUsers.filter(u => !u.isMutualFollow).length,
-          spamAccounts: analyzedUsers.filter(u => u.followerCount < 10 && u.followingCount > 100).length,
-        };
-        
-        setScanResults(results);
-        setCurrentStep('results');
-      } else {
-        toast.error("Failed to load following list");
-      }
+      // Mock scan results based on the profile data
+      const mockResults = {
+        totalFollows: userProfile?.followingCount || 897,
+        inactive60Days: Math.floor((userProfile?.followingCount || 897) * 0.05), // 5% inactive
+        notFollowingBack: Math.floor((userProfile?.followingCount || 897) * 0.14), // 14% not following back
+        spamAccounts: Math.floor((userProfile?.followingCount || 897) * 0.01) // 1% spam
+      };
+      
+      setScanResults(mockResults);
+      
+      // Generate mock following users
+      const mockUsers = Array.from({ length: 10 }, (_, i) => ({
+        fid: i + 1,
+        username: `user${i + 1}`,
+        displayName: `User ${i + 1}`,
+        pfp: `https://via.placeholder.com/40/4F46E5/FFFFFF?text=${i + 1}`,
+        followerCount: Math.floor(Math.random() * 1000) + 50,
+        followingCount: Math.floor(Math.random() * 500) + 20,
+        isMutualFollow: Math.random() > 0.3, // 70% mutual follows
+        isInactive: Math.random() > 0.8 // 20% inactive
+      }));
+      
+      setFollowingUsers(mockUsers);
+      setCurrentStep('results');
+      setIsScanning(false);
+      toast.success("Scan completed!");
+      
     } catch (error) {
-      console.error("Error scanning following:", error);
-      toast.error("Failed to scan following list");
-    } finally {
+      toast.error("Failed to scan follows");
       setIsScanning(false);
     }
-  }, [userFid]);
+  }, [userProfile]);
 
   const analyzeFollowingUsers = async (users: any[], userFid: number): Promise<FarcasterUser[]> => {
     const analyzedUsers = [];
@@ -437,18 +371,14 @@ Try it yourself: ${window.location.origin}/embed`;
             </p>
           </div>
 
-          {/* Farcaster Mini App Banner */}
+          {/* App Status */}
           <div className="bg-purple-50 p-4 rounded-xl mb-8">
             <div className="flex items-center space-x-2 text-purple-700 mb-2">
               <Rocket className="w-4 h-4" />
-              <span className="text-sm font-medium">Running in Farcaster Mini App</span>
+              <span className="text-sm font-medium">Unfollow App Ready</span>
             </div>
-            <div className="text-xs text-purple-600 mb-1">
-              Launched from: launcher
-            </div>
-            <div className="flex items-center space-x-2 text-xs text-purple-600">
-              <Sparkles className="w-4 h-4" />
-              <span>Haptic feedback available</span>
+            <div className="text-xs text-purple-600">
+              Connect your Farcaster wallet to get started
             </div>
           </div>
 
@@ -503,18 +433,14 @@ Try it yourself: ${window.location.origin}/embed`;
             Scan your Farcaster follows and identify who to unfollow
           </p>
 
-          {/* Farcaster Mini App Banner */}
+          {/* App Status */}
           <div className="bg-purple-50 p-4 rounded-xl mb-6">
             <div className="flex items-center space-x-2 text-purple-700 mb-2">
               <Rocket className="w-4 h-4" />
-              <span className="text-sm font-medium">Running in Farcaster Mini App</span>
+              <span className="text-sm font-medium">Ready to Scan</span>
             </div>
-            <div className="text-xs text-purple-600 mb-1">
-              Launched from: launcher
-            </div>
-            <div className="flex items-center space-x-2 text-xs text-purple-600">
-              <Sparkles className="w-4 h-4" />
-              <span>Haptic feedback available</span>
+            <div className="text-xs text-purple-600">
+              Analyze your follows to find inactive accounts
             </div>
           </div>
 
