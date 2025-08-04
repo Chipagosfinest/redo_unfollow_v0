@@ -69,7 +69,7 @@ export default function Home() {
   const handleAuth = useCallback(async () => {
     try {
       // Get user from Farcaster SDK
-      const user = window.farcaster?.user;
+      const user = (window as any).farcaster?.user;
       if (!user?.fid) {
         toast.error("Please connect your Farcaster wallet first");
         return;
