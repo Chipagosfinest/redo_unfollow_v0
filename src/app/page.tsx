@@ -723,13 +723,73 @@ Try it yourself: ${window.location.origin}/embed`;
                 </IconWrapper>
                 <span className="text-lg font-semibold">Debug Info</span>
               </div>
-              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
                 <div>Environment: {typeof window !== 'undefined' ? (window.self !== window.top ? 'Farcaster Mini App' : 'Web Browser') : 'Server'}</div>
                 <div>Farcaster Object: {typeof window !== 'undefined' && 'farcaster' in window ? 'Available' : 'Not Available'}</div>
                 <div>User Authenticated: {typeof window !== 'undefined' && (window as any).farcaster?.user?.fid ? 'Yes' : 'No'}</div>
                 {typeof window !== 'undefined' && (window as any).farcaster?.user?.fid && (
                   <div>FID: {(window as any).farcaster.user.fid}</div>
                 )}
+              </div>
+              
+              {/* Debug Buttons */}
+              <div className="space-y-2">
+                <Button 
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/debug?action=test-neynar');
+                      const data = await response.json();
+                      console.log('Neynar test result:', data);
+                      toast.success('Check console for Neynar test results');
+                    } catch (error) {
+                      console.error('Debug test failed:', error);
+                      toast.error('Debug test failed');
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                >
+                  Test Neynar API
+                </Button>
+                
+                <Button 
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/debug?action=test-mock-fid');
+                      const data = await response.json();
+                      console.log('Mock FID test result:', data);
+                      toast.success('Check console for mock FID test results');
+                    } catch (error) {
+                      console.error('Debug test failed:', error);
+                      toast.error('Debug test failed');
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                >
+                  Test Mock FID (12345)
+                </Button>
+                
+                <Button 
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/debug?action=environment');
+                      const data = await response.json();
+                      console.log('Environment info:', data);
+                      toast.success('Check console for environment info');
+                    } catch (error) {
+                      console.error('Debug test failed:', error);
+                      toast.error('Debug test failed');
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                >
+                  Check Environment
+                </Button>
               </div>
             </div>
           )}
