@@ -9,6 +9,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { getFarcasterSigner, batchUnfollow } from "@/lib/farcaster-actions";
 import { sdk } from '@farcaster/miniapp-sdk';
 import { Users, UserMinus, Activity, TrendingUp, Search, Filter, Share2, Crown, Sparkles, Rocket } from "lucide-react";
+
+// Fix SVG rendering issues by providing proper size props
+const IconWrapper = ({ children, size = 16 }: { children: React.ReactNode; size?: number }) => (
+  <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    {children}
+  </div>
+);
 import { toast } from "sonner";
 
 // Logging utility for production debugging
@@ -137,7 +144,60 @@ export default function Home() {
     try {
       setIsLoading(true);
       
-      // For development, create a mock user
+      // Check if we're in an iframe (Farcaster Mini App environment)
+      const isInIframe = window.self !== window.top;
+      
+      if (isInIframe) {
+        // We're in a Farcaster Mini App - try real authentication
+        try {
+          const farcaster = (window as any).farcaster;
+          
+          if (farcaster?.user?.fid) {
+            // User already authenticated
+            const user = farcaster.user;
+            setUserFid(user.fid);
+            setIsAuthenticated(true);
+            setCurrentStep('profile');
+            
+            // Try to load real profile
+            try {
+              const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${user.fid}`);
+              if (response.ok) {
+                const data = await response.json();
+                setUserProfile(data.result?.user);
+              }
+            } catch (error) {
+              console.error('Failed to load profile:', error);
+            }
+            
+            toast.success("Connected to Farcaster!");
+            return;
+          }
+          
+          // Try to authenticate
+          await sdk.actions.ready();
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          const user = farcaster?.user;
+          if (user?.fid) {
+            setUserFid(user.fid);
+            setIsAuthenticated(true);
+            setCurrentStep('profile');
+            toast.success("Connected to Farcaster!");
+            return;
+          }
+          
+          toast.error("Please connect your Farcaster wallet");
+          return;
+          
+        } catch (error) {
+          console.error('Farcaster auth failed:', error);
+          toast.error("Failed to connect to Farcaster");
+          return;
+        }
+      }
+      
+      // Fallback for development/testing
       const mockUser = {
         fid: 12345,
         username: 'alec.eth',
@@ -154,6 +214,7 @@ export default function Home() {
       toast.success("Connected successfully!");
       
     } catch (error) {
+      console.error('Auth error:', error);
       toast.error("Failed to authenticate");
     } finally {
       setIsLoading(false);
@@ -361,7 +422,9 @@ Try it yourself: ${window.location.origin}/embed`;
           {/* Welcome Section */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <span className="text-white text-xl font-bold">✓</span>
+              <IconWrapper size={24}>
+                <span className="text-white text-xl font-bold">✓</span>
+              </IconWrapper>
             </div>
             <h1 className="text-xl font-bold text-gray-900 mb-3">
               Welcome to Unfollow App
@@ -374,7 +437,9 @@ Try it yourself: ${window.location.origin}/embed`;
           {/* App Status */}
           <div className="bg-purple-50 p-4 rounded-xl mb-8">
             <div className="flex items-center space-x-2 text-purple-700 mb-2">
-              <Rocket className="w-4 h-4" />
+              <IconWrapper size={16}>
+                <Rocket size={16} />
+              </IconWrapper>
               <span className="text-sm font-medium">Unfollow App Ready</span>
             </div>
             <div className="text-xs text-purple-600">
@@ -436,7 +501,9 @@ Try it yourself: ${window.location.origin}/embed`;
           {/* App Status */}
           <div className="bg-purple-50 p-4 rounded-xl mb-6">
             <div className="flex items-center space-x-2 text-purple-700 mb-2">
-              <Rocket className="w-4 h-4" />
+              <IconWrapper size={16}>
+                <Rocket size={16} />
+              </IconWrapper>
               <span className="text-sm font-medium">Ready to Scan</span>
             </div>
             <div className="text-xs text-purple-600">
@@ -606,8 +673,10 @@ Try it yourself: ${window.location.origin}/embed`;
                 variant="outline"
                 className="w-full hover:bg-orange-50 transition-colors border-orange-200"
               >
-                <Activity className="w-4 h-4 mr-2 text-orange-600" />
-                Select Inactive (60+ days)
+                <IconWrapper size={16}>
+                  <Activity size={16} className="text-orange-600" />
+                </IconWrapper>
+                <span className="ml-2">Select Inactive (60+ days)</span>
               </Button>
               
               <Button 
@@ -615,8 +684,10 @@ Try it yourself: ${window.location.origin}/embed`;
                 variant="outline"
                 className="w-full hover:bg-red-50 transition-colors border-red-200"
               >
-                <UserMinus className="w-4 h-4 mr-2 text-red-600" />
-                Select Not Following Back
+                <IconWrapper size={16}>
+                  <UserMinus size={16} className="text-red-600" />
+                </IconWrapper>
+                <span className="ml-2">Select Not Following Back</span>
               </Button>
               
               <Button 
@@ -624,8 +695,10 @@ Try it yourself: ${window.location.origin}/embed`;
                 variant="outline"
                 className="w-full hover:bg-purple-50 transition-colors border-purple-200"
               >
-                <Users className="w-4 h-4 mr-2 text-purple-600" />
-                Select All
+                <IconWrapper size={16}>
+                  <Users size={16} className="text-purple-600" />
+                </IconWrapper>
+                <span className="ml-2">Select All</span>
               </Button>
             </div>
 
@@ -639,12 +712,14 @@ Try it yourself: ${window.location.origin}/embed`;
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Unfollowing...
+                    <span>Unfollowing...</span>
                   </>
                 ) : (
                   <>
-                    <UserMinus className="w-4 h-4 mr-2" />
-                    Unfollow {selectedUsers.size} Users
+                    <IconWrapper size={16}>
+                      <UserMinus size={16} />
+                    </IconWrapper>
+                    <span className="ml-2">Unfollow {selectedUsers.size} Users</span>
                   </>
                 )}
               </Button>
@@ -655,8 +730,10 @@ Try it yourself: ${window.location.origin}/embed`;
               onClick={handleShareApp}
               className="w-full bg-purple-600 hover:bg-purple-700 text-white transform transition-all duration-200 hover:scale-105 animate-pulse"
             >
-              <Share2 className="w-4 h-4 mr-2" />
-              Share & Go Viral! 🚀
+              <IconWrapper size={16}>
+                <Share2 size={16} />
+              </IconWrapper>
+              <span className="ml-2">Share & Go Viral! 🚀</span>
             </Button>
           </div>
 
@@ -714,8 +791,10 @@ Try it yourself: ${window.location.origin}/embed`;
                         size="sm"
                         className="text-red-600 hover:text-red-700 border-red-200"
                       >
-                        <UserMinus className="w-4 h-4 mr-1" />
-                        Unfollow
+                        <IconWrapper size={14}>
+                          <UserMinus size={14} />
+                        </IconWrapper>
+                        <span className="ml-1">Unfollow</span>
                       </Button>
                     </div>
                   </CardContent>
