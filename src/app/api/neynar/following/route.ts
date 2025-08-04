@@ -38,10 +38,12 @@ export async function GET(request: NextRequest) {
     
     // Check if Neynar API key is configured
     if (!env.neynarApiKey) {
-      console.error('Neynar API key not configured');
+      console.warn('Neynar API key not configured - returning demo mode response');
       return NextResponse.json({ 
         error: 'Service not configured properly',
-        users: [] // Return empty array so app can use demo data
+        message: 'Running in demo mode - add NEYNAR_API_KEY to environment variables',
+        users: [],
+        demoMode: true
       }, { status: 503 });
     }
     
@@ -58,7 +60,10 @@ export async function GET(request: NextRequest) {
     
     if (!fid || !/^\d+$/.test(fid)) {
       console.log('Invalid FID provided', { fid });
-      return NextResponse.json({ error: 'Valid FID is required' }, { status: 400 });
+      return NextResponse.json({ 
+        error: 'Valid FID is required',
+        message: 'Please provide a valid numeric FID'
+      }, { status: 400 });
     }
 
     // Rate limiting check (simple implementation)
@@ -93,9 +98,29 @@ export async function GET(request: NextRequest) {
       });
       
       if (response.status === 404) {
-        throw new Error(`User with FID ${fid} not found in Neynar API. This might be a test/mock FID.`);
+        return NextResponse.json({ 
+          error: `User with FID ${fid} not found`,
+          message: 'This FID does not exist in the Farcaster network. Please check the FID and try again.',
+          users: [],
+          demoMode: false
+        }, { status: 404 });
       }
-      throw new Error(`Neynar API error: ${response.status} ${response.statusText}`);
+      
+      if (response.status === 401) {
+        return NextResponse.json({ 
+          error: 'Invalid API key',
+          message: 'The Neynar API key is invalid. Please check your configuration.',
+          users: [],
+          demoMode: false
+        }, { status: 401 });
+      }
+      
+      return NextResponse.json({ 
+        error: `Neynar API error: ${response.status} ${response.statusText}`,
+        message: 'There was an error communicating with the Farcaster API.',
+        users: [],
+        demoMode: false
+      }, { status: response.status });
     }
 
     const data = await response.json();
@@ -112,14 +137,19 @@ export async function GET(request: NextRequest) {
     responseHeaders.set('X-Frame-Options', 'DENY');
     responseHeaders.set('X-XSS-Protection', '1; mode=block');
     
-    return NextResponse.json(data, { headers: responseHeaders });
+    return NextResponse.json({
+      ...data,
+      demoMode: false
+    }, { headers: responseHeaders });
   } catch (error) {
     console.error('Error fetching following data:', error);
     
     // Return empty users array so the app can fall back to demo data
     return NextResponse.json({ 
       error: 'Failed to fetch following data',
-      users: []
+      message: 'There was an unexpected error. Please try again later.',
+      users: [],
+      demoMode: false
     }, { status: 500 });
   }
 } 

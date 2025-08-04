@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -83,6 +83,28 @@ export default function Home() {
   const endIndex = startIndex + usersPerPage;
   const currentUsers = allFollowingUsers.slice(startIndex, endIndex);
 
+  // SDK Ready call for Mini App
+  useEffect(() => {
+    const callSdkReady = async () => {
+      try {
+        // Check if we're in a Mini App environment
+        if (typeof window !== 'undefined' && (window as any).farcaster) {
+          const sdk = (window as any).farcaster;
+          if (sdk && sdk.actions && sdk.actions.ready) {
+            console.log('Calling SDK ready...');
+            await sdk.actions.ready();
+            console.log('SDK ready called successfully');
+          }
+        }
+      } catch (error) {
+        console.error('Error calling SDK ready:', error);
+      }
+    };
+
+    // Call SDK ready after component mounts
+    callSdkReady();
+  }, []);
+
   const handleAuthenticated = useCallback((user: any) => {
     logToVercel('info', 'User authenticated with Neynar', { 
       fid: user.fid,
@@ -122,45 +144,57 @@ export default function Home() {
       
       // Get following list using Neynar API
       const followingResponse = await fetch(`/api/neynar/following?fid=${userFid}`);
+      const followingData = await followingResponse.json();
       
-      if (followingResponse.ok) {
-        const followingData = await followingResponse.json();
-        const followingUsers = followingData.users || [];
-        
-        logToVercel('info', 'Following data loaded', { 
-          userCount: followingUsers.length,
-          userFid 
+      logToVercel('info', 'Following API response', { 
+        status: followingResponse.status,
+        userCount: followingData.users?.length || 0,
+        demoMode: followingData.demoMode,
+        error: followingData.error,
+        userFid 
+      });
+      
+      // Check if we're in demo mode or have an error
+      if (followingData.demoMode || followingData.error || !followingData.users || followingData.users.length === 0) {
+        console.log('Using demo data due to:', {
+          demoMode: followingData.demoMode,
+          error: followingData.error,
+          userCount: followingData.users?.length || 0
         });
         
-        // If no real data, use demo data for testing
-        if (followingUsers.length === 0) {
-          console.log('No following data found, using demo data for testing');
-          const demoUsers: FarcasterUser[] = Array.from({ length: 20 }, (_, i) => ({
-            fid: 1000 + i,
-            username: `user${i + 1}`,
-            displayName: `Demo User ${i + 1}`,
-            pfp: `https://via.placeholder.com/40/4F46E5/FFFFFF?text=${i + 1}`,
-            followerCount: Math.floor(Math.random() * 1000) + 50,
-            followingCount: Math.floor(Math.random() * 500) + 20,
-            isMutualFollow: Math.random() > 0.3,
-            isInactive: Math.random() > 0.8
-          }));
-          
-          setAllFollowingUsers(demoUsers);
-          
-          const results = {
-            totalFollows: demoUsers.length,
-            inactive60Days: demoUsers.filter(u => u.isInactive).length,
-            notFollowingBack: demoUsers.filter(u => !u.isMutualFollow).length,
-            spamAccounts: demoUsers.filter(u => u.followerCount < 10 && u.followingCount > 100).length,
-          };
-          
-          setScanResults(results);
-          setCurrentStep('results');
-          setIsScanning(false);
+        const demoUsers: FarcasterUser[] = Array.from({ length: 20 }, (_, i) => ({
+          fid: 1000 + i,
+          username: `user${i + 1}`,
+          displayName: `Demo User ${i + 1}`,
+          pfp: `https://via.placeholder.com/40/4F46E5/FFFFFF?text=${i + 1}`,
+          followerCount: Math.floor(Math.random() * 1000) + 50,
+          followingCount: Math.floor(Math.random() * 500) + 20,
+          isMutualFollow: Math.random() > 0.3,
+          isInactive: Math.random() > 0.8
+        }));
+        
+        setAllFollowingUsers(demoUsers);
+        
+        const results = {
+          totalFollows: demoUsers.length,
+          inactive60Days: demoUsers.filter(u => u.isInactive).length,
+          notFollowingBack: demoUsers.filter(u => !u.isMutualFollow).length,
+          spamAccounts: demoUsers.filter(u => u.followerCount < 10 && u.followingCount > 100).length,
+        };
+        
+        setScanResults(results);
+        setCurrentStep('results');
+        setIsScanning(false);
+        
+        if (followingData.demoMode) {
+          toast.success("Scan completed with demo data - configure NEYNAR_API_KEY for real data!");
+        } else if (followingData.error) {
+          toast.error(`API Error: ${followingData.message || followingData.error}`);
+        } else {
           toast.success("Scan completed with demo data for testing!");
-          return;
         }
+        return;
+      }
         
         // Analyze users for inactivity and mutual follows
         const analyzedUsers = await Promise.all(
@@ -228,39 +262,7 @@ export default function Home() {
         setIsScanning(false);
         toast.success("Scan completed with real Farcaster data!");
         
-      } else {
-        // API call failed, use demo data
-        logToVercel('error', 'Failed to load following data', { 
-          status: followingResponse.status,
-          userFid 
-        });
-        
-        console.log('API call failed, using demo data for testing');
-        const demoUsers: FarcasterUser[] = Array.from({ length: 20 }, (_, i) => ({
-          fid: 1000 + i,
-          username: `user${i + 1}`,
-          displayName: `Demo User ${i + 1}`,
-          pfp: `https://via.placeholder.com/40/4F46E5/FFFFFF?text=${i + 1}`,
-          followerCount: Math.floor(Math.random() * 1000) + 50,
-          followingCount: Math.floor(Math.random() * 500) + 20,
-          isMutualFollow: Math.random() > 0.3,
-          isInactive: Math.random() > 0.8
-        }));
-        
-        setAllFollowingUsers(demoUsers);
-        
-        const results = {
-          totalFollows: demoUsers.length,
-          inactive60Days: demoUsers.filter(u => u.isInactive).length,
-          notFollowingBack: demoUsers.filter(u => !u.isMutualFollow).length,
-          spamAccounts: demoUsers.filter(u => u.followerCount < 10 && u.followingCount > 100).length,
-        };
-        
-        setScanResults(results);
-        setCurrentStep('results');
-        setIsScanning(false);
-        toast.success("Scan completed with demo data for testing!");
-      }
+
       
     } catch (error) {
       logToVercel('error', 'Scan error', { 
