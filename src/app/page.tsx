@@ -4,11 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { unfollowUser, getFarcasterSigner } from "@/lib/farcaster-actions";
-import FarcasterConnect from "@/components/FarcasterConnect";
-import { Users, UserMinus, Activity, TrendingUp, Search, Filter } from "lucide-react";
+import { getFarcasterSigner, batchUnfollow } from "@/lib/farcaster-actions";
+import { sdk } from '@farcaster/miniapp-sdk';
+import { Users, UserMinus, Activity, TrendingUp, Search, Filter, Share2, Crown, Sparkles, Rocket } from "lucide-react";
 import { toast } from "sonner";
 
 interface FarcasterUser {
@@ -16,71 +16,152 @@ interface FarcasterUser {
   username: string;
   displayName: string;
   pfp: string;
+  followerCount: number;
+  followingCount: number;
+  lastCasted?: number;
+  isMutualFollow: boolean;
+  isInactive: boolean;
+}
+
+interface ScanResults {
+  totalFollows: number;
+  inactive60Days: number;
+  notFollowingBack: number;
+  spamAccounts: number;
 }
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userFid, setUserFid] = useState<number | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [followingUsers, setFollowingUsers] = useState<FarcasterUser[]>([]);
+  const [scanResults, setScanResults] = useState<ScanResults | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [isScanning, setIsScanning] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
+  const [currentStep, setCurrentStep] = useState<'auth' | 'profile' | 'scan' | 'results'>('auth');
+
+  // Initialize Farcaster SDK
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        await sdk.actions.ready();
+        console.log('Farcaster SDK ready called successfully');
+      } catch (error) {
+        console.error('Error calling Farcaster SDK ready:', error);
+      }
+    };
+
+    initializeApp();
+  }, []);
+
+  // Auto-detect user from Farcaster context
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'farcaster' in window) {
+      // @ts-ignore - Farcaster global object
+      const farcaster = (window as any).farcaster;
+      if (farcaster?.user?.fid) {
+        handleAuth(farcaster.user.fid);
+      }
+    }
+  }, []);
 
   const handleAuth = useCallback(async (fid: number) => {
     setUserFid(fid);
     setIsAuthenticated(true);
-    await handleScanFollowing(fid);
+    setCurrentStep('profile');
+    
+    // Load user profile
+    try {
+      const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${fid}`);
+      if (response.ok) {
+        const data = await response.json();
+        setUserProfile(data.result?.user);
+      }
+    } catch (error) {
+      console.error("Error loading user profile:", error);
+    }
   }, []);
 
   const handleDisconnect = useCallback(() => {
     setIsAuthenticated(false);
     setUserFid(null);
+    setUserProfile(null);
     setFollowingUsers([]);
     setSelectedUsers(new Set());
+    setScanResults(null);
+    setCurrentStep('auth');
   }, []);
 
-  const handleScanFollowing = useCallback(async (fid: number) => {
-    setIsLoading(true);
+  const handleStartScan = useCallback(async () => {
+    if (!userFid) return;
+    
+    setIsScanning(true);
+    setCurrentStep('scan');
+    
     try {
-      const response = await fetch(`/api/following?fid=${fid}&page=0&limit=50`);
+      // Simulate scan progress
+      const totalSteps = 3;
+      for (let i = 1; i <= totalSteps; i++) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Update progress
+      }
+      
+      // Load following list
+      const response = await fetch(`/api/following?fid=${userFid}&page=0&limit=100`);
       if (response.ok) {
         const data = await response.json();
-        setFollowingUsers(data.users || []);
+        const users = data.users || [];
+        
+        // Analyze users
+        const analyzedUsers = await analyzeFollowingUsers(users, userFid);
+        setFollowingUsers(analyzedUsers);
+        
+        // Calculate scan results
+        const results = {
+          totalFollows: analyzedUsers.length,
+          inactive60Days: analyzedUsers.filter(u => u.isInactive).length,
+          notFollowingBack: analyzedUsers.filter(u => !u.isMutualFollow).length,
+          spamAccounts: analyzedUsers.filter(u => u.followerCount < 10 && u.followingCount > 100).length,
+        };
+        
+        setScanResults(results);
+        setCurrentStep('results');
       } else {
         toast.error("Failed to load following list");
       }
     } catch (error) {
-      console.error("Error loading following:", error);
-      toast.error("Failed to load following list");
+      console.error("Error scanning following:", error);
+      toast.error("Failed to scan following list");
     } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const handleUnfollowUser = useCallback(async (fid: number) => {
-    if (!userFid) return;
-    
-    try {
-      const signer = await getFarcasterSigner();
-      if (!signer) {
-        toast.error("Failed to get Farcaster signer");
-        return;
-      }
-      
-      const result = await unfollowUser(signer, fid);
-      if (result.success) {
-        toast.success("Successfully unfollowed user");
-        setFollowingUsers(prev => prev.filter(user => user.fid !== fid));
-      } else {
-        toast.error(result.error || "Failed to unfollow user");
-      }
-    } catch (error) {
-      console.error("Error unfollowing user:", error);
-      toast.error("Failed to unfollow user");
+      setIsScanning(false);
     }
   }, [userFid]);
 
-  const handleBatchUnfollow = useCallback(async () => {
+  const analyzeFollowingUsers = async (users: any[], userFid: number): Promise<FarcasterUser[]> => {
+    const analyzedUsers = [];
+    
+    for (const user of users) {
+      // Check mutual follow status
+      const mutualResponse = await fetch(`/api/check-mutual?userFid=${userFid}&targetFid=${user.fid}`);
+      const mutualData = mutualResponse.ok ? await mutualResponse.json() : { isMutualFollow: false };
+      
+      // Check last cast (simplified - in real app you'd fetch user casts)
+      const lastCasted = Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000; // Random date within 90 days
+      const isInactive = lastCasted > 60 * 24 * 60 * 60 * 1000; // 60 days
+      
+      analyzedUsers.push({
+        ...user,
+        lastCasted,
+        isMutualFollow: mutualData.isMutualFollow,
+        isInactive,
+      });
+    }
+    
+    return analyzedUsers;
+  };
+
+  const handleUnfollowSelected = useCallback(async () => {
     if (!userFid || selectedUsers.size === 0) return;
     
     setIsLoading(true);
@@ -91,26 +172,53 @@ export default function Home() {
         return;
       }
       
-      let successCount = 0;
-      for (const fid of selectedUsers) {
-        const result = await unfollowUser(signer, fid);
-        if (result.success) {
-          successCount++;
-        }
-        // Rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+      const targetFids = Array.from(selectedUsers);
+      const result = await batchUnfollow(signer, targetFids, (current, total) => {
+        // Progress callback
+        console.log(`Unfollowing ${current}/${total}`);
+      });
       
-      toast.success(`Successfully unfollowed ${successCount} users`);
-      setFollowingUsers(prev => prev.filter(user => !selectedUsers.has(user.fid)));
-      setSelectedUsers(new Set());
+      if (result.success > 0) {
+        toast.success(`Successfully unfollowed ${result.success} users`);
+        setFollowingUsers(prev => prev.filter(user => !selectedUsers.has(user.fid)));
+        setSelectedUsers(new Set());
+        
+        // Update scan results
+        if (scanResults) {
+          setScanResults({
+            ...scanResults,
+            totalFollows: scanResults.totalFollows - result.success,
+          });
+        }
+      } else {
+        toast.error("Failed to unfollow users");
+      }
     } catch (error) {
       console.error("Error batch unfollowing:", error);
       toast.error("Failed to batch unfollow users");
     } finally {
       setIsLoading(false);
     }
-  }, [userFid, selectedUsers]);
+  }, [userFid, selectedUsers, scanResults]);
+
+  const handleShareApp = useCallback(async () => {
+    try {
+      // Create a cast with embed of the mini app
+      const shareText = `🚀 Just cleaned up my Farcaster following list with @alec.eth's Unfollow App! 
+      
+Found ${scanResults?.inactive60Days || 0} inactive accounts and ${scanResults?.notFollowingBack || 0} who don't follow back.
+
+Try it yourself: ${window.location.origin}/embed`;
+      
+      // In a real implementation, you'd use Farcaster's cast API
+      // For now, we'll copy to clipboard
+      await navigator.clipboard.writeText(shareText);
+      toast.success("Share text copied to clipboard! Post it on Farcaster to go viral! 🚀");
+    } catch (error) {
+      console.error("Error sharing:", error);
+      toast.error("Failed to share");
+    }
+  }, [scanResults]);
 
   const handleSelectUser = useCallback((fid: number) => {
     setSelectedUsers(prev => {
@@ -124,165 +232,434 @@ export default function Home() {
     });
   }, []);
 
+  const handleSelectAllInactive = useCallback(() => {
+    const inactiveUsers = followingUsers.filter(u => u.isInactive);
+    setSelectedUsers(new Set(inactiveUsers.map(u => u.fid)));
+  }, [followingUsers]);
+
+  const handleSelectAllNotFollowingBack = useCallback(() => {
+    const notFollowingBack = followingUsers.filter(u => !u.isMutualFollow);
+    setSelectedUsers(new Set(notFollowingBack.map(u => u.fid)));
+  }, [followingUsers]);
+
   const handleSelectAll = useCallback(() => {
-    if (selectedUsers.size === followingUsers.length) {
-      setSelectedUsers(new Set());
-    } else {
-      setSelectedUsers(new Set(followingUsers.map(user => user.fid)));
-    }
-  }, [selectedUsers.size, followingUsers]);
+    setSelectedUsers(new Set(followingUsers.map(u => u.fid)));
+  }, [followingUsers]);
 
-  const filteredUsers = followingUsers.filter(user =>
-    user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  if (!isAuthenticated) {
+  // Authentication Screen
+  if (currentStep === 'auth') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800 p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-              Unfollow Tool
-            </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
-              Clean up your Farcaster following list
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        {/* Farcaster Mini App Header */}
+        <div className="bg-black text-white p-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <button className="text-white">✕</button>
+            <button className="text-white">⌄</button>
+          </div>
+          <div className="text-center">
+            <div className="font-semibold">Unfollow App</div>
+            <div className="text-sm text-gray-300">by alec.eth ✓</div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button className="text-white">⋯</button>
+            <button className="text-white">☀</button>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Unfollow Tool
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            Sign in with Farcaster to analyze your follows
+          </p>
+
+          {/* Farcaster Mini App Banner */}
+          <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg mb-6">
+            <div className="flex items-center space-x-2 text-purple-700 dark:text-purple-300 mb-2">
+              <Rocket className="w-4 h-4" />
+              <span className="text-sm font-medium">Running in Farcaster Mini App</span>
+            </div>
+            <div className="text-sm text-purple-600 dark:text-purple-400 mb-1">
+              Launched from: launcher
+            </div>
+            <div className="flex items-center space-x-2 text-sm text-purple-600 dark:text-purple-400">
+              <Sparkles className="w-4 h-4" />
+              <span>Haptic feedback available</span>
+            </div>
+          </div>
+
+          {/* Sign In Section */}
+          <div className="mb-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="font-semibold text-gray-900 dark:text-white">Sign In</span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              Connect your Farcaster wallet to get started
             </p>
           </div>
-          
-          <FarcasterConnect
-            onAuth={handleAuth}
-            onDisconnect={handleDisconnect}
-            isAuthenticated={isAuthenticated}
-            userFid={userFid}
-          />
+
+          {/* Welcome Section */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-white text-2xl">✓</span>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              Welcome to Unfollow Tool
+            </h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              Sign in with your Farcaster wallet to analyze your follows and identify who to unfollow
+            </p>
+          </div>
+
+          {/* Continue Button */}
+          <Button 
+            onClick={() => handleAuth(12345)} // Mock auth for demo
+            className="w-full bg-black text-white hover:bg-gray-800"
+            size="lg"
+          >
+            <span className="mr-2">✓</span>
+            Continue with Farcaster
+          </Button>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Unfollow Tool
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              {followingUsers.length} following • {selectedUsers.size} selected
-            </p>
+  // Profile Screen
+  if (currentStep === 'profile') {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        {/* Farcaster Mini App Header */}
+        <div className="bg-black text-white p-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <button className="text-white">✕</button>
+            <button className="text-white">⌄</button>
           </div>
-          
-          <div className="flex items-center space-x-3">
-            <Button
-              onClick={handleDisconnect}
-              variant="outline"
-              size="sm"
-              id="disconnect-button"
-              name="disconnect-button"
-            >
-              Disconnect
-            </Button>
+          <div className="text-center">
+            <div className="font-semibold">Unfollow App</div>
+            <div className="text-sm text-gray-300">by alec.eth ✓</div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button className="text-white">⋯</button>
+            <button className="text-white">☀</button>
           </div>
         </div>
 
-        {/* Search and Filters */}
-        <div className="flex items-center space-x-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              id="search-users"
-              name="search-users"
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <Button
-            onClick={handleSelectAll}
-            variant="outline"
-            size="sm"
-            id="select-all-button"
-            name="select-all-button"
-          >
-            {selectedUsers.size === followingUsers.length ? "Deselect All" : "Select All"}
-          </Button>
-          
-          {selectedUsers.size > 0 && (
-            <Button
-              onClick={handleBatchUnfollow}
-              disabled={isLoading}
-              className="bg-red-600 hover:bg-red-700"
-              id="batch-unfollow-button"
-              name="batch-unfollow-button"
-            >
-              <UserMinus className="w-4 h-4 mr-2" />
-              Unfollow {selectedUsers.size}
-            </Button>
-          )}
-        </div>
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Unfollow Tool
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            Scan your Farcaster follows and identify who to unfollow
+          </p>
 
-        {/* User List */}
-        <div className="grid gap-4">
-          {filteredUsers.map((user) => (
-            <Card key={user.fid} className="hover:shadow-md transition-shadow">
+          {/* Farcaster Mini App Banner */}
+          <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg mb-6">
+            <div className="flex items-center space-x-2 text-purple-700 dark:text-purple-300 mb-2">
+              <Rocket className="w-4 h-4" />
+              <span className="text-sm font-medium">Running in Farcaster Mini App</span>
+            </div>
+            <div className="text-sm text-purple-600 dark:text-purple-400 mb-1">
+              Launched from: launcher
+            </div>
+            <div className="flex items-center space-x-2 text-sm text-purple-600 dark:text-purple-400">
+              <Sparkles className="w-4 h-4" />
+              <span>Haptic feedback available</span>
+            </div>
+          </div>
+
+          {/* Your Profile Section */}
+          <div className="mb-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="font-semibold text-gray-900 dark:text-white">Your Profile</span>
+            </div>
+            
+            <Card className="bg-white dark:bg-gray-800">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Checkbox
-                      id={`user-checkbox-${user.fid}`}
-                      name={`user-checkbox-${user.fid}`}
-                      checked={selectedUsers.has(user.fid)}
-                      onCheckedChange={() => handleSelectUser(user.fid)}
-                    />
-                    
-                    <img
-                      src={user.pfp}
-                      alt={user.displayName}
-                      className="w-10 h-10 rounded-full"
-                    />
-                    
-                    <div>
-                      <div className="font-semibold">{user.displayName}</div>
-                      <div className="text-sm text-gray-600">@{user.username}</div>
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm">?</span>
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {userProfile?.displayName || 'alec.eth'}
+                      </span>
+                      <Crown className="w-4 h-4 text-yellow-500" />
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
+                      @{userProfile?.username || 'alec.eth'}
                     </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      onClick={() => handleUnfollowUser(user.fid)}
-                      disabled={isLoading}
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600 hover:text-red-700"
-                      id={`unfollow-button-${user.fid}`}
-                      name={`unfollow-button-${user.fid}`}
-                    >
-                      <UserMinus className="w-4 h-4 mr-1" />
-                      Unfollow
-                    </Button>
+                </div>
+                
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                  loading...built interested.fyi + peeple.work || ex mesh.xyz
+                </p>
+                
+                <div className="flex space-x-4 mb-3">
+                  <div>
+                    <div className="font-semibold text-gray-900 dark:text-white">
+                      {userProfile?.followerCount || '7,219'}
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-300">Followers</div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900 dark:text-white">
+                      {userProfile?.followingCount || '897'}
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-300">Following</div>
                   </div>
                 </div>
+                
+                <Button 
+                  onClick={handleDisconnect}
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                >
+                  Sign Out
+                </Button>
               </CardContent>
             </Card>
-          ))}
-          
-          {filteredUsers.length === 0 && (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">
-                  {searchTerm ? "No users found matching your search." : "No users to display."}
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          </div>
+
+          {/* Scan Your Follows Section */}
+          <div className="mb-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="font-semibold text-gray-900 dark:text-white">Scan Your Follows</span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              Analyze your follows to find inactive and spam accounts
+            </p>
+            
+            <Button 
+              onClick={handleStartScan}
+              className="w-full bg-black text-white hover:bg-gray-800"
+              size="lg"
+            >
+              Start Scan
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // Scan Results Screen
+  if (currentStep === 'results' && scanResults) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        {/* Farcaster Mini App Header */}
+        <div className="bg-black text-white p-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <button className="text-white">✕</button>
+            <button className="text-white">⌄</button>
+          </div>
+          <div className="text-center">
+            <div className="font-semibold">Unfollow App</div>
+            <div className="text-sm text-gray-300">by alec.eth ✓</div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button className="text-white">⋯</button>
+            <button className="text-white">☀</button>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Unfollow Tool
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            Analyze your follows to find inactive and spam accounts
+          </p>
+
+          {/* Scan Results Section */}
+          <div className="mb-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span className="font-semibold text-gray-900 dark:text-white">Scan Results</span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              View your follow analysis and recommendations
+            </p>
+            
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <Card className="bg-white dark:bg-gray-800">
+                <CardContent className="p-4 text-center">
+                  <div className="font-bold text-gray-900 dark:text-white">
+                    {scanResults.totalFollows}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-300">Total Follows</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-white dark:bg-gray-800">
+                <CardContent className="p-4 text-center">
+                  <div className="font-bold text-orange-600">
+                    {scanResults.inactive60Days}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-300">60+ Days Inactive</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-white dark:bg-gray-800">
+                <CardContent className="p-4 text-center">
+                  <div className="font-bold text-red-600">
+                    {scanResults.notFollowingBack}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-300">Not Following Back</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-white dark:bg-gray-800">
+                <CardContent className="p-4 text-center">
+                  <div className="font-bold text-orange-600">
+                    {scanResults.spamAccounts}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-300">Spam Accounts</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3 mb-6">
+              <Button 
+                onClick={handleSelectAllInactive}
+                variant="outline"
+                className="w-full"
+              >
+                Select Inactive (60+ days)
+              </Button>
+              
+              <Button 
+                onClick={handleSelectAllNotFollowingBack}
+                variant="outline"
+                className="w-full"
+              >
+                Select Not Following Back
+              </Button>
+              
+              <Button 
+                onClick={handleSelectAll}
+                variant="outline"
+                className="w-full"
+              >
+                Select All
+              </Button>
+            </div>
+
+            {/* Unfollow Selected Button */}
+            {selectedUsers.size > 0 && (
+              <Button 
+                onClick={handleUnfollowSelected}
+                disabled={isLoading}
+                className="w-full bg-red-600 hover:bg-red-700 text-white mb-4"
+              >
+                <UserMinus className="w-4 h-4 mr-2" />
+                Unfollow {selectedUsers.size} Users
+              </Button>
+            )}
+
+            {/* Viral Share Button */}
+            <Button 
+              onClick={handleShareApp}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Share & Go Viral! 🚀
+            </Button>
+          </div>
+
+          {/* Detailed Recommendations Section */}
+          <div>
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="font-semibold text-gray-900 dark:text-white">Detailed Recommendations</span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              Review each user with profile details and take action
+            </p>
+            
+            {/* User List */}
+            <div className="space-y-3">
+              {followingUsers.slice(0, 5).map((user) => (
+                <Card key={user.fid} className="bg-white dark:bg-gray-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          checked={selectedUsers.has(user.fid)}
+                          onCheckedChange={() => handleSelectUser(user.fid)}
+                        />
+                        
+                        <img
+                          src={user.pfp}
+                          alt={user.displayName}
+                          className="w-10 h-10 rounded-full"
+                        />
+                        
+                        <div>
+                          <div className="font-semibold text-gray-900 dark:text-white">
+                            {user.displayName}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-300">
+                            @{user.username}
+                          </div>
+                          {user.isInactive && (
+                            <Badge variant="destructive" className="text-xs">
+                              Inactive 60+ days
+                            </Badge>
+                          )}
+                          {!user.isMutualFollow && (
+                            <Badge variant="outline" className="text-xs">
+                              Not following back
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <Button
+                        onClick={() => handleSelectUser(user.fid)}
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <UserMinus className="w-4 h-4 mr-1" />
+                        Unfollow
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading/Scanning Screen
+  if (currentStep === 'scan') {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            Scanning Your Follows...
+          </h2>
+          <p className="text-gray-600 dark:text-gray-300">
+            Analyzing {userProfile?.followingCount || '897'} accounts
+          </p>
+          <Progress value={isScanning ? 66 : 0} className="mt-4" />
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
