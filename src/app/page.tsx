@@ -625,60 +625,60 @@ Try it yourself: ${window.location.origin}/embed`;
             Analyze your follows to find inactive and spam accounts
           </p>
 
-          {/* Scan Results Section */}
-          <div className="mb-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              <span className="font-semibold text-gray-900 dark:text-white">Scan Results</span>
-            </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              View your follow analysis and recommendations
-            </p>
+                  {/* Scan Results Section */}
+        <div className="mb-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+            <span className="font-semibold text-gray-900">Scan Results</span>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            View your follow analysis and recommendations
+          </p>
+          
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <Card className="bg-white border border-gray-200">
+              <CardContent className="p-4 text-center">
+                <div className="font-bold text-gray-900 text-lg">
+                  {scanResults.totalFollows}
+                </div>
+                <div className="text-xs text-gray-600">Total Follows</div>
+              </CardContent>
+            </Card>
             
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <Card className="bg-white dark:bg-gray-800 transform transition-all duration-300 hover:scale-105">
-                <CardContent className="p-4 text-center">
-                  <div className="font-bold text-gray-900 dark:text-white animate-pulse">
-                    {scanResults.totalFollows}
-                  </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-300">Total Follows</div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white dark:bg-gray-800 transform transition-all duration-300 hover:scale-105">
-                <CardContent className="p-4 text-center">
-                  <div className="font-bold text-orange-600 animate-pulse">
-                    {scanResults.inactive60Days}
-                  </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-300">60+ Days Inactive</div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white dark:bg-gray-800 transform transition-all duration-300 hover:scale-105">
-                <CardContent className="p-4 text-center">
-                  <div className="font-bold text-red-600 animate-pulse">
-                    {scanResults.notFollowingBack}
-                  </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-300">Not Following Back</div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white dark:bg-gray-800 transform transition-all duration-300 hover:scale-105">
-                <CardContent className="p-4 text-center">
-                  <div className="font-bold text-orange-600 animate-pulse">
-                    {scanResults.spamAccounts}
-                  </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-300">Spam Accounts</div>
-                </CardContent>
-              </Card>
-            </div>
+            <Card className="bg-orange-50 border border-orange-200">
+              <CardContent className="p-4 text-center">
+                <div className="font-bold text-orange-600 text-lg">
+                  {scanResults.inactive60Days}
+                </div>
+                <div className="text-xs text-orange-600">60+ Days Inactive</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-red-50 border border-red-200">
+              <CardContent className="p-4 text-center">
+                <div className="font-bold text-red-600 text-lg">
+                  {scanResults.notFollowingBack}
+                </div>
+                <div className="text-xs text-red-600">Not Following Back</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-yellow-50 border border-yellow-200">
+              <CardContent className="p-4 text-center">
+                <div className="font-bold text-yellow-600 text-lg">
+                  {scanResults.spamAccounts}
+                </div>
+                <div className="text-xs text-yellow-600">Spam Accounts</div>
+              </CardContent>
+            </Card>
+          </div>
 
             {/* Action Buttons */}
             <div className="space-y-3 mb-6">
               <Button 
                 onClick={handleSelectAllInactive}
                 variant="outline"
-                className="w-full hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
+                className="w-full hover:bg-orange-50 transition-colors border-orange-200"
               >
                 <Activity className="w-4 h-4 mr-2 text-orange-600" />
                 Select Inactive (60+ days)
@@ -687,7 +687,7 @@ Try it yourself: ${window.location.origin}/embed`;
               <Button 
                 onClick={handleSelectAllNotFollowingBack}
                 variant="outline"
-                className="w-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                className="w-full hover:bg-red-50 transition-colors border-red-200"
               >
                 <UserMinus className="w-4 h-4 mr-2 text-red-600" />
                 Select Not Following Back
@@ -696,7 +696,7 @@ Try it yourself: ${window.location.origin}/embed`;
               <Button 
                 onClick={handleSelectAll}
                 variant="outline"
-                className="w-full hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                className="w-full hover:bg-purple-50 transition-colors border-purple-200"
               >
                 <Users className="w-4 h-4 mr-2 text-purple-600" />
                 Select All
@@ -738,16 +738,16 @@ Try it yourself: ${window.location.origin}/embed`;
           <div>
             <div className="flex items-center space-x-2 mb-4">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="font-semibold text-gray-900 dark:text-white">Detailed Recommendations</span>
+              <span className="font-semibold text-gray-900">Detailed Recommendations</span>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
+            <p className="text-sm text-gray-600 mb-4">
               Review each user with profile details and take action
             </p>
             
             {/* User List */}
             <div className="space-y-3">
               {followingUsers.slice(0, 5).map((user) => (
-                <Card key={user.fid} className="bg-white dark:bg-gray-800">
+                <Card key={user.fid} className="bg-white border border-gray-200">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -763,10 +763,10 @@ Try it yourself: ${window.location.origin}/embed`;
                         />
                         
                         <div>
-                          <div className="font-semibold text-gray-900 dark:text-white">
+                          <div className="font-semibold text-gray-900">
                             {user.displayName}
                           </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-300">
+                          <div className="text-sm text-gray-600">
                             @{user.username}
                           </div>
                           {user.isInactive && (
@@ -786,7 +786,7 @@ Try it yourself: ${window.location.origin}/embed`;
                         onClick={() => handleSelectUser(user.fid)}
                         variant="outline"
                         size="sm"
-                        className="text-red-600 hover:text-red-700"
+                        className="text-red-600 hover:text-red-700 border-red-200"
                       >
                         <UserMinus className="w-4 h-4 mr-1" />
                         Unfollow
