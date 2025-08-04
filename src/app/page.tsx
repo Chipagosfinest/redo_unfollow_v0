@@ -575,7 +575,7 @@ Try it yourself: ${window.location.origin}/embed`;
   // Authentication Screen
   if (currentStep === 'auth') {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
         {/* Farcaster Mini App Header */}
         <div className="bg-black text-white px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -592,31 +592,70 @@ Try it yourself: ${window.location.origin}/embed`;
           </div>
         </div>
 
-        <div className="px-6 py-8">
+        <div className="px-6 py-12">
           {/* Welcome Section */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <IconWrapper size={24}>
-                <span className="text-white text-xl font-bold">✓</span>
+          <div className="text-center mb-12">
+            <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-lg">
+              <IconWrapper size={32}>
+                <span className="text-white text-2xl font-bold">✓</span>
               </IconWrapper>
             </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-3">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
               Welcome to Unfollow App
             </h1>
-            <p className="text-sm text-gray-600 leading-relaxed">
+            <p className="text-lg text-gray-600 leading-relaxed max-w-md mx-auto">
               Sign in with your Farcaster wallet to analyze your follows and identify who to unfollow
             </p>
           </div>
 
-          {/* App Status */}
-          <div className="bg-purple-50 p-4 rounded-xl mb-8">
-            <div className="flex items-center space-x-2 text-purple-700 mb-2">
-              <IconWrapper size={16}>
-                <Rocket size={16} />
-              </IconWrapper>
-              <span className="text-sm font-medium">Unfollow App Ready</span>
+          {/* Feature Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <IconWrapper size={16}>
+                    <Search size={16} className="text-blue-600" />
+                  </IconWrapper>
+                </div>
+                <span className="font-semibold text-gray-900">Smart Analysis</span>
+              </div>
+              <p className="text-sm text-gray-600">Find inactive accounts and spam</p>
             </div>
-            <div className="text-xs text-purple-600">
+            
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <IconWrapper size={16}>
+                    <UserMinus size={16} className="text-green-600" />
+                  </IconWrapper>
+                </div>
+                <span className="font-semibold text-gray-900">Batch Unfollow</span>
+              </div>
+              <p className="text-sm text-gray-600">Unfollow multiple users at once</p>
+            </div>
+            
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <IconWrapper size={16}>
+                    <TrendingUp size={16} className="text-purple-600" />
+                  </IconWrapper>
+                </div>
+                <span className="font-semibold text-gray-900">Clean Feed</span>
+              </div>
+              <p className="text-sm text-gray-600">Improve your Farcaster experience</p>
+            </div>
+          </div>
+
+          {/* App Status */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
+            <div className="flex items-center space-x-3 text-purple-700 mb-3">
+              <IconWrapper size={20}>
+                <Rocket size={20} />
+              </IconWrapper>
+              <span className="text-lg font-semibold">Unfollow App Ready</span>
+            </div>
+            <div className="text-gray-600">
               Connect your Farcaster wallet to get started
             </div>
           </div>
@@ -644,17 +683,17 @@ Try it yourself: ${window.location.origin}/embed`;
           {/* Continue Button */}
           <Button 
             onClick={handleAuth}
-            className="w-full bg-black text-white hover:bg-gray-800 h-12 text-base font-medium"
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 h-14 text-lg font-semibold rounded-xl shadow-lg"
             disabled={isLoading}
           >
             {isLoading ? (
               <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
                 Connecting...
               </>
             ) : (
               <>
-                <span className="mr-2 text-lg">✓</span>
+                <span className="mr-3 text-xl">✓</span>
                 Continue with Farcaster
               </>
             )}
@@ -674,7 +713,7 @@ Try it yourself: ${window.location.origin}/embed`;
                 });
                 toast.info('Check console for debug info');
               }}
-              className="w-full mt-4 bg-gray-500 text-white hover:bg-gray-600 h-10 text-sm"
+              className="w-full mt-4 bg-gray-500 text-white hover:bg-gray-600 h-10 text-sm rounded-xl"
             >
               🧪 Test Farcaster Connection
             </Button>
@@ -687,7 +726,7 @@ Try it yourself: ${window.location.origin}/embed`;
   // Profile Screen
   if (currentStep === 'profile') {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
         {/* Farcaster Mini App Header */}
         <div className="bg-black text-white px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -705,22 +744,22 @@ Try it yourself: ${window.location.origin}/embed`;
         </div>
 
         <div className="px-6 py-8">
-          <h1 className="text-xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Unfollow Tool
           </h1>
-          <p className="text-sm text-gray-600 mb-6">
+          <p className="text-lg text-gray-600 mb-8">
             Scan your Farcaster follows and identify who to unfollow
           </p>
 
           {/* App Status */}
-          <div className="bg-purple-50 p-4 rounded-xl mb-6">
-            <div className="flex items-center space-x-2 text-purple-700 mb-2">
-              <IconWrapper size={16}>
-                <Rocket size={16} />
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+            <div className="flex items-center space-x-3 text-purple-700 mb-3">
+              <IconWrapper size={20}>
+                <Rocket size={20} />
               </IconWrapper>
-              <span className="text-sm font-medium">Ready to Scan</span>
+              <span className="text-lg font-semibold">Ready to Scan</span>
             </div>
-            <div className="text-xs text-purple-600">
+            <div className="text-gray-600">
               Analyze your follows to find inactive accounts
             </div>
           </div>
@@ -765,47 +804,47 @@ Try it yourself: ${window.location.origin}/embed`;
           )}
 
           {/* Your Profile Section */}
-          <div className="mb-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="font-semibold text-gray-900">Your Profile</span>
+          <div className="mb-8">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span className="font-semibold text-gray-900 text-lg">Your Profile</span>
             </div>
             
-            <Card className="bg-white border border-gray-200">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm">?</span>
+            <Card className="bg-white border border-gray-200 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-lg font-semibold">?</span>
                   </div>
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-gray-900">
+                      <span className="font-bold text-gray-900 text-lg">
                         {userProfile?.displayName || 'Loading...'}
                       </span>
-                      <Crown className="w-4 h-4 text-yellow-500" />
+                      <Crown className="w-5 h-5 text-yellow-500" />
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-gray-600">
                       @{userProfile?.username || 'Loading...'}
                     </div>
                   </div>
                 </div>
                 
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-gray-600 mb-4">
                   {userProfile?.bio || 'Loading profile...'}
                 </p>
                 
-                <div className="flex space-x-4 mb-3">
+                <div className="flex space-x-6 mb-4">
                   <div>
-                    <div className="font-semibold text-gray-900">
+                    <div className="font-bold text-gray-900 text-xl">
                       {userProfile?.followerCount || '0'}
                     </div>
-                    <div className="text-xs text-gray-600">Followers</div>
+                    <div className="text-sm text-gray-600">Followers</div>
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900">
+                    <div className="font-bold text-gray-900 text-xl">
                       {userProfile?.followingCount || '897'}
                     </div>
-                    <div className="text-xs text-gray-600">Following</div>
+                    <div className="text-sm text-gray-600">Following</div>
                   </div>
                 </div>
                 
@@ -823,17 +862,17 @@ Try it yourself: ${window.location.origin}/embed`;
 
           {/* Scan Your Follows Section */}
           <div className="mb-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="font-semibold text-gray-900">Scan Your Follows</span>
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <span className="font-semibold text-gray-900 text-lg">Scan Your Follows</span>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-gray-600 mb-6">
               Analyze your follows to find inactive and spam accounts
             </p>
             
             <Button 
               onClick={handleStartScan}
-              className="w-full bg-black text-white hover:bg-gray-800 h-12 text-base font-medium"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 h-14 text-lg font-semibold rounded-xl shadow-lg"
             >
               Start Scan
             </Button>
@@ -846,7 +885,7 @@ Try it yourself: ${window.location.origin}/embed`;
   // Scan Results Screen
   if (currentStep === 'results' && scanResults) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
         {/* Farcaster Mini App Header */}
         <div className="bg-black text-white p-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -864,94 +903,94 @@ Try it yourself: ${window.location.origin}/embed`;
         </div>
 
         <div className="p-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">
             Unfollow Tool
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
+          <p className="text-lg text-gray-600 mb-8">
             Analyze your follows to find inactive and spam accounts
           </p>
 
-                  {/* Scan Results Section */}
-        <div className="mb-6">
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-            <span className="font-semibold text-gray-900">Scan Results</span>
-          </div>
-          <p className="text-sm text-gray-600 mb-4">
-            View your follow analysis and recommendations
-          </p>
-          
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <Card className="bg-white border border-gray-200">
-              <CardContent className="p-4 text-center">
-                <div className="font-bold text-gray-900 text-lg">
-                  {scanResults.totalFollows}
-                </div>
-                <div className="text-xs text-gray-600">Total Follows</div>
-              </CardContent>
-            </Card>
+          {/* Scan Results Section */}
+          <div className="mb-8">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+              <span className="font-semibold text-gray-900 text-xl">Scan Results</span>
+            </div>
+            <p className="text-gray-600 mb-6">
+              View your follow analysis and recommendations
+            </p>
             
-            <Card className="bg-orange-50 border border-orange-200">
-              <CardContent className="p-4 text-center">
-                <div className="font-bold text-orange-600 text-lg">
-                  {scanResults.inactive60Days}
-                </div>
-                <div className="text-xs text-orange-600">60+ Days Inactive</div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-red-50 border border-red-200">
-              <CardContent className="p-4 text-center">
-                <div className="font-bold text-red-600 text-lg">
-                  {scanResults.notFollowingBack}
-                </div>
-                <div className="text-xs text-red-600">Not Following Back</div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-yellow-50 border border-yellow-200">
-              <CardContent className="p-4 text-center">
-                <div className="font-bold text-yellow-600 text-lg">
-                  {scanResults.spamAccounts}
-                </div>
-                <div className="text-xs text-yellow-600">Spam Accounts</div>
-              </CardContent>
-            </Card>
-          </div>
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              <Card className="bg-white border border-gray-200 shadow-sm">
+                <CardContent className="p-6 text-center">
+                  <div className="font-bold text-gray-900 text-2xl mb-2">
+                    {scanResults.totalFollows}
+                  </div>
+                  <div className="text-sm text-gray-600">Total Follows</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-orange-50 border border-orange-200 shadow-sm">
+                <CardContent className="p-6 text-center">
+                  <div className="font-bold text-orange-600 text-2xl mb-2">
+                    {scanResults.inactive60Days}
+                  </div>
+                  <div className="text-sm text-orange-600">60+ Days Inactive</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-red-50 border border-red-200 shadow-sm">
+                <CardContent className="p-6 text-center">
+                  <div className="font-bold text-red-600 text-2xl mb-2">
+                    {scanResults.notFollowingBack}
+                  </div>
+                  <div className="text-sm text-red-600">Not Following Back</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-yellow-50 border border-yellow-200 shadow-sm">
+                <CardContent className="p-6 text-center">
+                  <div className="font-bold text-yellow-600 text-2xl mb-2">
+                    {scanResults.spamAccounts}
+                  </div>
+                  <div className="text-sm text-yellow-600">Spam Accounts</div>
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Action Buttons */}
-            <div className="space-y-3 mb-6">
+            <div className="space-y-4 mb-8">
               <Button 
                 onClick={handleSelectAllInactive}
                 variant="outline"
-                className="w-full hover:bg-orange-50 transition-colors border-orange-200"
+                className="w-full hover:bg-orange-50 transition-colors border-orange-200 h-12 text-base"
               >
-                <IconWrapper size={16}>
-                  <Activity size={16} className="text-orange-600" />
+                <IconWrapper size={18}>
+                  <Activity size={18} className="text-orange-600" />
                 </IconWrapper>
-                <span className="ml-2">Select Inactive (60+ days)</span>
+                <span className="ml-3">Select Inactive (60+ days)</span>
               </Button>
               
               <Button 
                 onClick={handleSelectAllNotFollowingBack}
                 variant="outline"
-                className="w-full hover:bg-red-50 transition-colors border-red-200"
+                className="w-full hover:bg-red-50 transition-colors border-red-200 h-12 text-base"
               >
-                <IconWrapper size={16}>
-                  <UserMinus size={16} className="text-red-600" />
+                <IconWrapper size={18}>
+                  <UserMinus size={18} className="text-red-600" />
                 </IconWrapper>
-                <span className="ml-2">Select Not Following Back</span>
+                <span className="ml-3">Select Not Following Back</span>
               </Button>
               
               <Button 
                 onClick={handleSelectAll}
                 variant="outline"
-                className="w-full hover:bg-purple-50 transition-colors border-purple-200"
+                className="w-full hover:bg-purple-50 transition-colors border-purple-200 h-12 text-base"
               >
-                <IconWrapper size={16}>
-                  <Users size={16} className="text-purple-600" />
+                <IconWrapper size={18}>
+                  <Users size={18} className="text-purple-600" />
                 </IconWrapper>
-                <span className="ml-2">Select All</span>
+                <span className="ml-3">Select All</span>
               </Button>
             </div>
 
@@ -960,19 +999,19 @@ Try it yourself: ${window.location.origin}/embed`;
               <Button 
                 onClick={handleUnfollowSelected}
                 disabled={isLoading}
-                className="w-full bg-red-600 hover:bg-red-700 text-white mb-4 transform transition-all duration-200 hover:scale-105"
+                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white mb-6 h-14 text-lg font-semibold rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105"
               >
                 {isLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                     <span>Unfollowing...</span>
                   </>
                 ) : (
                   <>
-                    <IconWrapper size={16}>
-                      <UserMinus size={16} />
+                    <IconWrapper size={18}>
+                      <UserMinus size={18} />
                     </IconWrapper>
-                    <span className="ml-2">Unfollow {selectedUsers.size} Users</span>
+                    <span className="ml-3">Unfollow {selectedUsers.size} Users</span>
                   </>
                 )}
               </Button>
@@ -981,60 +1020,63 @@ Try it yourself: ${window.location.origin}/embed`;
             {/* Viral Share Button */}
             <Button 
               onClick={handleShareApp}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white transform transition-all duration-200 hover:scale-105 animate-pulse"
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white h-14 text-lg font-semibold rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105 animate-pulse"
             >
-              <IconWrapper size={16}>
-                <Share2 size={16} />
+              <IconWrapper size={18}>
+                <Share2 size={18} />
               </IconWrapper>
-              <span className="ml-2">Share & Go Viral! 🚀</span>
+              <span className="ml-3">Share & Go Viral! 🚀</span>
             </Button>
           </div>
 
           {/* Detailed Recommendations Section */}
           <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="font-semibold text-gray-900">Detailed Recommendations</span>
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <span className="font-semibold text-gray-900 text-xl">Detailed Recommendations</span>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-gray-600 mb-6">
               Review each user with profile details and take action
             </p>
             
             {/* User List */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               {followingUsers.slice(0, 5).map((user) => (
-                <Card key={user.fid} className="bg-white border border-gray-200">
-                  <CardContent className="p-4">
+                <Card key={user.fid} className="bg-white border border-gray-200 shadow-sm">
+                  <CardContent className="p-6">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-4">
                         <Checkbox
                           checked={selectedUsers.has(user.fid)}
                           onCheckedChange={() => handleSelectUser(user.fid)}
+                          className="w-5 h-5"
                         />
                         
                         <img
                           src={user.pfp}
                           alt={user.displayName}
-                          className="w-10 h-10 rounded-full"
+                          className="w-12 h-12 rounded-full"
                         />
                         
                         <div>
-                          <div className="font-semibold text-gray-900">
+                          <div className="font-bold text-gray-900 text-lg">
                             {user.displayName}
                           </div>
-                          <div className="text-sm text-gray-600">
+                          <div className="text-gray-600">
                             @{user.username}
                           </div>
-                          {user.isInactive && (
-                            <Badge variant="destructive" className="text-xs">
-                              Inactive 60+ days
-                            </Badge>
-                          )}
-                          {!user.isMutualFollow && (
-                            <Badge variant="outline" className="text-xs">
-                              Not following back
-                            </Badge>
-                          )}
+                          <div className="flex space-x-2 mt-2">
+                            {user.isInactive && (
+                              <Badge variant="destructive" className="text-xs">
+                                Inactive 60+ days
+                              </Badge>
+                            )}
+                            {!user.isMutualFollow && (
+                              <Badge variant="outline" className="text-xs">
+                                Not following back
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                       
@@ -1042,12 +1084,12 @@ Try it yourself: ${window.location.origin}/embed`;
                         onClick={() => handleSelectUser(user.fid)}
                         variant="outline"
                         size="sm"
-                        className="text-red-600 hover:text-red-700 border-red-200"
+                        className="text-red-600 hover:text-red-700 border-red-200 h-10"
                       >
-                        <IconWrapper size={14}>
-                          <UserMinus size={14} />
+                        <IconWrapper size={16}>
+                          <UserMinus size={16} />
                         </IconWrapper>
-                        <span className="ml-1">Unfollow</span>
+                        <span className="ml-2">Unfollow</span>
                       </Button>
                     </div>
                   </CardContent>
@@ -1063,34 +1105,34 @@ Try it yourself: ${window.location.origin}/embed`;
   // Loading/Scanning Screen
   if (currentStep === 'scan') {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse shadow-lg">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
           </div>
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3 animate-pulse">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4 animate-pulse">
             Scanning Your Follows...
           </h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
+          <p className="text-lg text-gray-600 mb-8">
             Analyzing {userProfile?.followingCount || '897'} accounts for inactivity and mutual follows
           </p>
           
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
+          <div className="space-y-4">
+            <div className="flex justify-between text-base text-gray-600">
               <span>Progress</span>
               <span>{isScanning ? '66%' : '0%'}</span>
             </div>
-            <Progress value={isScanning ? 66 : 0} className="w-full h-3" />
-            <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+            <Progress value={isScanning ? 66 : 0} className="w-full h-4" />
+            <div className="text-sm text-gray-500 text-center">
               Checking mutual follows and cast activity...
             </div>
           </div>
           
           {/* Animated dots */}
-          <div className="flex justify-center space-x-1 mt-4">
-            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
-            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+          <div className="flex justify-center space-x-2 mt-6">
+            <div className="w-3 h-3 bg-purple-500 rounded-full animate-bounce"></div>
+            <div className="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+            <div className="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
           </div>
         </div>
       </div>
