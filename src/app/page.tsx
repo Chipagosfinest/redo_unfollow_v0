@@ -406,122 +406,70 @@ Try it yourself: ${window.location.origin}/embed`;
   // Authentication Screen
   if (currentStep === 'auth') {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900">
+      <div className="min-h-screen bg-white">
         {/* Farcaster Mini App Header */}
-        <div className="bg-black text-white p-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <button className="text-white">✕</button>
-            <button className="text-white">⌄</button>
+        <div className="bg-black text-white px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <button className="text-white text-lg">✕</button>
+            <button className="text-white text-lg">⌄</button>
           </div>
           <div className="text-center">
-            <div className="font-semibold">Unfollow App</div>
-            <div className="text-sm text-gray-300">by alec.eth ✓</div>
+            <div className="font-semibold text-base">Unfollow App</div>
+            <div className="text-xs text-gray-300">by alec.eth ✓</div>
           </div>
-          <div className="flex items-center space-x-2">
-            <button className="text-white">⋯</button>
-            <button className="text-white">☀</button>
+          <div className="flex items-center space-x-3">
+            <button className="text-white text-lg">⋯</button>
+            <button className="text-white text-lg">☀</button>
           </div>
         </div>
 
-        <div className="p-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Unfollow Tool
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Sign in with Farcaster to analyze your follows
-          </p>
+        <div className="px-6 py-8">
+          {/* Welcome Section */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="text-white text-xl font-bold">✓</span>
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 mb-3">
+              Welcome to Unfollow App
+            </h1>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Sign in with your Farcaster wallet to analyze your follows and identify who to unfollow
+            </p>
+          </div>
 
           {/* Farcaster Mini App Banner */}
-          <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg mb-6">
-            <div className="flex items-center space-x-2 text-purple-700 dark:text-purple-300 mb-2">
+          <div className="bg-purple-50 p-4 rounded-xl mb-8">
+            <div className="flex items-center space-x-2 text-purple-700 mb-2">
               <Rocket className="w-4 h-4" />
               <span className="text-sm font-medium">Running in Farcaster Mini App</span>
             </div>
-            <div className="text-sm text-purple-600 dark:text-purple-400 mb-1">
+            <div className="text-xs text-purple-600 mb-1">
               Launched from: launcher
             </div>
-            <div className="flex items-center space-x-2 text-sm text-purple-600 dark:text-purple-400">
+            <div className="flex items-center space-x-2 text-xs text-purple-600">
               <Sparkles className="w-4 h-4" />
               <span>Haptic feedback available</span>
             </div>
           </div>
 
-          {/* Sign In Section */}
-          <div className="mb-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="font-semibold text-gray-900 dark:text-white">Sign In</span>
-            </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              Connect your Farcaster wallet to get started
-            </p>
-          </div>
-
-          {/* Welcome Section */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-white text-2xl">✓</span>
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              Welcome to Unfollow Tool
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              Sign in with your Farcaster wallet to analyze your follows and identify who to unfollow
-            </p>
-          </div>
-
           {/* Continue Button */}
           <Button 
             onClick={handleAuth}
-            className="w-full bg-black text-white hover:bg-gray-800"
-            size="lg"
+            className="w-full bg-black text-white hover:bg-gray-800 h-12 text-base font-medium"
             disabled={isLoading}
           >
             {isLoading ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                 Connecting...
               </>
             ) : (
               <>
-                <span className="mr-2">✓</span>
+                <span className="mr-2 text-lg">✓</span>
                 Continue with Farcaster
               </>
             )}
           </Button>
-          
-          {/* Enhanced UX Elements */}
-          <div className="mt-6 space-y-4">
-            {/* Feature Highlights */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg text-center">
-                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Users className="w-4 h-4 text-white" />
-                </div>
-                <div className="text-xs font-medium text-purple-700 dark:text-purple-300">Smart Analysis</div>
-                <div className="text-xs text-purple-600 dark:text-purple-400">Find inactive accounts</div>
-              </div>
-              
-              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg text-center">
-                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <UserMinus className="w-4 h-4 text-white" />
-                </div>
-                <div className="text-xs font-medium text-red-700 dark:text-red-300">Batch Unfollow</div>
-                <div className="text-xs text-red-600 dark:text-red-400">Remove multiple users</div>
-              </div>
-            </div>
-            
-            {/* Trust Indicators */}
-            <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-              <div className="flex items-center space-x-2 text-green-700 dark:text-green-300">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-xs font-medium">Trusted by Farcaster Community</span>
-              </div>
-              <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                Join thousands of users who've cleaned up their following lists
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     );
@@ -530,41 +478,41 @@ Try it yourself: ${window.location.origin}/embed`;
   // Profile Screen
   if (currentStep === 'profile') {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900">
+      <div className="min-h-screen bg-white">
         {/* Farcaster Mini App Header */}
-        <div className="bg-black text-white p-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <button className="text-white">✕</button>
-            <button className="text-white">⌄</button>
+        <div className="bg-black text-white px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <button className="text-white text-lg">✕</button>
+            <button className="text-white text-lg">⌄</button>
           </div>
           <div className="text-center">
-            <div className="font-semibold">Unfollow App</div>
-            <div className="text-sm text-gray-300">by alec.eth ✓</div>
+            <div className="font-semibold text-base">Unfollow App</div>
+            <div className="text-xs text-gray-300">by alec.eth ✓</div>
           </div>
-          <div className="flex items-center space-x-2">
-            <button className="text-white">⋯</button>
-            <button className="text-white">☀</button>
+          <div className="flex items-center space-x-3">
+            <button className="text-white text-lg">⋯</button>
+            <button className="text-white text-lg">☀</button>
           </div>
         </div>
 
-        <div className="p-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="px-6 py-8">
+          <h1 className="text-xl font-bold text-gray-900 mb-2">
             Unfollow Tool
           </h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
+          <p className="text-sm text-gray-600 mb-6">
             Scan your Farcaster follows and identify who to unfollow
           </p>
 
           {/* Farcaster Mini App Banner */}
-          <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg mb-6">
-            <div className="flex items-center space-x-2 text-purple-700 dark:text-purple-300 mb-2">
+          <div className="bg-purple-50 p-4 rounded-xl mb-6">
+            <div className="flex items-center space-x-2 text-purple-700 mb-2">
               <Rocket className="w-4 h-4" />
               <span className="text-sm font-medium">Running in Farcaster Mini App</span>
             </div>
-            <div className="text-sm text-purple-600 dark:text-purple-400 mb-1">
+            <div className="text-xs text-purple-600 mb-1">
               Launched from: launcher
             </div>
-            <div className="flex items-center space-x-2 text-sm text-purple-600 dark:text-purple-400">
+            <div className="flex items-center space-x-2 text-xs text-purple-600">
               <Sparkles className="w-4 h-4" />
               <span>Haptic feedback available</span>
             </div>
@@ -574,10 +522,10 @@ Try it yourself: ${window.location.origin}/embed`;
           <div className="mb-6">
             <div className="flex items-center space-x-2 mb-4">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="font-semibold text-gray-900 dark:text-white">Your Profile</span>
+              <span className="font-semibold text-gray-900">Your Profile</span>
             </div>
             
-            <Card className="bg-white dark:bg-gray-800">
+            <Card className="bg-white border border-gray-200">
               <CardContent className="p-4">
                 <div className="flex items-center space-x-3 mb-3">
                   <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
@@ -585,33 +533,33 @@ Try it yourself: ${window.location.origin}/embed`;
                   </div>
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-gray-900 dark:text-white">
+                      <span className="font-semibold text-gray-900">
                         {userProfile?.displayName || 'Loading...'}
                       </span>
                       <Crown className="w-4 h-4 text-yellow-500" />
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">
+                    <div className="text-sm text-gray-600">
                       @{userProfile?.username || 'Loading...'}
                     </div>
                   </div>
                 </div>
                 
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                <p className="text-sm text-gray-600 mb-3">
                   {userProfile?.bio || 'Loading profile...'}
                 </p>
                 
                 <div className="flex space-x-4 mb-3">
                   <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">
+                    <div className="font-semibold text-gray-900">
                       {userProfile?.followerCount || '0'}
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-300">Followers</div>
+                    <div className="text-xs text-gray-600">Followers</div>
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">
+                    <div className="font-semibold text-gray-900">
                       {userProfile?.followingCount || '897'}
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-300">Following</div>
+                    <div className="text-xs text-gray-600">Following</div>
                   </div>
                 </div>
                 
@@ -631,16 +579,15 @@ Try it yourself: ${window.location.origin}/embed`;
           <div className="mb-6">
             <div className="flex items-center space-x-2 mb-4">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="font-semibold text-gray-900 dark:text-white">Scan Your Follows</span>
+              <span className="font-semibold text-gray-900">Scan Your Follows</span>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
+            <p className="text-sm text-gray-600 mb-4">
               Analyze your follows to find inactive and spam accounts
             </p>
             
             <Button 
               onClick={handleStartScan}
-              className="w-full bg-black text-white hover:bg-gray-800"
-              size="lg"
+              className="w-full bg-black text-white hover:bg-gray-800 h-12 text-base font-medium"
             >
               Start Scan
             </Button>
