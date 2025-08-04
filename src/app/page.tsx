@@ -490,15 +490,36 @@ Try it yourself: ${window.location.origin}/embed`;
             )}
           </Button>
           
-          {/* Debug Info */}
-          <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-            <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-              Debug Info (check console for details):
-            </p>
-            <div className="text-xs text-gray-500 dark:text-gray-500">
-              <div>Farcaster Object: {typeof window !== 'undefined' && (window as any).farcaster ? '✅ Found' : '❌ Not Found'}</div>
-              <div>User: {typeof window !== 'undefined' && (window as any).farcaster?.user?.fid ? `✅ FID: ${(window as any).farcaster.user.fid}` : '❌ No User'}</div>
-              <div>SDK Ready: {typeof sdk?.actions?.ready === 'function' ? '✅ Available' : '❌ Not Available'}</div>
+          {/* Enhanced UX Elements */}
+          <div className="mt-6 space-y-4">
+            {/* Feature Highlights */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg text-center">
+                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Users className="w-4 h-4 text-white" />
+                </div>
+                <div className="text-xs font-medium text-purple-700 dark:text-purple-300">Smart Analysis</div>
+                <div className="text-xs text-purple-600 dark:text-purple-400">Find inactive accounts</div>
+              </div>
+              
+              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg text-center">
+                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <UserMinus className="w-4 h-4 text-white" />
+                </div>
+                <div className="text-xs font-medium text-red-700 dark:text-red-300">Batch Unfollow</div>
+                <div className="text-xs text-red-600 dark:text-red-400">Remove multiple users</div>
+              </div>
+            </div>
+            
+            {/* Trust Indicators */}
+            <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+              <div className="flex items-center space-x-2 text-green-700 dark:text-green-300">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-xs font-medium">Trusted by Farcaster Community</span>
+              </div>
+              <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                Join thousands of users who've cleaned up their following lists
+              </div>
             </div>
           </div>
         </div>
@@ -668,36 +689,36 @@ Try it yourself: ${window.location.origin}/embed`;
             </p>
             
             <div className="grid grid-cols-2 gap-3 mb-6">
-              <Card className="bg-white dark:bg-gray-800">
+              <Card className="bg-white dark:bg-gray-800 transform transition-all duration-300 hover:scale-105">
                 <CardContent className="p-4 text-center">
-                  <div className="font-bold text-gray-900 dark:text-white">
+                  <div className="font-bold text-gray-900 dark:text-white animate-pulse">
                     {scanResults.totalFollows}
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-300">Total Follows</div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-white dark:bg-gray-800">
+              <Card className="bg-white dark:bg-gray-800 transform transition-all duration-300 hover:scale-105">
                 <CardContent className="p-4 text-center">
-                  <div className="font-bold text-orange-600">
+                  <div className="font-bold text-orange-600 animate-pulse">
                     {scanResults.inactive60Days}
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-300">60+ Days Inactive</div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-white dark:bg-gray-800">
+              <Card className="bg-white dark:bg-gray-800 transform transition-all duration-300 hover:scale-105">
                 <CardContent className="p-4 text-center">
-                  <div className="font-bold text-red-600">
+                  <div className="font-bold text-red-600 animate-pulse">
                     {scanResults.notFollowingBack}
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-300">Not Following Back</div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-white dark:bg-gray-800">
+              <Card className="bg-white dark:bg-gray-800 transform transition-all duration-300 hover:scale-105">
                 <CardContent className="p-4 text-center">
-                  <div className="font-bold text-orange-600">
+                  <div className="font-bold text-orange-600 animate-pulse">
                     {scanResults.spamAccounts}
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-300">Spam Accounts</div>
@@ -710,24 +731,27 @@ Try it yourself: ${window.location.origin}/embed`;
               <Button 
                 onClick={handleSelectAllInactive}
                 variant="outline"
-                className="w-full"
+                className="w-full hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors"
               >
+                <Activity className="w-4 h-4 mr-2 text-orange-600" />
                 Select Inactive (60+ days)
               </Button>
               
               <Button 
                 onClick={handleSelectAllNotFollowingBack}
                 variant="outline"
-                className="w-full"
+                className="w-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
+                <UserMinus className="w-4 h-4 mr-2 text-red-600" />
                 Select Not Following Back
               </Button>
               
               <Button 
                 onClick={handleSelectAll}
                 variant="outline"
-                className="w-full"
+                className="w-full hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
               >
+                <Users className="w-4 h-4 mr-2 text-purple-600" />
                 Select All
               </Button>
             </div>
@@ -737,17 +761,26 @@ Try it yourself: ${window.location.origin}/embed`;
               <Button 
                 onClick={handleUnfollowSelected}
                 disabled={isLoading}
-                className="w-full bg-red-600 hover:bg-red-700 text-white mb-4"
+                className="w-full bg-red-600 hover:bg-red-700 text-white mb-4 transform transition-all duration-200 hover:scale-105"
               >
-                <UserMinus className="w-4 h-4 mr-2" />
-                Unfollow {selectedUsers.size} Users
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Unfollowing...
+                  </>
+                ) : (
+                  <>
+                    <UserMinus className="w-4 h-4 mr-2" />
+                    Unfollow {selectedUsers.size} Users
+                  </>
+                )}
               </Button>
             )}
 
             {/* Viral Share Button */}
             <Button 
               onClick={handleShareApp}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white transform transition-all duration-200 hover:scale-105 animate-pulse"
             >
               <Share2 className="w-4 h-4 mr-2" />
               Share & Go Viral! 🚀
@@ -826,15 +859,34 @@ Try it yourself: ${window.location.origin}/embed`;
   if (currentStep === 'scan') {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
+          </div>
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3 animate-pulse">
             Scanning Your Follows...
           </h2>
-          <p className="text-gray-600 dark:text-gray-300">
-            Analyzing {userProfile?.followingCount || '897'} accounts
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            Analyzing {userProfile?.followingCount || '897'} accounts for inactivity and mutual follows
           </p>
-          <Progress value={isScanning ? 66 : 0} className="mt-4" />
+          
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
+              <span>Progress</span>
+              <span>{isScanning ? '66%' : '0%'}</span>
+            </div>
+            <Progress value={isScanning ? 66 : 0} className="w-full h-3" />
+            <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+              Checking mutual follows and cast activity...
+            </div>
+          </div>
+          
+          {/* Animated dots */}
+          <div className="flex justify-center space-x-1 mt-4">
+            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+          </div>
         </div>
       </div>
     );
