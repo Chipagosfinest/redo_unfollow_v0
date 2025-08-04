@@ -161,11 +161,7 @@ export default function Home() {
             
             // Load real profile using Neynar API
             try {
-              const response = await fetch(`https://api.neynar.com/v2/farcaster/user/bulk?fids=${user.fid}`, {
-                headers: {
-                  'api_key': process.env.NEXT_PUBLIC_NEYNAR_API_KEY || ''
-                }
-              });
+              const response = await fetch(`/api/neynar/user?fid=${user.fid}`);
               if (response.ok) {
                 const data = await response.json();
                 setUserProfile(data.users[0]);
@@ -257,11 +253,7 @@ export default function Home() {
       }
       
       // Get following list using Neynar API
-      const followingResponse = await fetch(`https://api.neynar.com/v2/farcaster/user/following?fid=${userFid}&viewer_fid=${userFid}`, {
-        headers: {
-          'api_key': process.env.NEXT_PUBLIC_NEYNAR_API_KEY || ''
-        }
-      });
+      const followingResponse = await fetch(`/api/neynar/following?fid=${userFid}`);
       
       if (followingResponse.ok) {
         const followingData = await followingResponse.json();
@@ -273,7 +265,7 @@ export default function Home() {
             // Check mutual follow status
             const mutualResponse = await fetch(`https://api.neynar.com/v2/farcaster/user/followers?fid=${userFid}&viewer_fid=${user.fid}`, {
               headers: {
-                'api_key': process.env.NEXT_PUBLIC_NEYNAR_API_KEY || ''
+                'api_key': process.env.NEYNAR_API_KEY || ''
               }
             });
             
