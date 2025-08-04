@@ -2,7 +2,7 @@
   "app": {
     "name": "Unfollow Tool",
     "description": "Clean your Farcaster feed with smart analysis and batch unfollow operations",
-    "icon": "https://redounfollowv0.vercel.app/api/icon",
+    "icon": "https://redounfollowv0.vercel.app/icon.svg",
     "url": "https://redounfollowv0.vercel.app",
     "verified": false,
     "category": "social",
