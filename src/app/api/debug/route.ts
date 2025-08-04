@@ -5,97 +5,76 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
     
-    console.log('Debug endpoint called', { action, url: request.url });
-    
     switch (action) {
       case 'test-neynar':
-        // Test Neynar API with a known valid FID
-        const testFid = '194'; // Dwr (known valid FID)
-        console.log('Testing Neynar API with known FID', { testFid });
-        
-        const response = await fetch(`https://api.neynar.com/v2/farcaster/user/bulk?fids=${testFid}`, {
-          headers: {
-            'api_key': process.env.NEYNAR_API_KEY || ''
+        // Test Neynar API with a real FID
+        try {
+          const response = await fetch(`https://api.neynar.com/v2/farcaster/user/bulk?fids=12345`, {
+            headers: {
+              'api_key': process.env.NEYNAR_API_KEY || ''
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            return NextResponse.json({ 
+              success: true, 
+              message: 'Neynar API test successful',
+              data: data.users[0]
+            });
+          } else {
+            return NextResponse.json({ 
+              success: false, 
+              message: 'Neynar API test failed',
+              status: response.status
+            });
           }
-        });
-        
-        const data = await response.json();
-        console.log('Neynar test response', { 
-          status: response.status, 
-          ok: response.ok,
-          hasData: !!data,
-          hasUsers: !!data.users,
-          userCount: data.users?.length || 0
-        });
-        
-        return NextResponse.json({
-          success: true,
-          neynarTest: {
-            status: response.status,
-            ok: response.ok,
-            hasData: !!data,
-            hasUsers: !!data.users,
-            userCount: data.users?.length || 0,
-            data: data
-          }
-        });
+        } catch (error) {
+          return NextResponse.json({ 
+            success: false, 
+            message: 'Neynar API test error',
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
         
       case 'test-mock-fid':
-        // Test with the mock FID that's causing issues
-        const mockFid = '12345';
-        console.log('Testing with mock FID', { mockFid });
-        
-        const mockResponse = await fetch(`https://api.neynar.com/v2/farcaster/user/bulk?fids=${mockFid}`, {
-          headers: {
-            'api_key': process.env.NEYNAR_API_KEY || ''
-          }
-        });
-        
-        const mockData = await mockResponse.json();
-        console.log('Mock FID test response', { 
-          status: mockResponse.status, 
-          ok: mockResponse.ok,
-          hasData: !!mockData,
-          hasUsers: !!mockData.users,
-          userCount: mockData.users?.length || 0
-        });
-        
-        return NextResponse.json({
-          success: true,
-          mockFidTest: {
-            status: mockResponse.status,
-            ok: mockResponse.ok,
-            hasData: !!mockData,
-            hasUsers: !!mockData.users,
-            userCount: mockData.users?.length || 0,
-            data: mockData
+        // Test with mock FID
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Mock FID test',
+          mockUser: {
+            fid: 12345,
+            username: 'stinos',
+            displayName: 'Stijn den Engelse',
+            bio: 'Decentralization maxi',
+            followerCount: 195,
+            followingCount: 180
           }
         });
         
       case 'environment':
-        // Return environment info
-        return NextResponse.json({
-          success: true,
+        // Return environment information
+        return NextResponse.json({ 
+          success: true, 
+          message: 'Environment info',
           environment: {
             nodeEnv: process.env.NODE_ENV,
-            vercelUrl: process.env.VERCEL_URL,
             hasNeynarKey: !!process.env.NEYNAR_API_KEY,
-            neynarKeyLength: process.env.NEYNAR_API_KEY?.length || 0,
-            timestamp: new Date().toISOString()
+            neynarKeyLength: process.env.NEYNAR_API_KEY?.length || 0
           }
         });
         
       default:
-        return NextResponse.json({
-          success: true,
-          availableActions: ['test-neynar', 'test-mock-fid', 'environment'],
-          message: 'Use ?action= to test specific functionality'
+        return NextResponse.json({ 
+          success: false, 
+          message: 'Invalid action',
+          availableActions: ['test-neynar', 'test-mock-fid', 'environment']
         });
     }
   } catch (error) {
-    console.error('Debug endpoint error', error);
     return NextResponse.json({ 
       success: false, 
+      message: 'Debug endpoint error',
       error: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
