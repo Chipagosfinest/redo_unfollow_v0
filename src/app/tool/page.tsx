@@ -294,7 +294,9 @@ export default function ToolPage() {
                         onCheckedChange={(checked) => 
                           handleSelectUser(user.fid, checked as boolean)
                         }
-                                                      disabled={false}
+                        disabled={false}
+                        id={`user-checkbox-${user.fid}`}
+                        name={`user-checkbox-${user.fid}`}
                       />
                       <img
                         src={user.pfp}

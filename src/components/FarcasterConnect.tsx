@@ -46,21 +46,30 @@ export default function FarcasterConnect({
       // If we're in iframe, try to initialize SDK
       if (isInIframe) {
         console.log('FarcasterConnect: Initializing SDK in iframe');
-        await sdk.actions.ready();
-        
-        // Wait for SDK to initialize
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Check again for user
-        if (farcaster?.user?.fid) {
-          console.log('FarcasterConnect: Found user after SDK init:', farcaster.user);
-          return farcaster.user;
-        }
-        
-        // Check for Privy wallet integration
-        if (farcaster?.privy?.user) {
-          console.log('FarcasterConnect: Found Privy user:', farcaster.privy.user);
-          return farcaster.privy.user;
+        try {
+          await sdk.actions.ready();
+          
+          // Wait for SDK to initialize
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Check again for user
+          if (farcaster?.user?.fid) {
+            console.log('FarcasterConnect: Found user after SDK init:', farcaster.user);
+            return farcaster.user;
+          }
+          
+          // Check for Privy wallet integration
+          if (farcaster?.privy?.user) {
+            console.log('FarcasterConnect: Found Privy user:', farcaster.privy.user);
+            return farcaster.privy.user;
+          }
+        } catch (sdkError) {
+          console.warn('Farcaster SDK initialization failed, continuing without SDK:', sdkError);
+          // Continue without SDK - user might still be available
+          if (farcaster?.user?.fid) {
+            console.log('FarcasterConnect: Found user despite SDK error:', farcaster.user);
+            return farcaster.user;
+          }
         }
       }
       
@@ -198,7 +207,12 @@ export default function FarcasterConnect({
         } catch (error) {
           console.error('Connection error:', error);
           const isInIframe = window.self !== window.top;
-          if (isInIframe) {
+          
+          // Check if it's a CSP or network error
+          if (error instanceof TypeError && error.message.includes('fetch')) {
+            console.warn('Network error detected, this might be due to CSP restrictions');
+            toast.error("Network connection issue. Please check your connection and try again.");
+          } else if (isInIframe) {
             toast.error("Failed to connect to Farcaster wallet");
           } else {
             toast.error("Please open this app in Farcaster to connect your wallet");

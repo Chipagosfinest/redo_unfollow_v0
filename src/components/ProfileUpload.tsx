@@ -118,6 +118,8 @@ export default function ProfileUpload({ onProfileUpdate, currentPfp, currentBio 
                   accept="image/*"
                   onChange={handlePfpUpload}
                   className="hidden"
+                  id="profile-picture-upload"
+                  name="profile-picture-upload"
                 />
               </div>
             </div>
@@ -132,6 +134,8 @@ export default function ProfileUpload({ onProfileUpdate, currentPfp, currentBio 
               placeholder="Tell us about yourself..."
               className="bg-white/10 border-purple-200/20 text-white placeholder:text-purple-300 resize-none"
               rows={4}
+              id="profile-bio"
+              name="profile-bio"
             />
             <p className="text-xs text-purple-300">
               {bio.length}/280 characters

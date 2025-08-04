@@ -407,7 +407,8 @@ Try it yourself: ${window.location.origin}/embed`;
               <Sparkles className="w-10 h-10 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-white mb-4">Feed Cleaner</h1>
-            <p className="text-purple-200">Connect your Farcaster wallet to get started</p>
+            <p className="text-purple-200 text-lg mb-2">Sweep who doesn't follow you back or is inactive</p>
+            <p className="text-purple-300 text-sm">Connect your Farcaster wallet to get started</p>
           </div>
           
           <FarcasterConnect 
@@ -757,6 +758,8 @@ Try it yourself: ${window.location.origin}/embed`;
                         checked={selectedUsers.has(user.fid)}
                         onCheckedChange={() => handleSelectUser(user.fid)}
                         className="w-5 h-5 mt-2"
+                        id={`main-user-checkbox-${user.fid}`}
+                        name={`main-user-checkbox-${user.fid}`}
                       />
                       
                       <div className="flex-1">

@@ -25,7 +25,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#6366f1" />
-        <meta name="description" content="Clean up your Farcaster feed with our intelligent unfollow tool" />
+        <meta name="description" content="Sweep who doesn't follow you back or is inactive. Clean up your Farcaster feed with our intelligent unfollow tool" />
         
         {/* Farcaster Mini App Meta Tags */}
         <meta name="farcaster:app" content="unfollow-tool" />
@@ -33,7 +33,7 @@ export default function RootLayout({
         
         {/* Open Graph */}
         <meta property="og:title" content="Farcaster Unfollow Tool" />
-        <meta property="og:description" content="Clean up your Farcaster feed by identifying and unfollowing inactive accounts" />
+        <meta property="og:description" content="Sweep who doesn't follow you back or is inactive. Clean up your Farcaster feed by identifying and unfollowing inactive accounts" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://redounfollowv0-a86wlidhi-chipagosfinests-projects.vercel.app" />
         <meta property="og:image" content="/thumbnail.png" />
@@ -41,7 +41,7 @@ export default function RootLayout({
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Farcaster Unfollow Tool" />
-        <meta name="twitter:description" content="Clean up your Farcaster feed with intelligent unfollow recommendations" />
+        <meta name="twitter:description" content="Sweep who doesn't follow you back or is inactive. Clean up your Farcaster feed with intelligent unfollow recommendations" />
         <meta name="twitter:image" content="/thumbnail.png" />
       </head>
       <body className={`${inter.className} antialiased`}>
