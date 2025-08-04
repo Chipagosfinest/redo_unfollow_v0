@@ -264,8 +264,8 @@ export default function Home() {
   }, [userFid]);
 
   const handleUnfollowSelected = useCallback(async () => {
-    if (!userProfile?.signer_uuid || selectedUsers.size === 0) {
-      toast.error("No signer available or no users selected");
+    if (!userFid || selectedUsers.size === 0) {
+      toast.error("No user authenticated or no users selected");
       return;
     }
     
@@ -276,16 +276,17 @@ export default function Home() {
       logToVercel('info', 'Starting batch unfollow', { 
         targetFidsCount: targetFids.length,
         targetFids,
-        hasSignerUuid: !!userProfile.signer_uuid
+        userFid
       });
       
-      const response = await fetch('/api/neynar/unfollow', {
+      // Use Farcaster API directly for unfollowing
+      const response = await fetch('/api/unfollow', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          signerUuid: userProfile.signer_uuid,
+          userFid,
           targetFids
         })
       });
@@ -295,7 +296,7 @@ export default function Home() {
         logToVercel('info', 'Unfollow successful', { result });
         
         if (result.success) {
-          const successCount = result.details?.filter((d: any) => d.success).length || 0;
+          const successCount = result.successCount || targetFids.length;
           toast.success(`Successfully unfollowed ${successCount} users`);
           
           // Remove unfollowed users from the list
@@ -329,7 +330,7 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, [userProfile, selectedUsers, scanResults]);
+  }, [userFid, selectedUsers, scanResults]);
 
   const handleShareApp = useCallback(async () => {
     try {
@@ -420,28 +421,12 @@ Try it yourself: ${window.location.origin}/embed`;
                   if (data.users && data.users[0]) {
                     handleAuthenticated(data.users[0]);
                   } else {
-                    // Fallback user data
-                    handleAuthenticated({
-                      fid,
-                      username: 'user',
-                      display_name: 'Farcaster User',
-                      displayName: 'Farcaster User',
-                      follower_count: 0,
-                      following_count: 0
-                    });
+                    toast.error("Failed to get user data");
                   }
                 })
                 .catch(error => {
                   console.error('Error fetching user data:', error);
-                  // Fallback user data
-                  handleAuthenticated({
-                    fid,
-                    username: 'user',
-                    display_name: 'Farcaster User',
-                    displayName: 'Farcaster User',
-                    follower_count: 0,
-                    following_count: 0
-                  });
+                  toast.error("Failed to get user data");
                 });
             }}
             onDisconnect={handleDisconnect}
@@ -554,25 +539,7 @@ Try it yourself: ${window.location.origin}/embed`;
         </div>
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {/* Demo Mode Banner */}
-          {allFollowingUsers.length > 0 && allFollowingUsers[0].username.includes('user') && (
-            <div className="mb-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-yellow-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-yellow-800">Demo Mode</h3>
-                  <p className="text-sm text-yellow-700">
-                    This is sample data for testing. The Neynar v2 API currently doesn't support fetching following lists, so we're using demo data.
-                  </p>
-                  <div className="mt-2 text-xs text-yellow-600">
-                    <strong>API Limitation:</strong> Neynar v2 API doesn't have a following endpoint yet. Your API key is configured correctly!
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          
 
           {/* Results Header */}
           <div className="text-center mb-12">

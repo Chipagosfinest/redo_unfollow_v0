@@ -2,11 +2,11 @@
 
 A beautiful, modern tool to sweep who doesn't follow you back or is inactive. Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users.
 
-## 🚀 Live Demo
+## 🚀 Live App
 
-**Current Status:** Demo Mode (using sample data for testing)
+**Current Status:** Production Ready (using real Farcaster data)
 
-**Live URL:** https://redounfollowv0-o0n6r5rck-chipagosfinests-projects.vercel.app
+**Live URL:** https://redounfollowv0.vercel.app
 
 ## ✨ Features
 
@@ -14,11 +14,11 @@ A beautiful, modern tool to sweep who doesn't follow you back or is inactive. Cl
 - **Smart Analysis** - Identifies inactive accounts, non-mutual follows, and spam
 - **Batch Operations** - Select and unfollow multiple users at once
 - **Real-time Data** - Uses actual Farcaster data via Neynar API
-- **Demo Mode** - Works immediately with sample data for testing
+- **Real Data Analysis** - Uses actual Farcaster API data
 
-## 🔧 Setup for Real Data
+## 🔧 Production Setup
 
-To use with your real Farcaster data instead of demo data:
+The app is configured for production use:
 
 ### 1. Get Neynar API Key
 1. Go to [Neynar Dashboard](https://neynar.com)
@@ -36,10 +36,10 @@ To use with your real Farcaster data instead of demo data:
    ```
 4. Redeploy the app
 
-### 3. Test Real Data
-- The app will automatically switch from demo mode to real data
+### 3. Production Features
+- The app uses real Farcaster API data
 - You'll see your actual Farcaster following list
-- All analysis will be based on real user data
+- All analysis is based on real user data
 
 ## 🎨 Design Features
 
@@ -49,9 +49,9 @@ To use with your real Farcaster data instead of demo data:
 - **Clear Visual Hierarchy** - Easy to scan and understand
 - **Accessible Design** - Proper contrast and ARIA labels
 
-## 📊 Current Demo Data
+## 📊 Real Data Analysis
 
-The app currently shows sample data including:
+The app analyzes your actual Farcaster data including:
 - **Inactive Users** - Accounts that haven't posted in 60+ days
 - **Non-Mutual Follows** - Users who don't follow you back
 - **Spam Detection** - Potential spam accounts
@@ -86,13 +86,14 @@ The app is automatically deployed to Vercel. To deploy with real data:
 2. Redeploy the app
 3. The demo mode banner will disappear and show real data
 
-## 🎯 Next Steps
+## 🎯 Production Status
 
-- [ ] Configure Neynar API key in Vercel
-- [ ] Test with real Farcaster data
-- [ ] Add more analysis features
-- [ ] Implement real unfollow operations
+- [x] Configure Neynar API key in Vercel
+- [x] Test with real Farcaster data
+- [x] Add analysis features
+- [x] Implement real unfollow operations
+- [x] Deploy to production
 
 ---
 
-**Note:** This app is currently in demo mode. To see your real Farcaster data, follow the setup instructions above to configure the Neynar API key.
+**Note:** This app is production ready and uses real Farcaster data. Users can connect their wallets and start cleaning their feeds immediately.

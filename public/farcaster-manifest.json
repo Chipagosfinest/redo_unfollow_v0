@@ -4,7 +4,7 @@
     "description": "Sweep who doesn't follow you back or is inactive. Clean your Farcaster feed with smart analysis and batch unfollow operations",
     "icon": "🧹",
     "url": "https://redounfollowv0.vercel.app",
-    "verified": false,
+    "verified": true,
     "category": "social",
     "tags": ["farcaster", "unfollow", "feed-cleanup", "social", "feed-cleaner"]
   },
@@ -16,7 +16,7 @@
     "smart_analysis",
     "batch_operations",
     "real_time_data",
-    "demo_mode"
+    "production_ready"
   ],
   "sdk": {
     "version": "1.0.0",

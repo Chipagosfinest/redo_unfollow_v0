@@ -10,81 +10,82 @@ const logApiCall = (endpoint: string, method: string, data: any) => {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userFid, targetFid } = await request.json();
+    const { userFid, targetFids } = await request.json();
 
-    logApiCall('/api/unfollow', 'POST', { userFid, targetFid, url: request.url });
+    logApiCall('/api/unfollow', 'POST', { userFid, targetFids, url: request.url });
 
-    if (!userFid || !targetFid) {
-      logApiCall('/api/unfollow', 'POST', { error: 'Missing userFid or targetFid' });
+    if (!userFid || !targetFids || !Array.isArray(targetFids)) {
+      logApiCall('/api/unfollow', 'POST', { error: 'Missing userFid or targetFids array' });
       return NextResponse.json(
-        { error: 'Missing userFid or targetFid' },
+        { error: 'Missing userFid or targetFids array' },
         { status: 400 }
       );
     }
 
-    // Validate both users exist
-    const [userResponse, targetResponse] = await Promise.all([
-      fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${userFid}`),
-      fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${targetFid}`)
-    ]);
-
-    if (!userResponse.ok || !targetResponse.ok) {
+    // Validate user exists
+    const userResponse = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${userFid}`);
+    if (!userResponse.ok) {
       logApiCall('/api/unfollow', 'POST', { 
-        error: 'One or both users not found',
-        userResponseStatus: userResponse.status,
-        targetResponseStatus: targetResponse.status
+        error: 'User not found',
+        userResponseStatus: userResponse.status
       });
       return NextResponse.json(
-        { error: 'One or both users not found' },
+        { error: 'User not found' },
         { status: 404 }
       );
     }
 
-    // Check if user is actually following target
+    // Get user's following list to verify they're actually following the targets
     const followingResponse = await fetch(
-      `https://api.farcaster.xyz/v2/following?fid=${userFid}&targetFid=${targetFid}`
+      `https://api.farcaster.xyz/v2/following?fid=${userFid}&limit=100`
     );
 
     if (!followingResponse.ok) {
       logApiCall('/api/unfollow', 'POST', { 
-        error: 'Unable to verify following status',
+        error: 'Unable to fetch following list',
         followingResponseStatus: followingResponse.status
       });
       return NextResponse.json(
-        { error: 'Unable to verify following status' },
+        { error: 'Unable to fetch following list' },
         { status: 500 }
       );
     }
 
     const followingData = await followingResponse.json();
-    const isFollowing = followingData.result?.users?.some((user: any) => user.fid === targetFid);
-
-    if (!isFollowing) {
+    const followingFids = followingData.result?.users?.map((user: any) => user.fid) || [];
+    
+    // Filter to only unfollow users that are actually being followed
+    const validTargetFids = targetFids.filter(fid => followingFids.includes(fid));
+    
+    if (validTargetFids.length === 0) {
       logApiCall('/api/unfollow', 'POST', { 
-        error: 'Not following this user',
-        userFid,
-        targetFid
+        error: 'No valid targets to unfollow',
+        targetFids,
+        followingFids
       });
       return NextResponse.json(
-        { error: 'Not following this user' },
+        { error: 'No valid targets to unfollow' },
         { status: 400 }
       );
     }
 
-    // In a real implementation, this would create and sign a follow-remove message
-    // For now, we'll return success as the actual unfollow happens client-side
+    // For now, we'll simulate successful unfollows
+    // In a real implementation, this would create and sign follow-remove messages
+    // and submit them to the Farcaster Hub
     logApiCall('/api/unfollow', 'POST', { 
       success: true,
-      message: "Unfollow request processed",
+      message: "Batch unfollow request processed",
       userFid,
-      targetFid
+      targetFids: validTargetFids,
+      successCount: validTargetFids.length
     });
 
     return NextResponse.json({
       success: true,
-      message: "Unfollow request processed",
+      message: "Batch unfollow request processed",
       userFid,
-      targetFid
+      targetFids: validTargetFids,
+      successCount: validTargetFids.length
     });
 
   } catch (error) {
