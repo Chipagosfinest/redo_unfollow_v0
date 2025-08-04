@@ -76,6 +76,7 @@ export default function Home() {
   const [currentStep, setCurrentStep] = useState<'auth' | 'profile' | 'scan' | 'results'>('auth');
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Calculate pagination
   const totalPages = Math.ceil(allFollowingUsers.length / usersPerPage);
@@ -83,29 +84,44 @@ export default function Home() {
   const endIndex = startIndex + usersPerPage;
   const currentUsers = allFollowingUsers.slice(startIndex, endIndex);
 
-  // SDK Ready call for Mini App
+  // SDK Ready call for Mini App (Current Standard)
   useEffect(() => {
-    const callSdkReady = async () => {
+    const initializeSDK = async () => {
       try {
         // Check if we're in a Mini App environment
         if (typeof window !== 'undefined' && (window as any).farcaster) {
           const sdk = (window as any).farcaster;
+          
           if (sdk && sdk.actions && sdk.actions.ready) {
-            console.log('Calling SDK ready...');
+            console.log('Initializing Farcaster SDK...');
+            
+            // Wait for content to be ready
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Call SDK ready
             await sdk.actions.ready();
             console.log('SDK ready called successfully');
+            
+            // Log SDK version if available
+            if (sdk.version) {
+              console.log('Farcaster SDK version:', sdk.version);
+            }
+          } else {
+            console.log('Farcaster SDK not available in this environment');
           }
         }
+        
+        // Mark as initialized
+        setIsInitialized(true);
       } catch (error) {
-        console.error('Error calling SDK ready:', error);
+        console.error('Error initializing SDK:', error);
+        setIsInitialized(true); // Still mark as initialized even if SDK fails
       }
     };
 
-    // Call SDK ready after component mounts
-    callSdkReady();
+    // Initialize SDK after component mounts
+    initializeSDK();
   }, []);
-
-  // Force fresh deployment - SDK ready call fix
 
   const handleAuthenticated = useCallback((user: any) => {
     logToVercel('info', 'User authenticated with Neynar', { 
@@ -398,6 +414,21 @@ Try it yourself: ${window.location.origin}/embed`;
   const handleClearSelection = useCallback(() => {
     setSelectedUsers(new Set());
   }, []);
+
+  // Loading state while SDK initializes
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          </div>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Initializing...</h2>
+          <p className="text-slate-600">Setting up your Farcaster Mini App</p>
+        </div>
+      </div>
+    );
+  }
 
   // Authentication Screen
   if (currentStep === 'auth') {

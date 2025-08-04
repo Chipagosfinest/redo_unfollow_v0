@@ -1,10 +1,12 @@
 {
   "app": {
-    "name": "Unfollow App",
-    "description": "Advanced Farcaster unfollow tool with smart analysis and batch operations",
-    "icon": "https://redounfollowv0.vercel.app/icon.svg",
+    "name": "Unfollow Tool",
+    "description": "Clean your Farcaster feed with smart analysis and batch unfollow operations",
+    "icon": "https://redounfollowv0.vercel.app/api/icon",
     "url": "https://redounfollowv0.vercel.app",
-    "verified": false
+    "verified": false,
+    "category": "social",
+    "tags": ["farcaster", "unfollow", "feed-cleanup", "social"]
   },
   "permissions": [
     "farcaster_user",
@@ -13,6 +15,16 @@
   "features": [
     "smart_analysis",
     "batch_operations",
-    "real_time_data"
-  ]
+    "real_time_data",
+    "demo_mode"
+  ],
+  "sdk": {
+    "version": "1.0.0",
+    "ready_call": true
+  },
+  "metadata": {
+    "author": "alec.eth",
+    "version": "1.0.0",
+    "last_updated": "2025-08-04"
+  }
 } 
