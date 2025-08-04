@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Users, UserMinus, Activity, TrendingUp, Search, Filter, Share2, Crown, Sparkles, Rocket, X, CheckCircle, AlertCircle, Clock, UserCheck, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import NeynarAuth from "@/components/NeynarAuth";
+import FarcasterConnect from "@/components/FarcasterConnect";
 
 // Fix SVG rendering issues by providing proper size props
 const IconWrapper = ({ children, size = 16 }: { children: React.ReactNode; size?: number }) => (
@@ -432,7 +432,57 @@ Try it yourself: ${window.location.origin}/embed`;
 
   // Authentication Screen
   if (currentStep === 'auth') {
-    return <NeynarAuth onAuthenticated={handleAuthenticated} onDisconnect={handleDisconnect} />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto p-6">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
+              <Sparkles className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-4">Feed Cleaner</h1>
+            <p className="text-purple-200">Connect your Farcaster wallet to get started</p>
+          </div>
+          
+          <FarcasterConnect 
+            onAuth={(fid) => {
+              // Get user data from Farcaster API
+              fetch(`/api/neynar/user?fid=${fid}`)
+                .then(response => response.json())
+                .then(data => {
+                  if (data.users && data.users[0]) {
+                    handleAuthenticated(data.users[0]);
+                  } else {
+                    // Fallback user data
+                    handleAuthenticated({
+                      fid,
+                      username: 'user',
+                      display_name: 'Farcaster User',
+                      displayName: 'Farcaster User',
+                      follower_count: 0,
+                      following_count: 0
+                    });
+                  }
+                })
+                .catch(error => {
+                  console.error('Error fetching user data:', error);
+                  // Fallback user data
+                  handleAuthenticated({
+                    fid,
+                    username: 'user',
+                    display_name: 'Farcaster User',
+                    displayName: 'Farcaster User',
+                    follower_count: 0,
+                    following_count: 0
+                  });
+                });
+            }}
+            onDisconnect={handleDisconnect}
+            isAuthenticated={isAuthenticated}
+            userFid={userFid}
+          />
+        </div>
+      </div>
+    );
   }
 
 
