@@ -23,18 +23,30 @@ export default function FarcasterConnect({
   const [isConnecting, setIsConnecting] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
 
-  // Get Farcaster Mini App user using proper SDK methods
+  // Get Farcaster native wallet user (Privy-based)
   const getFarcasterUser = useCallback(async () => {
     try {
       // Initialize SDK first
       await sdk.actions.ready();
       
-      // Use global Farcaster object for user data (current SDK approach)
+      // Check for native Farcaster environment with Privy wallet
       if (typeof window !== 'undefined' && 'farcaster' in window) {
         // @ts-ignore - Farcaster global object
         const farcaster = (window as any).farcaster;
+        
+        // Check if we're in native Farcaster environment
         if (farcaster?.user?.fid) {
           return farcaster.user;
+        }
+        
+        // Check for Privy wallet integration
+        if (farcaster?.privy?.user) {
+          return farcaster.privy.user;
+        }
+        
+        // Check for WalletConnect integration
+        if (farcaster?.walletConnect?.user) {
+          return farcaster.walletConnect.user;
         }
       }
       
@@ -48,7 +60,7 @@ export default function FarcasterConnect({
   const handleFarcasterAuth = useCallback(async (fid: number) => {
     setIsConnecting(true);
     try {
-      // Get user using proper Mini App SDK
+      // Get user using native Farcaster wallet (Privy-based)
       const user = await getFarcasterUser();
       
       if (user) {
@@ -85,7 +97,7 @@ export default function FarcasterConnect({
     // Auto-connect when in Farcaster native environment
     const initializeAuth = async () => {
       try {
-        // Get user using proper Mini App SDK
+        // Get user using native Farcaster wallet (Privy-based)
         const user = await getFarcasterUser();
         
         if (user?.fid && !isAuthenticated) {
@@ -147,7 +159,7 @@ export default function FarcasterConnect({
     <Button
       onClick={async () => {
         try {
-          // Get user using proper Mini App SDK
+          // Get user using native Farcaster wallet (Privy-based)
           const user = await getFarcasterUser();
           
           if (user?.fid) {
