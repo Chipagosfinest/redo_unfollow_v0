@@ -1,6 +1,6 @@
 # Farcaster Unfollow Tool
 
-A beautiful, modern tool to clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users.
+A beautiful, modern tool to sweep who doesn't follow you back or is inactive. Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users.
 
 ## 🚀 Live Demo
 

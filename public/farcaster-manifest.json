@@ -1,12 +1,12 @@
 {
   "app": {
-    "name": "Unfollow Tool",
-    "description": "Clean your Farcaster feed with smart analysis and batch unfollow operations",
-    "icon": "https://redounfollowv0.vercel.app/icon.svg",
+    "name": "Feed Cleaner",
+    "description": "Sweep who doesn't follow you back or is inactive. Clean your Farcaster feed with smart analysis and batch unfollow operations",
+    "icon": "🧹",
     "url": "https://redounfollowv0.vercel.app",
     "verified": false,
     "category": "social",
-    "tags": ["farcaster", "unfollow", "feed-cleanup", "social"]
+    "tags": ["farcaster", "unfollow", "feed-cleanup", "social", "feed-cleaner"]
   },
   "permissions": [
     "farcaster_user",

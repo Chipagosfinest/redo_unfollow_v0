@@ -1,10 +1,10 @@
 {
-  "name": "Unfollow Tool",
-  "description": "Clean up your Farcaster following list by identifying inactive users and mutual follows",
-  "icon": "https://redounfollowv0.vercel.app/icon.svg",
+  "name": "Feed Cleaner",
+  "description": "Sweep who doesn't follow you back or is inactive. Clean up your Farcaster following list by identifying inactive users and mutual follows",
+  "icon": "🧹",
   "url": "https://redounfollowv0.vercel.app",
-  "thumbnail": "https://redounfollowv0.vercel.app/thumbnail.png",
-  "splash": "https://redounfollowv0.vercel.app/splash.png",
+  "thumbnail": "🧹",
+  "splash": "🧹",
   "permissions": [
     "user:read",
     "user:write",

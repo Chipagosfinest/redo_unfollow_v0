@@ -131,7 +131,7 @@ export default function NeynarAuth({ onAuthenticated, onDisconnect }: NeynarAuth
             Farcaster Cleanup
           </h1>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users.
+            Sweep who doesn't follow you back or is inactive. Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users.
           </p>
         </div>
 

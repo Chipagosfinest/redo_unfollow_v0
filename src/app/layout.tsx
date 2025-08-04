@@ -8,10 +8,10 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Farcaster Unfollow Tool",
-  description: "Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users.",
+  title: "Feed Cleaner - Farcaster Unfollow Tool",
+  description: "Sweep who doesn't follow you back or is inactive. Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users.",
   icons: {
-    icon: "/icon.svg",
+    icon: "🧹",
   },
 };
 
@@ -28,21 +28,21 @@ export default function RootLayout({
         <meta name="description" content="Sweep who doesn't follow you back or is inactive. Clean up your Farcaster feed with our intelligent unfollow tool" />
         
         {/* Farcaster Mini App Meta Tags */}
-        <meta name="farcaster:app" content="unfollow-tool" />
+        <meta name="farcaster:app" content="feed-cleaner" />
         <meta name="farcaster:frame" content="vNext" />
         
         {/* Open Graph */}
-        <meta property="og:title" content="Farcaster Unfollow Tool" />
+        <meta property="og:title" content="Feed Cleaner - Farcaster Unfollow Tool" />
         <meta property="og:description" content="Sweep who doesn't follow you back or is inactive. Clean up your Farcaster feed by identifying and unfollowing inactive accounts" />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://redounfollowv0-a86wlidhi-chipagosfinests-projects.vercel.app" />
-        <meta property="og:image" content="/thumbnail.png" />
+        <meta property="og:url" content="https://redounfollowv0.vercel.app" />
+        <meta property="og:image" content="🧹" />
         
         {/* Twitter Card */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Farcaster Unfollow Tool" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Feed Cleaner - Farcaster Unfollow Tool" />
         <meta name="twitter:description" content="Sweep who doesn't follow you back or is inactive. Clean up your Farcaster feed with intelligent unfollow recommendations" />
-        <meta name="twitter:image" content="/thumbnail.png" />
+        <meta name="twitter:image" content="🧹" />
       </head>
       <body className={`${inter.className} antialiased`}>
         <ThemeProvider defaultTheme="system" storageKey="farcaster-ui-theme">

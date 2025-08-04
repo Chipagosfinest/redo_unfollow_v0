@@ -33,7 +33,7 @@ export default function EmbedPage() {
               <Users className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-lg font-semibold text-gray-900 mb-2">
-              Clean Up Your Farcaster Following
+              Sweep Who Doesn't Follow You Back
             </h2>
             <p className="text-sm text-gray-600 mb-4">
               Automatically find and unfollow inactive accounts, spam, and users who don't follow back

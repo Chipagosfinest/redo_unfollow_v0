@@ -4,12 +4,12 @@ import { join } from 'path';
 
 export async function GET() {
   try {
-    const iconPath = join(process.cwd(), 'public', 'icon.svg');
-    const iconContent = readFileSync(iconPath, 'utf-8');
+    // Return emoji icon instead of SVG file
+    const emojiIcon = '🧹';
     
-    return new NextResponse(iconContent, {
+    return new NextResponse(emojiIcon, {
       headers: {
-        'Content-Type': 'image/svg+xml',
+        'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'public, max-age=31536000, immutable',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET',
@@ -18,6 +18,6 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error serving icon:', error);
-    return new NextResponse('Icon not found', { status: 404 });
+    return new NextResponse('🧹', { status: 200 });
   }
 } 
