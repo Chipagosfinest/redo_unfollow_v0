@@ -660,10 +660,92 @@ Try it yourself: ${window.location.origin}/embed`;
           {/* Debug Info (only in development) */}
           {process.env.NODE_ENV === 'development' && (
             <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-              <div className="text-sm text-gray-600 space-y-1">
+              <div className="text-sm text-gray-600 space-y-1 mb-4">
                 <div>Environment: {typeof window !== 'undefined' ? (window.self !== window.top ? 'Farcaster Mini App' : 'Web Browser') : 'Server'}</div>
                 <div>Farcaster Object: {typeof window !== 'undefined' && 'farcaster' in window ? 'Available' : 'Not Available'}</div>
                 <div>User Authenticated: {typeof window !== 'undefined' && (window as any).farcaster?.user?.fid ? 'Yes' : 'No'}</div>
+              </div>
+              
+              {/* Test Buttons */}
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-gray-700 mb-2">Test Neynar API:</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/test-neynar?type=user');
+                        const data = await response.json();
+                        console.log('User data test:', data);
+                        toast.success('Check console for user data');
+                      } catch (error) {
+                        console.error('Test failed:', error);
+                        toast.error('Test failed');
+                      }
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    Test Users
+                  </Button>
+                  
+                  <Button 
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/test-neynar?type=following');
+                        const data = await response.json();
+                        console.log('Following data test:', data);
+                        toast.success('Check console for following data');
+                      } catch (error) {
+                        console.error('Test failed:', error);
+                        toast.error('Test failed');
+                      }
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    Test Following
+                  </Button>
+                  
+                  <Button 
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/test-neynar?type=casts');
+                        const data = await response.json();
+                        console.log('Casts data test:', data);
+                        toast.success('Check console for casts data');
+                      } catch (error) {
+                        console.error('Test failed:', error);
+                        toast.error('Test failed');
+                      }
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    Test Casts
+                  </Button>
+                  
+                  <Button 
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('/api/test-neynar?type=mutual');
+                        const data = await response.json();
+                        console.log('Mutual follow test:', data);
+                        toast.success('Check console for mutual data');
+                      } catch (error) {
+                        console.error('Test failed:', error);
+                        toast.error('Test failed');
+                      }
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                  >
+                    Test Mutual
+                  </Button>
+                </div>
               </div>
             </div>
           )}
