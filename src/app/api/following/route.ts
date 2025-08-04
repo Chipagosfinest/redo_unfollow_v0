@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Logging utility for API endpoints
+const logApiCall = (endpoint: string, method: string, data: any) => {
+  console.log(`[API ${method.toUpperCase()}] ${endpoint}`, {
+    timestamp: new Date().toISOString(),
+    ...data
+  });
+};
+
 interface FarcasterUser {
   fid: number;
   username: string;
@@ -16,7 +24,10 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "0");
     const limit = parseInt(searchParams.get("limit") || "10");
 
+    logApiCall('/api/following', 'GET', { fid, page, limit, url: request.url });
+
     if (!fid) {
+      logApiCall('/api/following', 'GET', { error: 'Missing fid parameter' });
       return NextResponse.json(
         { error: "Query parameter 'fid' is required" },
         { status: 400 }
@@ -39,7 +50,12 @@ export async function GET(request: NextRequest) {
       const response = await fetch(url);
 
       if (!response.ok) {
-        console.error("Farcaster API error:", response.status, response.statusText);
+        logApiCall('/api/following', 'GET', { 
+          error: 'Farcaster API error', 
+          status: response.status, 
+          statusText: response.statusText,
+          url 
+        });
         return NextResponse.json(
           { error: "Failed to fetch following users" },
           { status: 500 }
@@ -80,6 +96,14 @@ export async function GET(request: NextRequest) {
     const totalFollowing = allUsers.length;
     const totalPages = Math.ceil(totalFollowing / limit);
 
+    logApiCall('/api/following', 'GET', { 
+      success: true, 
+      totalFollowing, 
+      totalPages, 
+      currentPage: page,
+      hasMore: currentCursor ? true : false 
+    });
+
     return NextResponse.json({
       success: true,
       following,
@@ -89,7 +113,10 @@ export async function GET(request: NextRequest) {
       hasMore: currentCursor ? true : false
     });
   } catch (error) {
-    console.error("Following error:", error);
+    logApiCall('/api/following', 'GET', { 
+      error: 'Following API error', 
+      errorMessage: error instanceof Error ? error.message : String(error) 
+    });
     return NextResponse.json(
       { error: "Failed to fetch following users" },
       { status: 500 }

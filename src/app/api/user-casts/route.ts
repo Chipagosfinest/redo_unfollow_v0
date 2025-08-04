@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Logging utility for API endpoints
+const logApiCall = (endpoint: string, method: string, data: any) => {
+  console.log(`[API ${method.toUpperCase()}] ${endpoint}`, {
+    timestamp: new Date().toISOString(),
+    ...data
+  });
+};
+
 interface FarcasterCast {
   hash: string;
   timestamp: number;
@@ -15,7 +23,10 @@ export async function GET(request: NextRequest) {
     const fid = searchParams.get("fid");
     const limit = searchParams.get("limit") || "1";
 
+    logApiCall('/api/user-casts', 'GET', { fid, limit, url: request.url });
+
     if (!fid) {
+      logApiCall('/api/user-casts', 'GET', { error: 'Missing fid parameter' });
       return NextResponse.json(
         { error: "Query parameter 'fid' is required" },
         { status: 400 }
@@ -26,7 +37,11 @@ export async function GET(request: NextRequest) {
     const response = await fetch(`https://api.farcaster.xyz/v2/casts?fid=${fid}&limit=${limit}`);
 
     if (!response.ok) {
-      console.error("Farcaster API error:", response.status, response.statusText);
+      logApiCall('/api/user-casts', 'GET', { 
+        error: 'Farcaster API error', 
+        status: response.status, 
+        statusText: response.statusText 
+      });
       return NextResponse.json(
         { error: "Failed to fetch user casts" },
         { status: 500 }
@@ -52,13 +67,21 @@ export async function GET(request: NextRequest) {
       mentionsPositions: cast.mentionsPositions || [],
     }));
 
+    logApiCall('/api/user-casts', 'GET', { 
+      success: true, 
+      count: casts.length 
+    });
+
     return NextResponse.json({
       success: true,
       casts,
       count: casts.length
     });
   } catch (error) {
-    console.error("User casts error:", error);
+    logApiCall('/api/user-casts', 'GET', { 
+      error: 'User casts error', 
+      errorMessage: error instanceof Error ? error.message : String(error) 
+    });
     return NextResponse.json(
       { error: "Failed to fetch user casts" },
       { status: 500 }
