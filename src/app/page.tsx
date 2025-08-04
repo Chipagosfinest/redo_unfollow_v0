@@ -58,29 +58,42 @@ export default function Home() {
   // Auto-detect user from Farcaster context
   useEffect(() => {
     const checkFarcasterAuth = async () => {
+      console.log("🔍 Checking Farcaster authentication...");
+      
       if (typeof window !== 'undefined' && 'farcaster' in window) {
         // @ts-ignore - Farcaster global object
         const farcaster = (window as any).farcaster;
+        console.log("🌐 Found Farcaster object:", farcaster);
         
         // If user is already authenticated, proceed
         if (farcaster?.user?.fid) {
+          console.log("✅ User already authenticated:", farcaster.user);
           handleAuth();
         } else {
+          console.log("🔑 No user found, trying SDK initialization...");
           // Try to initialize SDK and get user
           try {
+            console.log("📞 Calling sdk.actions.ready()...");
             await sdk.actions.ready();
+            console.log("✅ SDK ready called successfully");
             
             // Wait for SDK to initialize
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 1000));
             
             // Check again for user
+            console.log("👤 Checking for user after SDK ready...");
             if (farcaster?.user?.fid) {
+              console.log("✅ User found after SDK ready:", farcaster.user);
               handleAuth();
+            } else {
+              console.log("❌ Still no user after SDK ready");
             }
           } catch (error) {
-            console.log("Farcaster SDK not ready yet:", error);
+            console.log("⚠️ Farcaster SDK not ready yet:", error);
           }
         }
+      } else {
+        console.log("❌ No Farcaster object found in window");
       }
     };
 
@@ -88,68 +101,87 @@ export default function Home() {
     checkFarcasterAuth();
     
     // Also check after a delay to handle slow SDK initialization
-    const timeoutId = setTimeout(checkFarcasterAuth, 2000);
+    const timeoutId = setTimeout(checkFarcasterAuth, 3000);
     
     return () => clearTimeout(timeoutId);
   }, []);
 
   const handleAuth = useCallback(async () => {
     try {
+      setIsLoading(true);
+      console.log("🔐 Starting authentication...");
+      
       // Check if we're in a Farcaster Mini App environment
       const farcaster = (window as any).farcaster;
+      console.log("🌐 Farcaster object:", farcaster);
       
       if (!farcaster) {
+        console.log("❌ No Farcaster object found");
         toast.error("Please open this app in Farcaster");
         return;
       }
 
       // Try to get user from Farcaster SDK
       let user = farcaster.user;
+      console.log("👤 Initial user object:", user);
       
       // If no user, try to authenticate
       if (!user?.fid) {
+        console.log("🔑 No user found, attempting authentication...");
         try {
           // Request authentication from Farcaster
+          console.log("📞 Calling sdk.actions.ready()...");
           await sdk.actions.ready();
+          console.log("✅ SDK ready called successfully");
           
           // Wait a bit for the SDK to initialize
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          console.log("⏳ Waiting for SDK initialization...");
+          await new Promise(resolve => setTimeout(resolve, 2000));
           
           // Try to get user again
           user = farcaster.user;
+          console.log("👤 User after SDK ready:", user);
           
           if (!user?.fid) {
+            console.log("❌ Still no user after SDK ready");
             toast.error("Please connect your Farcaster wallet");
             return;
           }
         } catch (error) {
-          console.error("Error during Farcaster authentication:", error);
+          console.error("❌ Error during Farcaster authentication:", error);
           toast.error("Failed to connect to Farcaster");
           return;
         }
       }
       
+      console.log("✅ User authenticated:", user);
       setUserFid(user.fid);
       setIsAuthenticated(true);
       setCurrentStep('profile');
       
       // Load user profile
       try {
+        console.log("📥 Loading user profile for FID:", user.fid);
         const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${user.fid}`);
+        console.log("📊 Profile response status:", response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log("📋 Profile data:", data);
           setUserProfile(data.result?.user);
         } else {
-          console.error("Failed to load user profile:", response.status);
+          console.error("❌ Failed to load user profile:", response.status);
           toast.error("Failed to load user profile");
         }
       } catch (error) {
-        console.error("Error loading user profile:", error);
+        console.error("❌ Error loading user profile:", error);
         toast.error("Failed to load user profile");
       }
     } catch (error) {
-      console.error("Error during authentication:", error);
+      console.error("❌ Error during authentication:", error);
       toast.error("Failed to authenticate with Farcaster");
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -420,6 +452,18 @@ Try it yourself: ${window.location.origin}/embed`;
               </>
             )}
           </Button>
+          
+          {/* Debug Info */}
+          <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+              Debug Info (check console for details):
+            </p>
+            <div className="text-xs text-gray-500 dark:text-gray-500">
+              <div>Farcaster Object: {typeof window !== 'undefined' && (window as any).farcaster ? '✅ Found' : '❌ Not Found'}</div>
+              <div>User: {typeof window !== 'undefined' && (window as any).farcaster?.user?.fid ? `✅ FID: ${(window as any).farcaster.user.fid}` : '❌ No User'}</div>
+              <div>SDK Ready: {typeof sdk?.actions?.ready === 'function' ? '✅ Available' : '❌ Not Available'}</div>
+            </div>
+          </div>
         </div>
       </div>
     );
