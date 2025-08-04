@@ -604,46 +604,40 @@ Try it yourself: ${window.location.origin}/embed`;
               Welcome to Unfollow App
             </h1>
             <p className="text-lg text-gray-600 leading-relaxed max-w-md mx-auto">
-              Sign in with your Farcaster wallet to analyze your follows and identify who to unfollow
+              The most advanced Farcaster unfollow tool with real API integration, smart analysis, and batch operations
             </p>
           </div>
 
           {/* Feature Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <IconWrapper size={16}>
-                    <Search size={16} className="text-blue-600" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <IconWrapper size={20}>
+                    <Search size={20} className="text-blue-600" />
                   </IconWrapper>
                 </div>
-                <span className="font-semibold text-gray-900">Smart Analysis</span>
+                <span className="font-bold text-gray-900 text-lg">Smart Analysis</span>
               </div>
-              <p className="text-sm text-gray-600">Find inactive accounts and spam</p>
+              <p className="text-gray-600 mb-3">AI-powered detection of inactive accounts, spam, and non-mutual follows</p>
+              <div className="text-xs text-blue-600 font-medium">• 60+ day inactivity detection</div>
+              <div className="text-xs text-blue-600 font-medium">• Mutual follow analysis</div>
+              <div className="text-xs text-blue-600 font-medium">• Spam account identification</div>
             </div>
             
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                  <IconWrapper size={16}>
-                    <UserMinus size={16} className="text-green-600" />
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <IconWrapper size={20}>
+                    <UserMinus size={20} className="text-green-600" />
                   </IconWrapper>
                 </div>
-                <span className="font-semibold text-gray-900">Batch Unfollow</span>
+                <span className="font-bold text-gray-900 text-lg">Batch Operations</span>
               </div>
-              <p className="text-sm text-gray-600">Unfollow multiple users at once</p>
-            </div>
-            
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <IconWrapper size={16}>
-                    <TrendingUp size={16} className="text-purple-600" />
-                  </IconWrapper>
-                </div>
-                <span className="font-semibold text-gray-900">Clean Feed</span>
-              </div>
-              <p className="text-sm text-gray-600">Improve your Farcaster experience</p>
+              <p className="text-gray-600 mb-3">Unfollow multiple users simultaneously with real Farcaster integration</p>
+              <div className="text-xs text-green-600 font-medium">• Real Farcaster API integration</div>
+              <div className="text-xs text-green-600 font-medium">• Batch unfollow operations</div>
+              <div className="text-xs text-green-600 font-medium">• Native wallet support</div>
             </div>
           </div>
 
@@ -926,7 +920,8 @@ Try it yourself: ${window.location.origin}/embed`;
                   <div className="font-bold text-gray-900 text-2xl mb-2">
                     {scanResults.totalFollows}
                   </div>
-                  <div className="text-sm text-gray-600">Total Follows</div>
+                  <div className="text-sm text-gray-600">Total Follows Analyzed</div>
+                  <div className="text-xs text-gray-500 mt-1">Real Farcaster data</div>
                 </CardContent>
               </Card>
               
@@ -936,6 +931,7 @@ Try it yourself: ${window.location.origin}/embed`;
                     {scanResults.inactive60Days}
                   </div>
                   <div className="text-sm text-orange-600">60+ Days Inactive</div>
+                  <div className="text-xs text-orange-500 mt-1">AI detected</div>
                 </CardContent>
               </Card>
               
@@ -945,6 +941,7 @@ Try it yourself: ${window.location.origin}/embed`;
                     {scanResults.notFollowingBack}
                   </div>
                   <div className="text-sm text-red-600">Not Following Back</div>
+                  <div className="text-xs text-red-500 mt-1">Mutual analysis</div>
                 </CardContent>
               </Card>
               
@@ -954,8 +951,25 @@ Try it yourself: ${window.location.origin}/embed`;
                     {scanResults.spamAccounts}
                   </div>
                   <div className="text-sm text-yellow-600">Spam Accounts</div>
+                  <div className="text-xs text-yellow-500 mt-1">Pattern detected</div>
                 </CardContent>
               </Card>
+            </div>
+
+            {/* Technical Capabilities */}
+            <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-6">
+              <div className="flex items-center space-x-2 mb-2">
+                <IconWrapper size={16}>
+                  <span className="text-blue-600 text-sm">⚡</span>
+                </IconWrapper>
+                <span className="text-sm font-semibold text-blue-700">Powered by Real Farcaster Integration</span>
+              </div>
+              <div className="text-xs text-blue-600 space-y-1">
+                <div>• Native Farcaster mini app detection</div>
+                <div>• Real-time user data from Neynar API</div>
+                <div>• Batch operations with Farcaster protocol</div>
+                <div>• Smart inactivity and spam detection</div>
+              </div>
             </div>
 
             {/* Action Buttons */}
