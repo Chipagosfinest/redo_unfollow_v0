@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Users, UserMinus, Activity, TrendingUp, Search, Filter, Share2, Crown, Sparkles, Rocket, X, CheckCircle, AlertCircle, Clock, UserCheck, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import NeynarAuth from "@/components/NeynarAuth";
+import ProfileUpload from "@/components/ProfileUpload";
 
 // Fix SVG rendering issues by providing proper size props
 const IconWrapper = ({ children, size = 16 }: { children: React.ReactNode; size?: number }) => (
@@ -73,10 +74,12 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
-  const [currentStep, setCurrentStep] = useState<'auth' | 'profile' | 'scan' | 'results'>('auth');
+  const [currentStep, setCurrentStep] = useState<'auth' | 'profile' | 'upload' | 'scan' | 'results'>('auth');
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [customPfp, setCustomPfp] = useState('');
+  const [customBio, setCustomBio] = useState('');
 
   // Calculate pagination
   const totalPages = Math.ceil(allFollowingUsers.length / usersPerPage);
@@ -133,6 +136,12 @@ export default function Home() {
     setUserFid(user.fid);
     setUserProfile(user);
     setIsAuthenticated(true);
+    setCurrentStep('upload');
+  }, []);
+
+  const handleProfileUpdate = useCallback((profile: { pfp: string; bio: string }) => {
+    setCustomPfp(profile.pfp);
+    setCustomBio(profile.bio);
     setCurrentStep('profile');
   }, []);
 
@@ -418,13 +427,13 @@ Try it yourself: ${window.location.origin}/embed`;
   // Loading state while SDK initializes
   if (!isInitialized) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-8 animate-pulse shadow-2xl">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
           </div>
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Initializing...</h2>
-          <p className="text-slate-600">Setting up your Farcaster Mini App</p>
+          <h2 className="text-2xl font-bold text-white mb-3">Cleaning Up...</h2>
+          <p className="text-purple-200 text-lg">Setting up your Farcaster feed cleaner</p>
         </div>
       </div>
     );
@@ -435,28 +444,41 @@ Try it yourself: ${window.location.origin}/embed`;
     return <NeynarAuth onAuthenticated={handleAuthenticated} onDisconnect={handleDisconnect} />;
   }
 
+  // Profile Upload Screen
+  if (currentStep === 'upload') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <ProfileUpload 
+          onProfileUpdate={handleProfileUpdate}
+          currentPfp={userProfile?.pfp_url}
+          currentBio={userProfile?.bio?.text}
+        />
+      </div>
+    );
+  }
+
   // Profile Screen
   if (currentStep === 'profile') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         {/* Header */}
-        <div className="bg-white border-b border-slate-200">
+        <div className="bg-white/10 backdrop-blur-sm border-b border-purple-200/20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center space-x-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-slate-900">Unfollow Tool</h1>
-                  <p className="text-sm text-slate-600">Clean your Farcaster feed</p>
+                  <h1 className="text-xl font-bold text-white">Feed Cleaner</h1>
+                  <p className="text-sm text-purple-200">Clean your Farcaster feed</p>
                 </div>
               </div>
               <Button 
                 onClick={handleDisconnect}
                 variant="ghost"
                 size="sm"
-                className="text-slate-600 hover:text-slate-900"
+                className="text-purple-200 hover:text-white hover:bg-purple-600/20"
               >
                 <X className="w-4 h-4 mr-2" />
                 Sign Out
@@ -468,28 +490,28 @@ Try it yourself: ${window.location.origin}/embed`;
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Welcome Section */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full mb-6">
-              <CheckCircle className="w-8 h-8 text-white" />
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl mb-6 shadow-2xl">
+              <CheckCircle className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-slate-900 mb-4">
+            <h1 className="text-4xl font-bold text-white mb-4">
               Welcome back, {userProfile?.display_name || userProfile?.displayName || 'Farcaster User'}!
             </h1>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+            <p className="text-xl text-purple-200 max-w-2xl mx-auto">
               Let's analyze your Farcaster follows and identify accounts that might be cluttering your feed.
             </p>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <Card className="bg-white border-slate-200 shadow-lg">
+            <Card className="bg-white/10 backdrop-blur-sm border-purple-200/20 shadow-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Users className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-purple-100/20 rounded-lg flex items-center justify-center">
+                    <Users className="w-5 h-5 text-purple-300" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-slate-600">Following</p>
-                    <p className="text-2xl font-bold text-slate-900">
+                    <p className="text-sm font-medium text-purple-200">Following</p>
+                    <p className="text-2xl font-bold text-white">
                       {userProfile?.following_count || userProfile?.followingCount || '0'}
                     </p>
                   </div>
@@ -497,15 +519,15 @@ Try it yourself: ${window.location.origin}/embed`;
               </CardContent>
             </Card>
 
-            <Card className="bg-white border-slate-200 shadow-lg">
+            <Card className="bg-white/10 backdrop-blur-sm border-purple-200/20 shadow-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <UserCheck className="w-5 h-5 text-green-600" />
+                  <div className="w-10 h-10 bg-pink-100/20 rounded-lg flex items-center justify-center">
+                    <UserCheck className="w-5 h-5 text-pink-300" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-slate-600">Followers</p>
-                    <p className="text-2xl font-bold text-slate-900">
+                    <p className="text-sm font-medium text-purple-200">Followers</p>
+                    <p className="text-2xl font-bold text-white">
                       {userProfile?.follower_count || userProfile?.followerCount || '0'}
                     </p>
                   </div>
@@ -513,15 +535,15 @@ Try it yourself: ${window.location.origin}/embed`;
               </CardContent>
             </Card>
 
-            <Card className="bg-white border-slate-200 shadow-lg">
+            <Card className="bg-white/10 backdrop-blur-sm border-purple-200/20 shadow-2xl">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Activity className="w-5 h-5 text-purple-600" />
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                    <Activity className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-slate-600">Ready to Scan</p>
-                    <p className="text-2xl font-bold text-slate-900">Analyze</p>
+                    <p className="text-sm font-medium text-purple-200">Ready to Scan</p>
+                    <p className="text-2xl font-bold text-white">Analyze</p>
                   </div>
                 </div>
               </CardContent>
@@ -530,12 +552,12 @@ Try it yourself: ${window.location.origin}/embed`;
 
           {/* Action Section */}
           <div className="max-w-2xl mx-auto">
-            <Card className="bg-white border-slate-200 shadow-xl">
+            <Card className="bg-white/10 backdrop-blur-sm border-purple-200/20 shadow-2xl">
               <CardHeader className="text-center pb-4">
-                <CardTitle className="text-2xl font-bold text-slate-900">
+                <CardTitle className="text-2xl font-bold text-white">
                   Start Your Analysis
                 </CardTitle>
-                <p className="text-slate-600 mt-2">
+                <p className="text-purple-200 mt-2">
                   We'll scan your follows to find inactive accounts and non-mutual follows
                 </p>
               </CardHeader>
@@ -543,30 +565,30 @@ Try it yourself: ${window.location.origin}/embed`;
                 {/* Features List */}
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span className="text-slate-700">Identify accounts inactive for 60+ days</span>
+                    <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                    <span className="text-purple-100">Identify accounts inactive for 60+ days</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    <span className="text-slate-700">Find users who don't follow you back</span>
+                    <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                    <span className="text-purple-100">Find users who don't follow you back</span>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                    <span className="text-slate-700">Detect potential spam accounts</span>
+                    <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                    <span className="text-purple-100">Detect potential spam accounts</span>
                   </div>
                 </div>
 
                 {/* Start Button */}
                 <Button 
                   onClick={handleStartScan}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white h-14 text-lg font-semibold rounded-xl shadow-lg transform transition-all duration-200 hover:scale-105"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white h-14 text-lg font-semibold rounded-xl shadow-2xl transform transition-all duration-200 hover:scale-105"
                 >
                   <Activity className="w-5 h-5 mr-3" />
                   Start Analysis
                 </Button>
 
                 <div className="text-center">
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-purple-300">
                     Powered by Neynar • Secure & Private
                   </p>
                 </div>
