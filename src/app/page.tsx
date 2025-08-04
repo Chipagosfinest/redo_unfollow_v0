@@ -105,6 +105,8 @@ export default function Home() {
     callSdkReady();
   }, []);
 
+  // Force fresh deployment - SDK ready call fix
+
   const handleAuthenticated = useCallback((user: any) => {
     logToVercel('info', 'User authenticated with Neynar', { 
       fid: user.fid,
@@ -589,7 +591,7 @@ Try it yourself: ${window.location.origin}/embed`;
                     This is sample data for testing. The Neynar v2 API currently doesn't support fetching following lists, so we're using demo data.
                   </p>
                   <div className="mt-2 text-xs text-yellow-600">
-                    <strong>API Limitation:</strong> Neynar v2 API doesn't have a following endpoint yet
+                    <strong>API Limitation:</strong> Neynar v2 API doesn't have a following endpoint yet. Your API key is configured correctly!
                   </div>
                 </div>
               </div>
