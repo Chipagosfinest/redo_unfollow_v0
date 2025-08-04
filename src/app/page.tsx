@@ -66,20 +66,32 @@ export default function Home() {
     }
   }, []);
 
-  const handleAuth = useCallback(async (fid: number) => {
-    setUserFid(fid);
-    setIsAuthenticated(true);
-    setCurrentStep('profile');
-    
-    // Load user profile
+  const handleAuth = useCallback(async () => {
     try {
-      const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${fid}`);
-      if (response.ok) {
-        const data = await response.json();
-        setUserProfile(data.result?.user);
+      // Get user from Farcaster SDK
+      const user = window.farcaster?.user;
+      if (!user?.fid) {
+        toast.error("Please connect your Farcaster wallet first");
+        return;
+      }
+      
+      setUserFid(user.fid);
+      setIsAuthenticated(true);
+      setCurrentStep('profile');
+      
+      // Load user profile
+      try {
+        const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${user.fid}`);
+        if (response.ok) {
+          const data = await response.json();
+          setUserProfile(data.result?.user);
+        }
+      } catch (error) {
+        console.error("Error loading user profile:", error);
       }
     } catch (error) {
-      console.error("Error loading user profile:", error);
+      console.error("Error during authentication:", error);
+      toast.error("Failed to authenticate with Farcaster");
     }
   }, []);
 
@@ -146,9 +158,27 @@ export default function Home() {
       const mutualResponse = await fetch(`/api/check-mutual?userFid=${userFid}&targetFid=${user.fid}`);
       const mutualData = mutualResponse.ok ? await mutualResponse.json() : { isMutualFollow: false };
       
-      // Check last cast (simplified - in real app you'd fetch user casts)
-      const lastCasted = Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000; // Random date within 90 days
-      const isInactive = lastCasted > 60 * 24 * 60 * 60 * 1000; // 60 days
+      // Check last cast by fetching user's recent casts
+      let lastCasted = 0;
+      let isInactive = false;
+      
+      try {
+        const castsResponse = await fetch(`/api/user-casts?fid=${user.fid}&limit=1`);
+        if (castsResponse.ok) {
+          const castsData = await castsResponse.json();
+          if (castsData.casts && castsData.casts.length > 0) {
+            lastCasted = new Date(castsData.casts[0].timestamp).getTime();
+            isInactive = Date.now() - lastCasted > 60 * 24 * 60 * 60 * 1000; // 60 days
+          } else {
+            // No casts found, consider inactive
+            isInactive = true;
+          }
+        }
+      } catch (error) {
+        console.error(`Error fetching casts for user ${user.fid}:`, error);
+        // Default to inactive if we can't fetch casts
+        isInactive = true;
+      }
       
       analyzedUsers.push({
         ...user,
@@ -204,7 +234,7 @@ export default function Home() {
   const handleShareApp = useCallback(async () => {
     try {
       // Create a cast with embed of the mini app
-      const shareText = `🚀 Just cleaned up my Farcaster following list with @alec.eth's Unfollow App! 
+      const shareText = `🚀 Just cleaned up my Farcaster following list with the Unfollow App! 
       
 Found ${scanResults?.inactive60Days || 0} inactive accounts and ${scanResults?.notFollowingBack || 0} who don't follow back.
 
@@ -315,7 +345,7 @@ Try it yourself: ${window.location.origin}/embed`;
 
           {/* Continue Button */}
           <Button 
-            onClick={() => handleAuth(12345)} // Mock auth for demo
+            onClick={handleAuth}
             className="w-full bg-black text-white hover:bg-gray-800"
             size="lg"
           >
@@ -386,24 +416,24 @@ Try it yourself: ${window.location.origin}/embed`;
                   <div>
                     <div className="flex items-center space-x-2">
                       <span className="font-semibold text-gray-900 dark:text-white">
-                        {userProfile?.displayName || 'alec.eth'}
+                        {userProfile?.displayName || 'Loading...'}
                       </span>
                       <Crown className="w-4 h-4 text-yellow-500" />
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-300">
-                      @{userProfile?.username || 'alec.eth'}
+                      @{userProfile?.username || 'Loading...'}
                     </div>
                   </div>
                 </div>
                 
                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                  loading...built interested.fyi + peeple.work || ex mesh.xyz
+                  {userProfile?.bio || 'Loading profile...'}
                 </p>
                 
                 <div className="flex space-x-4 mb-3">
                   <div>
                     <div className="font-semibold text-gray-900 dark:text-white">
-                      {userProfile?.followerCount || '7,219'}
+                      {userProfile?.followerCount || '0'}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-300">Followers</div>
                   </div>

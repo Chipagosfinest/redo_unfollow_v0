@@ -8,10 +8,10 @@ import { Rocket, Sparkles, Crown, Users, TrendingUp } from "lucide-react";
 
 export default function EmbedPage() {
   const [stats, setStats] = useState({
-    totalUsers: 1247,
-    inactiveFound: 89,
-    notFollowingBack: 156,
-    spamAccounts: 23,
+    totalUsers: 0,
+    inactiveFound: 0,
+    notFollowingBack: 0,
+    spamAccounts: 0,
   });
 
   return (
