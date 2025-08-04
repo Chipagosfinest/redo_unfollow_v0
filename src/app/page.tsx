@@ -61,7 +61,7 @@ export default function Home() {
       // @ts-ignore - Farcaster global object
       const farcaster = (window as any).farcaster;
       if (farcaster?.user?.fid) {
-        handleAuth(farcaster.user.fid);
+        handleAuth();
       }
     }
   }, []);
