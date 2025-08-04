@@ -606,218 +606,47 @@ Try it yourself: ${window.location.origin}/embed`;
     setSelectedUsers(new Set(followingUsers.map(u => u.fid)));
   }, [followingUsers]);
 
-  // Authentication Screen
+    // Authentication Screen
   if (currentStep === 'auth') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-        {/* Modern Desktop Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-6">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white text-lg font-bold">✓</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Unfollow App</h1>
-                <p className="text-sm text-gray-600">by alec.eth</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-600">The most advanced Farcaster unfollow tool</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-4xl mx-auto px-8 py-16">
-          {/* Hero Section */}
-          <div className="text-center mb-16">
-            <h1 className="text-5xl font-bold text-gray-900 mb-6">
-              Clean Up Your Farcaster Feed
+      <div className="min-h-screen bg-white">
+        <div className="max-w-md mx-auto px-6 py-16">
+          {/* Simple Header */}
+          <div className="text-center mb-12">
+            <h1 className="text-3xl font-bold text-gray-900 mb-3">
+              Farcaster Cleanup
             </h1>
-            <p className="text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto mb-8">
-              Advanced AI-powered analysis to identify inactive accounts, spam, and non-mutual follows. 
-              Batch unfollow with real Farcaster API integration.
+            <p className="text-gray-600">
+              Find and unfollow inactive accounts
             </p>
-            <div className="flex items-center justify-center space-x-8 text-sm text-gray-500">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>Real Farcaster API</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span>Smart Analysis</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span>Batch Operations</span>
-              </div>
-            </div>
           </div>
 
-          {/* Feature Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                                   <SafeIcon icon={Search} size={24} className="text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">Smart Analysis</h3>
-                  <p className="text-blue-600 font-medium">AI-Powered Detection</p>
-                </div>
-              </div>
-              <p className="text-gray-600 mb-4 text-lg">Advanced algorithms detect inactive accounts, spam patterns, and non-mutual follows with high accuracy.</p>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                  <span>60+ day inactivity detection</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                  <span>Mutual follow analysis</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                  <span>Spam account identification</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                                   <SafeIcon icon={UserMinus} size={24} className="text-green-600" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">Batch Operations</h3>
-                  <p className="text-green-600 font-medium">Real Farcaster Integration</p>
-                </div>
-              </div>
-              <p className="text-gray-600 mb-4 text-lg">Unfollow multiple users simultaneously using the official Farcaster protocol and API.</p>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                  <span>Real Farcaster API integration</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                  <span>Batch unfollow operations</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                  <span>Native wallet support</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* CTA Section */}
-          <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 mb-8">
-            <div className="text-center">
-                             <div className="flex items-center justify-center space-x-3 text-purple-700 mb-4">
-                 <SafeIcon icon={Rocket} size={24} />
-                <span className="text-2xl font-bold">Ready to Clean Your Feed?</span>
-              </div>
-              <p className="text-gray-600 text-lg mb-6">
-                Connect your Farcaster wallet to start analyzing your follows
-              </p>
-              
-              <Button 
-                onClick={handleAuth}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 h-16 text-xl font-bold rounded-xl shadow-lg px-12"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    <span className="mr-3 text-2xl">✓</span>
-                    Connect Farcaster Wallet
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
+          {/* Simple Connect Button */}
+          <Button 
+            onClick={handleAuth}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 text-lg font-semibold rounded-lg flex items-center justify-center space-x-3"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <span>Connecting...</span>
+              </>
+            ) : (
+              <>
+                <SafeIcon icon={Users} size={20} />
+                <span>Scan Following List</span>
+              </>
+            )}
+          </Button>
 
           {/* Debug Info (only in development) */}
           {process.env.NODE_ENV === 'development' && (
-            <div className="bg-gray-50 p-6 rounded-xl">
-              <div className="flex items-center space-x-3 text-gray-700 mb-4">
-                <IconWrapper size={20}>
-                  <span className="text-lg">🐛</span>
-                </IconWrapper>
-                <span className="text-lg font-semibold">Debug Info</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+            <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+              <div className="text-sm text-gray-600 space-y-1">
                 <div>Environment: {typeof window !== 'undefined' ? (window.self !== window.top ? 'Farcaster Mini App' : 'Web Browser') : 'Server'}</div>
                 <div>Farcaster Object: {typeof window !== 'undefined' && 'farcaster' in window ? 'Available' : 'Not Available'}</div>
                 <div>User Authenticated: {typeof window !== 'undefined' && (window as any).farcaster?.user?.fid ? 'Yes' : 'No'}</div>
-                {typeof window !== 'undefined' && (window as any).farcaster?.user?.fid && (
-                  <div>FID: {(window as any).farcaster.user.fid}</div>
-                )}
-              </div>
-              
-              {/* Debug Buttons */}
-              <div className="space-y-2">
-                <Button 
-                  onClick={async () => {
-                    try {
-                      const response = await fetch('/api/debug?action=test-neynar');
-                      const data = await response.json();
-                      console.log('Neynar test result:', data);
-                      toast.success('Check console for Neynar test results');
-                    } catch (error) {
-                      console.error('Debug test failed:', error);
-                      toast.error('Debug test failed');
-                    }
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  Test Neynar API
-                </Button>
-                
-                <Button 
-                  onClick={async () => {
-                    try {
-                      const response = await fetch('/api/debug?action=test-mock-fid');
-                      const data = await response.json();
-                      console.log('Mock FID test result:', data);
-                      toast.success('Check console for mock FID test results');
-                    } catch (error) {
-                      console.error('Debug test failed:', error);
-                      toast.error('Debug test failed');
-                    }
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  Test Mock FID (12345)
-                </Button>
-                
-                <Button 
-                  onClick={async () => {
-                    try {
-                      const response = await fetch('/api/debug?action=environment');
-                      const data = await response.json();
-                      console.log('Environment info:', data);
-                      toast.success('Check console for environment info');
-                    } catch (error) {
-                      console.error('Debug test failed:', error);
-                      toast.error('Debug test failed');
-                    }
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  Check Environment
-                </Button>
               </div>
             </div>
           )}
