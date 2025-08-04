@@ -23,9 +23,13 @@ describe('Performance Tests - Farcaster Mini App', () => {
     })
 
     it('should handle authentication failures quickly', async () => {
-      // Temporarily remove farcaster from window
+      // Temporarily override farcaster to be undefined
       const originalFarcaster = (window as any).farcaster
-      delete (window as any).farcaster
+      Object.defineProperty(window, 'farcaster', {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      })
       
       const startTime = performance.now()
       
@@ -38,7 +42,11 @@ describe('Performance Tests - Farcaster Mini App', () => {
       expect(signer).toBeNull()
       
       // Restore
-      ;(window as any).farcaster = originalFarcaster
+      Object.defineProperty(window, 'farcaster', {
+        value: originalFarcaster,
+        writable: true,
+        configurable: true,
+      })
     })
   })
 

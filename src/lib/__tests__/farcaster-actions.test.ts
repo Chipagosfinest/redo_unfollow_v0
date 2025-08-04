@@ -20,15 +20,23 @@ describe('Farcaster Actions - Core Functionality Tests', () => {
     })
 
     it('should handle missing Farcaster environment gracefully', async () => {
-      // Temporarily remove farcaster from window
+      // Temporarily override farcaster to be undefined
       const originalFarcaster = (window as any).farcaster
-      delete (window as any).farcaster
+      Object.defineProperty(window, 'farcaster', {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      })
       
       const signer = await getFarcasterSigner()
       expect(signer).toBeNull()
       
       // Restore
-      ;(window as any).farcaster = originalFarcaster
+      Object.defineProperty(window, 'farcaster', {
+        value: originalFarcaster,
+        writable: true,
+        configurable: true,
+      })
     })
 
     it('should prioritize native Farcaster over Privy wallet', async () => {

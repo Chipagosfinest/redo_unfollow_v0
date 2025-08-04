@@ -34,13 +34,6 @@ Object.defineProperty(window, 'farcaster', {
       signMessage: jest.fn().mockResolvedValue(new Uint8Array(32)),
       getPublicKey: jest.fn().mockResolvedValue(new Uint8Array(64)),
     },
-    walletConnect: {
-      user: {
-        fid: 12345,
-      },
-      signMessage: jest.fn().mockResolvedValue(new Uint8Array(32)),
-      getPublicKey: jest.fn().mockResolvedValue(new Uint8Array(64)),
-    },
   },
   writable: true,
 })

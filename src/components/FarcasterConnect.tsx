@@ -62,12 +62,6 @@ export default function FarcasterConnect({
           console.log('FarcasterConnect: Found Privy user:', farcaster.privy.user);
           return farcaster.privy.user;
         }
-        
-        // Check for WalletConnect integration
-        if (farcaster?.walletConnect?.user) {
-          console.log('FarcasterConnect: Found WalletConnect user:', farcaster.walletConnect.user);
-          return farcaster.walletConnect.user;
-        }
       }
       
       console.log('FarcasterConnect: No user found');

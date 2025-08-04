@@ -83,32 +83,6 @@ export async function getFarcasterSigner(): Promise<FarcasterSigner | null> {
           }
         };
       }
-      
-      // Check for WalletConnect integration
-      if (farcaster?.walletConnect?.user?.fid) {
-        return {
-          signMessage: async (message: Uint8Array) => {
-            // Use WalletConnect signing
-            if (farcaster.walletConnect.signMessage) {
-              return await farcaster.walletConnect.signMessage(message);
-            }
-            
-            console.log('Using WalletConnect signing');
-            return new Uint8Array(32); // WalletConnect signing will handle this
-          },
-          getPublicKey: async () => {
-            // Get public key from WalletConnect
-            if (farcaster.walletConnect.getPublicKey) {
-              return await farcaster.walletConnect.getPublicKey();
-            }
-            
-            return new Uint8Array(0); // WalletConnect will handle this
-          },
-          getFid: async () => {
-            return farcaster.walletConnect.user.fid;
-          }
-        };
-      }
     }
     
     return null;

@@ -243,7 +243,7 @@ describe('UI Flow Tests - Farcaster Mini App', () => {
       const user = userEvent.setup()
       
       // Navigate through the flow to get to results
-      const continueButton = screen.getByText('Continue with Farcaster')
+      const continueButton = screen.getByText(/connect farcaster wallet|open in farcaster app/i)
       await user.click(continueButton)
       
       await waitFor(() => {
@@ -329,7 +329,7 @@ describe('UI Flow Tests - Farcaster Mini App', () => {
       const user = userEvent.setup()
       
       // Navigate through the flow
-      const continueButton = screen.getByText('Continue with Farcaster')
+      const continueButton = screen.getByText(/connect farcaster wallet|open in farcaster app/i)
       await user.click(continueButton)
       
       await waitFor(() => {
@@ -411,7 +411,7 @@ describe('UI Flow Tests - Farcaster Mini App', () => {
       render(<Home />)
       
       // Should have proper button roles
-      const continueButton = screen.getByText('Continue with Farcaster')
+      const continueButton = screen.getByText(/connect farcaster wallet|open in farcaster app/i)
       expect(continueButton).toHaveAttribute('role', 'button')
       
       // Should have proper heading structure
@@ -423,7 +423,7 @@ describe('UI Flow Tests - Farcaster Mini App', () => {
       render(<Home />)
       
       // Should be able to tab through interactive elements
-      const continueButton = screen.getByText('Continue with Farcaster')
+      const continueButton = screen.getByText(/connect farcaster wallet|open in farcaster app/i)
       continueButton.focus()
       expect(continueButton).toHaveFocus()
     })
