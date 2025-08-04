@@ -7,7 +7,7 @@ jest.mock('@/lib/farcaster-actions', () => ({
   getFarcasterSigner: jest.fn(),
 }))
 
-const mockGetFarcasterSigner = require('@/lib/farcaster-actions').getFarcasterSigner
+import { getFarcasterSigner as mockGetFarcasterSigner } from '@/lib/farcaster-actions'
 
 describe('FarcasterConnect Component', () => {
   beforeEach(() => {

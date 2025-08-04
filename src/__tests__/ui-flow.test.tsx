@@ -17,8 +17,7 @@ jest.mock('@farcaster/miniapp-sdk', () => ({
   },
 }))
 
-const mockGetFarcasterSigner = require('@/lib/farcaster-actions').getFarcasterSigner
-const mockBatchUnfollow = require('@/lib/farcaster-actions').batchUnfollow
+import { getFarcasterSigner as mockGetFarcasterSigner, batchUnfollow as mockBatchUnfollow } from '@/lib/farcaster-actions'
 
 describe('UI Flow Tests - Farcaster Mini App', () => {
   beforeEach(() => {
