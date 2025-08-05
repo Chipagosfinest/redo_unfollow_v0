@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, RefreshCw } from "lucide-react"
+import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, RefreshCw, LogIn } from "lucide-react"
 import { toast } from "sonner"
 import { sdk } from '@farcaster/miniapp-sdk'
 
@@ -29,7 +29,7 @@ interface AuthenticatedUser {
 export default function FarcasterUnfollowApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set())
   const [isUnfollowing, setIsUnfollowing] = useState(false)
@@ -37,115 +37,79 @@ export default function FarcasterUnfollowApp() {
   const [showConfirmUnfollow, setShowConfirmUnfollow] = useState(false)
   const [isMiniApp, setIsMiniApp] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
-  const [initTimeout, setInitTimeout] = useState<ReturnType<typeof setTimeout> | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
 
-  // Initialize Farcaster SDK and Quick Auth with timeout protection
+  // Simple initialization - just check if we're in Mini App
   useEffect(() => {
-    const initializeApp = async () => {
+    const checkMiniApp = async () => {
       try {
-        console.log('Initializing Farcaster Mini App...')
-        
-        // Set a timeout to prevent infinite loading
-        const timeout = setTimeout(() => {
-          console.error('Initialization timeout - forcing app ready')
-          setIsLoading(false)
-          setAuthError('Initialization timeout - please refresh and try again')
-        }, 15000) // 15 second timeout
-        
-        setInitTimeout(timeout)
-        
-        // Check if we're in a Mini App context
+        console.log('Checking Mini App context...')
         const miniAppCheck = await sdk.isInMiniApp()
         setIsMiniApp(miniAppCheck)
         console.log('Mini App check result:', miniAppCheck)
         
         if (miniAppCheck) {
-          console.log('Running in Farcaster Mini App context')
-          
-          // Call ready() to hide splash screen with error handling
+          // Just call ready() to hide splash screen
           try {
             await sdk.actions.ready()
             console.log('Farcaster Mini App SDK initialized')
           } catch (readyError) {
             console.warn('SDK ready() failed, continuing anyway:', readyError)
           }
-          
-          // Use Quick Auth to get authenticated user with timeout
-          try {
-            console.log('Attempting Quick Auth...')
-            
-            // Add timeout to the fetch request
-            const controller = new AbortController()
-            const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
-            
-            const res = await sdk.quickAuth.fetch('/api/auth/me', {
-              signal: controller.signal
-            })
-            
-            clearTimeout(timeoutId)
-            console.log('Quick Auth response status:', res.status)
-            
-            if (res.ok) {
-              const userData = await res.json()
-              console.log('Quick Auth user data:', userData)
-              
-              const user: AuthenticatedUser = {
-                fid: userData.fid,
-                username: userData.username || `user_${userData.fid}`,
-                displayName: userData.displayName || `User ${userData.fid}`,
-                pfpUrl: userData.pfpUrl || '',
-                isAuthenticated: true
-              }
-              
-              setAuthenticatedUser(user)
-              setIsAuthenticated(true)
-              setAuthError(null)
-              
-              // Automatically start scanning following list
-              await startScan(user.fid)
-            } else {
-              const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
-              console.error('Quick Auth failed:', res.status, errorData)
-              setAuthError(errorData.error || 'Authentication failed')
-              toast.error('Authentication failed: ' + (errorData.error || 'Unknown error'))
-            }
-          } catch (error) {
-            console.error('Quick Auth error:', error)
-            if (error.name === 'AbortError') {
-              setAuthError('Authentication timeout - please try again')
-              toast.error('Authentication timeout - please try again')
-            } else {
-              setAuthError('Failed to authenticate')
-              toast.error('Failed to authenticate: ' + (error instanceof Error ? error.message : 'Unknown error'))
-            }
-          }
-        } else {
-          console.log('Not in Mini App context')
-          setAuthError('This app works best in Farcaster')
-          toast.error('This app works best in Farcaster')
         }
-        
-        // Clear timeout on successful initialization
-        clearTimeout(timeout)
-        
       } catch (error) {
-        console.error('Failed to initialize Farcaster SDK:', error)
-        setAuthError('Failed to initialize app')
-        toast.error('Failed to initialize app: ' + (error instanceof Error ? error.message : 'Unknown error'))
+        console.error('Failed to check Mini App context:', error)
       } finally {
-        setIsLoading(false)
+        setIsInitialized(true)
       }
     }
 
-    initializeApp()
-    
-    // Cleanup timeout on unmount
-    return () => {
-      if (initTimeout) {
-        clearTimeout(initTimeout)
-      }
-    }
+    checkMiniApp()
   }, [])
+
+  // User-initiated authentication
+  const handleAuthenticate = async () => {
+    setIsLoading(true)
+    setAuthError(null)
+    
+    try {
+      console.log('User initiated authentication...')
+      
+      const res = await sdk.quickAuth.fetch('/api/auth/me')
+      console.log('Auth response status:', res.status)
+      
+      if (res.ok) {
+        const userData = await res.json()
+        console.log('Auth user data:', userData)
+        
+        const user: AuthenticatedUser = {
+          fid: userData.fid,
+          username: userData.username || `user_${userData.fid}`,
+          displayName: userData.displayName || `User ${userData.fid}`,
+          pfpUrl: userData.pfpUrl || '',
+          isAuthenticated: true
+        }
+        
+        setAuthenticatedUser(user)
+        setIsAuthenticated(true)
+        toast.success('Successfully authenticated!')
+        
+        // Automatically start scanning
+        await startScan(user.fid)
+      } else {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('Authentication failed:', res.status, errorData)
+        setAuthError(errorData.error || 'Authentication failed')
+        toast.error('Authentication failed: ' + (errorData.error || 'Unknown error'))
+      }
+    } catch (error) {
+      console.error('Authentication error:', error)
+      setAuthError('Failed to authenticate')
+      toast.error('Failed to authenticate: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const startScan = async (fid?: number) => {
     const targetFid = fid || authenticatedUser?.fid
@@ -158,10 +122,6 @@ export default function FarcasterUnfollowApp() {
     try {
       console.log('Starting scan for FID:', targetFid)
       
-      // Add timeout to the scan request
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
-      
       const response = await sdk.quickAuth.fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -170,10 +130,8 @@ export default function FarcasterUnfollowApp() {
           page: 1, 
           limit: 50 
         }),
-        signal: controller.signal
       })
       
-      clearTimeout(timeoutId)
       console.log('Analyze response status:', response.status)
       
       if (response.ok) {
@@ -199,11 +157,7 @@ export default function FarcasterUnfollowApp() {
       }
     } catch (error) {
       console.error('Scan error:', error)
-      if (error.name === 'AbortError') {
-        toast.error("Scan timeout - please try again")
-      } else {
-        toast.error("Scan failed - please try again: " + (error instanceof Error ? error.message : 'Unknown error'))
-      }
+      toast.error("Scan failed - please try again: " + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setIsScanning(false)
     }
@@ -322,20 +276,8 @@ export default function FarcasterUnfollowApp() {
     }
   }
 
-  const retryInitialization = () => {
-    setIsLoading(true)
-    setAuthError(null)
-    setIsAuthenticated(false)
-    setAuthenticatedUser(null)
-    setUsers([])
-    setSelectedUsers(new Set())
-    
-    // Force a page reload to restart the initialization
-    window.location.reload()
-  }
-
-  // Show loading screen
-  if (isLoading) {
+  // Show loading screen during initialization
+  if (!isInitialized) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
@@ -344,7 +286,6 @@ export default function FarcasterUnfollowApp() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Farcaster Cleanup</h1>
           <p className="text-gray-600">Initializing...</p>
-          <p className="text-sm text-gray-500 mt-2">This may take a few seconds</p>
         </div>
       </div>
     )
@@ -370,48 +311,46 @@ export default function FarcasterUnfollowApp() {
     )
   }
 
-  // Show authentication error
-  if (authError && !isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <AlertTriangle className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Authentication Error</h1>
-          <p className="text-gray-600 mb-6">{authError}</p>
-          <div className="space-y-3">
-            <Button 
-              onClick={retryInitialization} 
-              className="bg-purple-600 hover:bg-purple-700 text-white w-full"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Try Again
-            </Button>
-            <Button 
-              onClick={() => window.location.reload()} 
-              variant="outline"
-              className="w-full"
-            >
-              Refresh Page
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   // Show authentication screen if not authenticated
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Loader2 className="w-10 h-10 text-white animate-spin" />
+            <LogIn className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Farcaster Cleanup</h1>
-          <p className="text-gray-600">Authenticating...</p>
-          <p className="text-sm text-gray-500 mt-2">Please wait while we connect to Farcaster</p>
+          <p className="text-gray-600 mb-6">
+            Connect your Farcaster account to get started
+          </p>
+          
+          {authError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-red-700 text-sm">{authError}</p>
+            </div>
+          )}
+          
+          <Button 
+            onClick={handleAuthenticate}
+            disabled={isLoading}
+            className="bg-purple-600 hover:bg-purple-700 text-white w-full"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              <>
+                <LogIn className="w-4 h-4 mr-2" />
+                Connect Farcaster Account
+              </>
+            )}
+          </Button>
+          
+          <p className="text-sm text-gray-500 mt-4">
+            This will authenticate you with Farcaster and load your following list
+          </p>
         </div>
       </div>
     )
