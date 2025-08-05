@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Loader2, User, Shield, CheckCircle, ExternalLink, Copy } from 'lucide-react'
+import { Loader2, User, Shield, CheckCircle, ExternalLink, Copy, Smartphone, Monitor } from 'lucide-react'
 import { detectEnvironment, getFarcasterUser } from '@/lib/environment'
 
 interface NeynarUser {
@@ -29,6 +29,7 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
   const [environment, setEnvironment] = useState(detectEnvironment())
   const [approvalUrl, setApprovalUrl] = useState<string>('')
   const [signerUuid, setSignerUuid] = useState<string>('')
+  const [isCheckingFarcaster, setIsCheckingFarcaster] = useState(true)
 
   useEffect(() => {
     // Check environment on mount
@@ -42,9 +43,34 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
       if (farcasterUser) {
         console.log('Found Farcaster user:', farcasterUser)
         handleFarcasterUser(farcasterUser)
+      } else {
+        console.log('No Farcaster user found in context')
+        setIsCheckingFarcaster(false)
       }
+    } else {
+      setIsCheckingFarcaster(false)
     }
   }, [])
+
+  // Additional check for Farcaster context after a delay
+  useEffect(() => {
+    if (!isCheckingFarcaster && !user) {
+      const timer = setTimeout(() => {
+        const env = detectEnvironment()
+        console.log('Delayed environment check:', env)
+        
+        if (env.hasFarcasterContext) {
+          const farcasterUser = getFarcasterUser()
+          if (farcasterUser) {
+            console.log('Found Farcaster user on delayed check:', farcasterUser)
+            handleFarcasterUser(farcasterUser)
+          }
+        }
+      }, 1000) // Check again after 1 second
+
+      return () => clearTimeout(timer)
+    }
+  }, [isCheckingFarcaster, user])
 
   const handleFarcasterUser = (farcasterUser: any) => {
     const neynarUser: NeynarUser = {
@@ -262,6 +288,26 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
     )
   }
 
+  // Show loading while checking for Farcaster context
+  if (isCheckingFarcaster) {
+    return (
+      <Card className="bg-white/10 border-white/20">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center">
+            <Smartphone className="w-5 h-5 mr-2" />
+            Checking Farcaster App
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-white" />
+            <p className="text-sm text-purple-200">Detecting Farcaster environment...</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card className="bg-white/10 border-white/20">
       <CardHeader>
@@ -280,6 +326,7 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
         {environment.isMiniApp ? (
           <div className="space-y-4">
             <div className="text-center">
+              <Smartphone className="w-12 h-12 mx-auto mb-4 text-purple-400" />
               <p className="text-sm text-purple-200 mb-4">
                 This app works best in Warpcast or other Farcaster clients
               </p>
@@ -295,20 +342,28 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
         ) : (
           <>
             {signerStatus === 'none' && (
-              <Button
-                onClick={createSigner}
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating Signer...
-                  </>
-                ) : (
-                  'Create Signer'
-                )}
-              </Button>
+              <div className="space-y-4">
+                <div className="text-center">
+                  <Monitor className="w-12 h-12 mx-auto mb-4 text-blue-400" />
+                  <p className="text-sm text-purple-200 mb-4">
+                    Connect to Farcaster to analyze your feed
+                  </p>
+                </div>
+                <Button
+                  onClick={createSigner}
+                  disabled={isLoading}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating Signer...
+                    </>
+                  ) : (
+                    'Create Signer'
+                  )}
+                </Button>
+              </div>
             )}
 
             {signerStatus === 'creating' && (
