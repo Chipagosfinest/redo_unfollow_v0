@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { NeynarAPIClient, isApiErrorResponse } from '@neynar/nodejs-sdk'
-
-const client = new NeynarAPIClient({ apiKey: process.env.NEYNAR_API_KEY! })
 
 interface User {
   fid: number
@@ -34,17 +31,69 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user's following list
-    const followingResponse = await client.fetchUserFollowing(fid)
-    const following = followingResponse.users || []
+    console.log('Analyzing FID:', fid)
 
-    // Get user's followers list
-    const followersResponse = await client.fetchUserFollowers(fid)
-    const followers = followersResponse.users || []
+    const apiKey = process.env.NEYNAR_API_KEY
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'Neynar API key not configured' },
+        { status: 500 }
+      )
+    }
+
+    // Get user's following list using direct API call
+    const followingResponse = await fetch(
+      `https://api.neynar.com/v2/farcaster/user/following?fid=${fid}&limit=100`,
+      {
+        headers: {
+          'api_key': apiKey,
+          'accept': 'application/json'
+        }
+      }
+    )
+
+    if (!followingResponse.ok) {
+      const errorData = await followingResponse.json()
+      console.error('Following API error:', errorData)
+      return NextResponse.json(
+        { error: 'Failed to fetch following data' },
+        { status: followingResponse.status }
+      )
+    }
+
+    const followingData = await followingResponse.json()
+    const following = followingData.users || []
+
+    console.log('Following count:', following.length)
+
+    // Get user's followers list using direct API call
+    const followersResponse = await fetch(
+      `https://api.neynar.com/v2/farcaster/user/followers?fid=${fid}&limit=100`,
+      {
+        headers: {
+          'api_key': apiKey,
+          'accept': 'application/json'
+        }
+      }
+    )
+
+    if (!followersResponse.ok) {
+      const errorData = await followersResponse.json()
+      console.error('Followers API error:', errorData)
+      return NextResponse.json(
+        { error: 'Failed to fetch followers data' },
+        { status: followersResponse.status }
+      )
+    }
+
+    const followersData = await followersResponse.json()
+    const followers = followersData.users || []
+
+    console.log('Followers count:', followers.length)
 
     // Create sets for efficient lookup
-    const followingFids = new Set(following.map(user => user.user.fid))
-    const followerFids = new Set(followers.map(user => user.user.fid))
+    const followingFids = new Set(following.map((user: any) => user.user.fid))
+    const followerFids = new Set(followers.map((user: any) => user.user.fid))
 
     // Analyze users
     const analysis: AnalysisResult = {
@@ -90,17 +139,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log('Analysis complete:', {
+      total: analysis.totalFollowing,
+      mutual: analysis.mutualUsers.length,
+      nonMutual: analysis.nonMutualUsers.length,
+      inactive: analysis.inactiveUsers.length,
+      spam: analysis.spamUsers.length
+    })
+
     return NextResponse.json(analysis)
   } catch (error) {
     console.error('Analysis error:', error)
-    
-    if (isApiErrorResponse(error)) {
-      return NextResponse.json(
-        { error: error.response.data.message || 'API Error' },
-        { status: error.response.status }
-      )
-    }
-    
     return NextResponse.json(
       { error: 'Failed to analyze following' },
       { status: 500 }
