@@ -36,21 +36,32 @@ export default function FarcasterUnfollowApp() {
   const [isScanning, setIsScanning] = useState(false)
   const [showConfirmUnfollow, setShowConfirmUnfollow] = useState(false)
   const [isMiniApp, setIsMiniApp] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
 
   // Initialize Farcaster SDK and Quick Auth
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        console.log('Initializing Farcaster Mini App...')
+        
         // Check if we're in a Mini App context
         const miniAppCheck = await sdk.isInMiniApp()
         setIsMiniApp(miniAppCheck)
+        console.log('Mini App check result:', miniAppCheck)
         
         if (miniAppCheck) {
           console.log('Running in Farcaster Mini App context')
           
+          // Call ready() to hide splash screen
+          await sdk.actions.ready()
+          console.log('Farcaster Mini App SDK initialized')
+          
           // Use Quick Auth to get authenticated user
           try {
+            console.log('Attempting Quick Auth...')
             const res = await sdk.quickAuth.fetch('/api/auth/me')
+            console.log('Quick Auth response status:', res.status)
+            
             if (res.ok) {
               const userData = await res.json()
               console.log('Quick Auth user data:', userData)
@@ -65,29 +76,31 @@ export default function FarcasterUnfollowApp() {
               
               setAuthenticatedUser(user)
               setIsAuthenticated(true)
+              setAuthError(null)
               
               // Automatically start scanning following list
               await startScan(user.fid)
             } else {
-              console.error('Quick Auth failed:', res.status)
-              toast.error('Authentication failed')
+              const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
+              console.error('Quick Auth failed:', res.status, errorData)
+              setAuthError(errorData.error || 'Authentication failed')
+              toast.error('Authentication failed: ' + (errorData.error || 'Unknown error'))
             }
           } catch (error) {
             console.error('Quick Auth error:', error)
-            toast.error('Failed to authenticate')
+            setAuthError('Failed to authenticate')
+            toast.error('Failed to authenticate: ' + (error instanceof Error ? error.message : 'Unknown error'))
           }
         } else {
           console.log('Not in Mini App context')
+          setAuthError('This app works best in Farcaster')
           toast.error('This app works best in Farcaster')
         }
         
-        // Call ready() to hide splash screen
-        await sdk.actions.ready()
-        console.log('Farcaster Mini App SDK initialized')
-        
       } catch (error) {
         console.error('Failed to initialize Farcaster SDK:', error)
-        toast.error('Failed to initialize app')
+        setAuthError('Failed to initialize app')
+        toast.error('Failed to initialize app: ' + (error instanceof Error ? error.message : 'Unknown error'))
       } finally {
         setIsLoading(false)
       }
@@ -105,6 +118,7 @@ export default function FarcasterUnfollowApp() {
 
     setIsScanning(true)
     try {
+      console.log('Starting scan for FID:', targetFid)
       const response = await sdk.quickAuth.fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -115,8 +129,11 @@ export default function FarcasterUnfollowApp() {
         }),
       })
       
+      console.log('Analyze response status:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log('Analyze response data:', data)
 
         const allUsers: User[] = data.users.map((user: any) => ({
           fid: user.fid,
@@ -131,13 +148,13 @@ export default function FarcasterUnfollowApp() {
         setUsers(allUsers)
         toast.success(`Found ${allUsers.length} accounts to review`)
       } else {
-        const errorData = await response.json().catch(() => ({}))
-        console.error('Analysis failed:', errorData)
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('Analysis failed:', response.status, errorData)
         toast.error(errorData.error || "Scan failed - please try again")
       }
     } catch (error) {
       console.error('Scan error:', error)
-      toast.error("Scan failed - please try again")
+      toast.error("Scan failed - please try again: " + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setIsScanning(false)
     }
@@ -286,6 +303,27 @@ export default function FarcasterUnfollowApp() {
           <p className="text-sm text-gray-500">
             Please open this app within the Farcaster client
           </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show authentication error
+  if (authError && !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Authentication Error</h1>
+          <p className="text-gray-600 mb-6">{authError}</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            Try Again
+          </Button>
         </div>
       </div>
     )
