@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         domain,
       })
       
-      const timeoutPromise = new Promise((_, reject) => 
+      const timeoutPromise = new Promise<never>((_, reject) => 
         setTimeout(() => reject(new Error('Token verification timeout')), 10000)
       )
       
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
         }
       )
       
-      const neynarTimeoutPromise = new Promise((_, reject) => 
+      const neynarTimeoutPromise = new Promise<never>((_, reject) => 
         setTimeout(() => reject(new Error('Neynar API timeout')), 15000)
       )
       
