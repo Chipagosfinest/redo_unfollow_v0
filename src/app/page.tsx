@@ -37,7 +37,7 @@ export default function FarcasterUnfollowApp() {
   const [showConfirmUnfollow, setShowConfirmUnfollow] = useState(false)
   const [isMiniApp, setIsMiniApp] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
-  const [initTimeout, setInitTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [initTimeout, setInitTimeout] = useState<ReturnType<typeof setTimeout> | null>(null)
 
   // Initialize Farcaster SDK and Quick Auth with timeout protection
   useEffect(() => {
