@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
+import { sdk } from '@farcaster/miniapp-sdk'
 
 interface User {
   fid: number
@@ -25,9 +26,24 @@ export default function FarcasterUnfollowApp() {
   const [isUnfollowing, setIsUnfollowing] = useState(false)
   const [isDemoMode, setIsDemoMode] = useState(false)
 
-  // Auto-authenticate for simplicity
+  // Initialize Farcaster SDK and auto-authenticate
   useEffect(() => {
-    setIsAuthenticated(true)
+    const initializeApp = async () => {
+      try {
+        // Call ready() to hide splash screen and display content
+        await sdk.actions.ready()
+        console.log('Farcaster Mini App SDK initialized')
+        
+        // Auto-authenticate for simplicity
+        setIsAuthenticated(true)
+      } catch (error) {
+        console.error('Failed to initialize Farcaster SDK:', error)
+        // Fallback - still show the app even if SDK fails
+        setIsAuthenticated(true)
+      }
+    }
+
+    initializeApp()
   }, [])
 
   const startScan = async () => {

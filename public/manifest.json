@@ -1,0 +1,19 @@
+{
+  "name": "Farcaster Cleanup - Unfollow Tool",
+  "short_name": "Farcaster Cleanup",
+  "description": "Clean up your Farcaster following list by finding and unfollowing inactive accounts",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/unfollow-icon.png",
+      "sizes": "400x400",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["social", "productivity"],
+  "lang": "en",
+  "dir": "ltr"
+} 
