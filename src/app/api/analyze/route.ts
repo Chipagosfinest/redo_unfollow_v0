@@ -1,187 +1,146 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@farcaster/quick-auth'
 
-interface User {
-  fid: number
-  username: string
-  displayName: string
-  pfpUrl: string
-  followerCount: number
-  followingCount: number
-  lastActive?: string
-  isMutual?: boolean
-  isInactive?: boolean
-  isSpam?: boolean
-  shouldUnfollow?: boolean
-}
-
-interface AnalysisResult {
-  totalFollowing: number
-  totalPages: number
-  currentPage: number
-  users: User[]
-  summary: {
-    inactiveCount: number
-    nonMutualCount: number
-    spamCount: number
-    mutualCount: number
-    unfollowableCount: number
-  }
-}
-
-// Cache for API responses (2 minutes for faster updates)
-const cache = new Map<string, { data: AnalysisResult; timestamp: number }>()
-const CACHE_DURATION = 2 * 60 * 1000 // 2 minutes
+const client = createClient()
 
 export async function POST(request: NextRequest) {
   try {
-    const { fid, page = 1, limit = 50 } = await request.json()
-
-    if (!fid || typeof fid !== 'number') {
+    // Verify Quick Auth token
+    const authorization = request.headers.get('Authorization')
+    if (!authorization || !authorization.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'Valid FID is required' },
-        { status: 400 }
+        { error: 'Missing token' },
+        { status: 401 }
       )
     }
 
-    // Check cache first
-    const cacheKey = `analyze_${fid}_${page}_${limit}`
-    const cached = cache.get(cacheKey)
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      return NextResponse.json(cached.data)
-    }
-
-    const apiKey = process.env.NEYNAR_API_KEY
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'Neynar API key not configured' },
-        { status: 500 }
-      )
-    }
-
-    // Fetch data with timeout
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 30000)
-
+    const token = authorization.split(' ')[1]
+    
     try {
-      // Get following list with pagination
+      const payload = await client.verifyJwt({
+        token,
+        domain: process.env.NEXT_PUBLIC_APP_URL || 'https://redounfollowv0-oyjqxoqm5-chipagosfinests-projects.vercel.app',
+      })
+
+      const { fid, page = 1, limit = 50 } = await request.json()
+
+      const apiKey = process.env.NEYNAR_API_KEY
+      if (!apiKey) {
+        return NextResponse.json(
+          { error: 'Neynar API key not configured' },
+          { status: 500 }
+        )
+      }
+
+      console.log(`Analyzing following list for FID: ${fid}`)
+
+      // Fetch following list
       const followingResponse = await fetch(
         `https://api.neynar.com/v2/farcaster/user/following?fid=${fid}&limit=1000`,
         {
           headers: {
             'api_key': apiKey,
-            'accept': 'application/json'
+            'accept': 'application/json',
           },
-          signal: controller.signal
         }
       )
 
       if (!followingResponse.ok) {
-        const errorText = await followingResponse.text()
-        console.error('Following API error:', followingResponse.status, errorText)
+        console.error('Failed to fetch following:', followingResponse.status)
         return NextResponse.json(
-          { error: `Failed to fetch following data: ${followingResponse.status}` },
-          { status: followingResponse.status }
+          { error: 'Failed to fetch following list' },
+          { status: 500 }
         )
       }
 
       const followingData = await followingResponse.json()
-      const allFollowing = followingData.users || []
+      const following = followingData.users || []
 
-      // Get followers list for mutual detection
+      // Fetch followers list
       const followersResponse = await fetch(
         `https://api.neynar.com/v2/farcaster/user/followers?fid=${fid}&limit=1000`,
         {
           headers: {
             'api_key': apiKey,
-            'accept': 'application/json'
+            'accept': 'application/json',
           },
-          signal: controller.signal
         }
       )
 
       if (!followersResponse.ok) {
-        const errorText = await followersResponse.text()
-        console.error('Followers API error:', followersResponse.status, errorText)
+        console.error('Failed to fetch followers:', followersResponse.status)
         return NextResponse.json(
-          { error: `Failed to fetch followers data: ${followersResponse.status}` },
-          { status: followersResponse.status }
+          { error: 'Failed to fetch followers list' },
+          { status: 500 }
         )
       }
 
       const followersData = await followersResponse.json()
-      const allFollowers = followersData.users || []
-
-      clearTimeout(timeoutId)
+      const followers = followersData.users || []
 
       // Create sets for efficient lookup
-      const followerFids = new Set(allFollowers.map((user: any) => user.user.fid))
+      const followerFids = new Set(followers.map((f: any) => f.fid))
+      const followingFids = new Set(following.map((f: any) => f.fid))
 
-      // Analyze all users first
-      const allAnalyzedUsers: User[] = allFollowing.map((user: any) => {
-        const userData = user.user
-        const isMutual = followerFids.has(userData.fid)
-        
-        // Calculate metrics
-        const followerCount = userData.follower_count || 0
-        const followingCount = userData.following_count || 0
-        const isInactive = followerCount < 5 && followingCount > 100
-        const isSpam = followerCount < 10 && followingCount > 500
-        const shouldUnfollow = !isMutual || isInactive || isSpam
+      // Analyze users
+      const usersToUnfollow: any[] = []
 
-        return {
-          fid: userData.fid,
-          username: userData.username || 'unknown',
-          displayName: userData.display_name || userData.username || 'Unknown User',
-          pfpUrl: userData.pfp_url || '',
-          followerCount,
-          followingCount,
-          isMutual,
-          isInactive,
-          isSpam,
-          shouldUnfollow
+      for (const user of following) {
+        const isMutual = followerFids.has(user.fid)
+        const isInactive = user.lastActiveStatus === 'inactive' || 
+                          (user.lastActiveStatus && new Date(user.lastActiveStatus).getTime() < Date.now() - (75 * 24 * 60 * 60 * 1000))
+
+        if (!isMutual || isInactive) {
+          usersToUnfollow.push({
+            fid: user.fid,
+            username: user.username,
+            displayName: user.displayName,
+            pfpUrl: user.pfp?.url || '',
+            followerCount: user.followerCount,
+            followingCount: user.followingCount,
+            isInactive,
+            isMutual,
+            reason: isInactive ? 'inactive' : 'not_following_back'
+          })
+        }
+      }
+
+      // Sort by reason (inactive first, then non-mutual)
+      usersToUnfollow.sort((a, b) => {
+        if (a.reason === 'inactive' && b.reason !== 'inactive') return -1
+        if (a.reason !== 'inactive' && b.reason === 'inactive') return 1
+        return 0
+      })
+
+      // Apply pagination
+      const startIndex = (page - 1) * limit
+      const endIndex = startIndex + limit
+      const paginatedUsers = usersToUnfollow.slice(startIndex, endIndex)
+
+      console.log(`Found ${usersToUnfollow.length} users to unfollow (showing ${paginatedUsers.length})`)
+
+      return NextResponse.json({
+        users: paginatedUsers,
+        summary: {
+          total: usersToUnfollow.length,
+          inactive: usersToUnfollow.filter(u => u.reason === 'inactive').length,
+          notFollowingBack: usersToUnfollow.filter(u => u.reason === 'not_following_back').length,
+          page,
+          limit,
+          hasMore: endIndex < usersToUnfollow.length
         }
       })
 
-      // Calculate summary
-      const summary = {
-        inactiveCount: allAnalyzedUsers.filter(u => u.isInactive).length,
-        nonMutualCount: allAnalyzedUsers.filter(u => !u.isMutual).length,
-        spamCount: allAnalyzedUsers.filter(u => u.isSpam).length,
-        mutualCount: allAnalyzedUsers.filter(u => u.isMutual).length,
-        unfollowableCount: allAnalyzedUsers.filter(u => u.shouldUnfollow).length
-      }
-
-      // Paginate results
-      const startIndex = (page - 1) * limit
-      const endIndex = startIndex + limit
-      const paginatedUsers = allAnalyzedUsers.slice(startIndex, endIndex)
-      const totalPages = Math.ceil(allAnalyzedUsers.length / limit)
-
-      const analysis: AnalysisResult = {
-        totalFollowing: allAnalyzedUsers.length,
-        totalPages,
-        currentPage: page,
-        users: paginatedUsers,
-        summary
-      }
-
-      // Cache the result
-      cache.set(cacheKey, { data: analysis, timestamp: Date.now() })
-
-      return NextResponse.json(analysis)
-    } finally {
-      clearTimeout(timeoutId)
-    }
-  } catch (error) {
-    console.error('Analysis error:', error)
-    
-    if (error instanceof Error && error.name === 'AbortError') {
+    } catch (error) {
+      console.error('Token verification failed:', error)
       return NextResponse.json(
-        { error: 'Request timeout - please try again' },
-        { status: 408 }
+        { error: 'Invalid token' },
+        { status: 401 }
       )
     }
-    
+
+  } catch (error) {
+    console.error('Analysis error:', error)
     return NextResponse.json(
       { error: 'Failed to analyze following' },
       { status: 500 }

@@ -4,10 +4,9 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle } from "lucide-react"
+import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { sdk } from '@farcaster/miniapp-sdk'
-import { detectEnvironment, getFarcasterUser } from "@/lib/environment"
 
 interface User {
   fid: number
@@ -24,210 +23,93 @@ interface AuthenticatedUser {
   username: string
   displayName: string
   pfpUrl: string
-  signerUuid?: string
   isAuthenticated: boolean
 }
 
 export default function FarcasterUnfollowApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
-  const [isScanning, setIsScanning] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [users, setUsers] = useState<User[]>([])
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set())
   const [isUnfollowing, setIsUnfollowing] = useState(false)
-  const [environment, setEnvironment] = useState(detectEnvironment())
-  const [isCheckingFarcaster, setIsCheckingFarcaster] = useState(true)
+  const [isScanning, setIsScanning] = useState(false)
+  const [showConfirmUnfollow, setShowConfirmUnfollow] = useState(false)
+  const [isMiniApp, setIsMiniApp] = useState(false)
 
-  // Initialize Farcaster SDK and auto-detect user
+  // Initialize Farcaster SDK and Quick Auth
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Call ready() to hide splash screen and display content
+        // Check if we're in a Mini App context
+        const miniAppCheck = await sdk.isInMiniApp()
+        setIsMiniApp(miniAppCheck)
+        
+        if (miniAppCheck) {
+          console.log('Running in Farcaster Mini App context')
+          
+          // Use Quick Auth to get authenticated user
+          try {
+            const res = await sdk.quickAuth.fetch('/api/auth/me')
+            if (res.ok) {
+              const userData = await res.json()
+              console.log('Quick Auth user data:', userData)
+              
+              const user: AuthenticatedUser = {
+                fid: userData.fid,
+                username: userData.username || `user_${userData.fid}`,
+                displayName: userData.displayName || `User ${userData.fid}`,
+                pfpUrl: userData.pfpUrl || '',
+                isAuthenticated: true
+              }
+              
+              setAuthenticatedUser(user)
+              setIsAuthenticated(true)
+              
+              // Automatically start scanning following list
+              await startScan(user.fid)
+            } else {
+              console.error('Quick Auth failed:', res.status)
+              toast.error('Authentication failed')
+            }
+          } catch (error) {
+            console.error('Quick Auth error:', error)
+            toast.error('Failed to authenticate')
+          }
+        } else {
+          console.log('Not in Mini App context')
+          toast.error('This app works best in Farcaster')
+        }
+        
+        // Call ready() to hide splash screen
         await sdk.actions.ready()
         console.log('Farcaster Mini App SDK initialized')
         
-        // Check for Farcaster user context
-        const env = detectEnvironment()
-        setEnvironment(env)
-        
-        if (env.hasFarcasterContext) {
-          const farcasterUser = getFarcasterUser()
-          if (farcasterUser) {
-            console.log('Found Farcaster user:', farcasterUser)
-            handleFarcasterUser(farcasterUser)
-          } else {
-            console.log('No Farcaster user found in context')
-            setIsCheckingFarcaster(false)
-          }
-        } else {
-          setIsCheckingFarcaster(false)
-        }
       } catch (error) {
         console.error('Failed to initialize Farcaster SDK:', error)
-        setIsCheckingFarcaster(false)
+        toast.error('Failed to initialize app')
+      } finally {
+        setIsLoading(false)
       }
     }
 
     initializeApp()
   }, [])
 
-  // Additional check for Farcaster context after a delay
-  useEffect(() => {
-    if (!isCheckingFarcaster && !isAuthenticated) {
-      const timer = setTimeout(() => {
-        const env = detectEnvironment()
-        console.log('Delayed environment check:', env)
-        
-        if (env.hasFarcasterContext) {
-          const farcasterUser = getFarcasterUser()
-          if (farcasterUser) {
-            console.log('Found Farcaster user on delayed check:', farcasterUser)
-            handleFarcasterUser(farcasterUser)
-          }
-        }
-      }, 1000) // Check again after 1 second
-
-      return () => clearTimeout(timer)
-    }
-  }, [isCheckingFarcaster, isAuthenticated])
-
-  const handleFarcasterUser = (farcasterUser: any) => {
-    const neynarUser: AuthenticatedUser = {
-      fid: farcasterUser.fid,
-      username: farcasterUser.username,
-      displayName: farcasterUser.displayName,
-      pfpUrl: farcasterUser.pfp?.url || '',
-      isAuthenticated: true
-    }
-    
-    setAuthenticatedUser(neynarUser)
-    setIsAuthenticated(true)
-    console.log('User authenticated via Farcaster:', neynarUser)
-    toast.success('Connected via Farcaster!')
-  }
-
-  const createNeynarSigner = async () => {
-    try {
-      const response = await fetch('/api/auth/signer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || 'Failed to create signer')
-      }
-
-      const data = await response.json()
-      console.log('Signer created:', data)
-      
-      // Poll for signer status
-      await pollSignerStatus(data.signer_uuid)
-      
-    } catch (error) {
-      console.error('Signer creation error:', error)
-      toast.error(`Failed to create signer: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-  }
-
-  const pollSignerStatus = async (uuid: string) => {
-    console.log('Starting to poll signer status:', uuid)
-    const maxAttempts = 60 // 60 seconds
-    let attempts = 0
-
-    const poll = async () => {
-      try {
-        console.log(`Polling signer status (attempt ${attempts + 1}/${maxAttempts})`)
-        const response = await fetch(`/api/auth/signer?signer_uuid=${uuid}`)
-        const data = await response.json()
-
-        console.log('Signer status response:', data)
-
-        if (data.status === 'approved') {
-          toast.success('Signer approved!')
-          
-          // Get user data
-          await fetchUserData(uuid)
-          return
-        } else if (data.status === 'pending' || data.status === 'generated') {
-          attempts++
-          
-          if (attempts < maxAttempts) {
-            setTimeout(poll, 1000)
-          } else {
-            toast.error('Signer approval timeout - please try again')
-          }
-        } else {
-          console.log('Unknown signer status:', data.status)
-          attempts++
-          if (attempts < maxAttempts) {
-            setTimeout(poll, 1000)
-          } else {
-            toast.error('Signer status unknown - please try again')
-          }
-        }
-      } catch (error) {
-        console.error('Polling error:', error)
-        toast.error('Failed to check signer status')
-      }
-    }
-
-    await poll()
-  }
-
-  const fetchUserData = async (uuid: string) => {
-    try {
-      console.log('Fetching user data for signer:', uuid)
-      const response = await fetch('/api/auth/user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ signerUuid: uuid }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || 'Failed to fetch user data')
-      }
-
-      const userData = await response.json()
-      console.log('User data received:', userData)
-      
-      const neynarUser: AuthenticatedUser = {
-        fid: userData.fid,
-        username: userData.username,
-        displayName: userData.display_name,
-        pfpUrl: userData.pfp_url,
-        signerUuid: uuid,
-        isAuthenticated: true
-      }
-
-      setAuthenticatedUser(neynarUser)
-      setIsAuthenticated(true)
-      toast.success('Successfully authenticated!')
-      
-    } catch (error) {
-      console.error('User data fetch error:', error)
-      toast.error(`Failed to fetch user data: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-  }
-
-  const startScan = async () => {
-    if (!authenticatedUser) {
+  const startScan = async (fid?: number) => {
+    const targetFid = fid || authenticatedUser?.fid
+    if (!targetFid) {
       toast.error("Please authenticate first")
       return
     }
 
     setIsScanning(true)
     try {
-      const response = await fetch("/api/analyze", {
+      const response = await sdk.quickAuth.fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          fid: authenticatedUser.fid, 
+          fid: targetFid, 
           page: 1, 
           limit: 50 
         }),
@@ -275,6 +157,10 @@ export default function FarcasterUnfollowApp() {
     setSelectedUsers(new Set(users.map((u) => u.fid)))
   }
 
+  const clearSelection = () => {
+    setSelectedUsers(new Set())
+  }
+
   const toggleUser = (fid: number) => {
     const newSelected = new Set(selectedUsers)
     if (newSelected.has(fid)) {
@@ -285,62 +171,58 @@ export default function FarcasterUnfollowApp() {
     setSelectedUsers(newSelected)
   }
 
-  const unfollowSelected = async () => {
+  const confirmUnfollow = () => {
     if (selectedUsers.size === 0) return
-    if (!authenticatedUser?.signerUuid) {
-      toast.error("No active signer found")
-      return
-    }
-
-    setIsUnfollowing(true)
-    let successCount = 0
-
-    for (const fid of selectedUsers) {
-      try {
-        const response = await fetch("/api/unfollow", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            fid,
-            signerUuid: authenticatedUser.signerUuid 
-          }),
-        })
-
-        if (response.ok) {
-          successCount++
-        } else {
-          const errorData = await response.json().catch(() => ({}))
-          console.error(`Failed to unfollow ${fid}:`, errorData)
-        }
-
-        // Small delay to avoid rate limiting
-        await new Promise((resolve) => setTimeout(resolve, 200))
-      } catch (error) {
-        console.error(`Failed to unfollow ${fid}:`, error)
-      }
-    }
-
-    // Remove unfollowed users from the list
-    setUsers(users.filter((u) => !selectedUsers.has(u.fid)))
-    setSelectedUsers(new Set())
-    setIsUnfollowing(false)
-
-    toast.success(`Successfully unfollowed ${successCount} users`)
+    setShowConfirmUnfollow(true)
   }
 
-  const unfollowSingle = async (fid: number) => {
-    if (!authenticatedUser?.signerUuid) {
-      toast.error("No active signer found")
-      return
-    }
+  const unfollowSelected = async () => {
+    if (selectedUsers.size === 0) return
+
+    setIsUnfollowing(true)
+    setShowConfirmUnfollow(false)
+    let successCount = 0
 
     try {
-      const response = await fetch("/api/unfollow", {
+      const response = await sdk.quickAuth.fetch("/api/unfollow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          fid,
-          signerUuid: authenticatedUser.signerUuid 
+          targetFids: Array.from(selectedUsers),
+          mode: 'selected'
+        }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        successCount = result.results?.successful?.length || 0
+        
+        // Remove unfollowed users from the list
+        setUsers(users.filter((u) => !selectedUsers.has(u.fid)))
+        setSelectedUsers(new Set())
+        
+        toast.success(`Successfully unfollowed ${successCount} users`)
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Unfollow failed:', errorData)
+        toast.error(errorData.error || "Failed to unfollow users")
+      }
+    } catch (error) {
+      console.error('Unfollow error:', error)
+      toast.error("Failed to unfollow users")
+    } finally {
+      setIsUnfollowing(false)
+    }
+  }
+
+  const unfollowSingle = async (fid: number) => {
+    try {
+      const response = await sdk.quickAuth.fetch("/api/unfollow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          targetFids: [fid],
+          mode: 'selected'
         }),
       })
 
@@ -358,6 +240,12 @@ export default function FarcasterUnfollowApp() {
     }
   }
 
+  const unfollowAllFollowers = async () => {
+    setShowConfirmUnfollow(true)
+    // This would be a separate API call to unfollow all followers
+    // For now, we'll use the same confirmation flow
+  }
+
   const shareResults = () => {
     const text = `Just cleaned up my Farcaster following list! 🧹 Found ${users.length} accounts to unfollow. Try it yourself!`
     if (navigator.share) {
@@ -368,8 +256,8 @@ export default function FarcasterUnfollowApp() {
     }
   }
 
-  // Show loading while checking for Farcaster context
-  if (isCheckingFarcaster) {
+  // Show loading screen
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
@@ -377,7 +265,27 @@ export default function FarcasterUnfollowApp() {
             <Loader2 className="w-10 h-10 text-white animate-spin" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Farcaster Cleanup</h1>
-          <p className="text-gray-600">Detecting Farcaster environment...</p>
+          <p className="text-gray-600">Initializing...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error if not in Mini App
+  if (!isMiniApp) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Farcaster Cleanup</h1>
+          <p className="text-gray-600 mb-6">
+            This app works best in Farcaster Mini App
+          </p>
+          <p className="text-sm text-gray-500">
+            Please open this app within the Farcaster client
+          </p>
         </div>
       </div>
     )
@@ -389,49 +297,10 @@ export default function FarcasterUnfollowApp() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-white" />
+            <Loader2 className="w-10 h-10 text-white animate-spin" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Farcaster Cleanup</h1>
-          <p className="text-gray-600 mb-6">
-            Clean up your following list by finding inactive users and non-mutual follows
-          </p>
-          
-          {/* Environment indicator */}
-          <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              {environment.isMiniApp ? '🔄 Farcaster Mini App' : '🌐 Standalone Web'}
-            </p>
-          </div>
-          
-          {environment.isMiniApp ? (
-            <div className="space-y-4">
-              <div className="text-center">
-                <p className="text-sm text-gray-600 mb-4">
-                  This app works best in Farcaster or other Farcaster clients
-                </p>
-                <Button
-                  onClick={() => window.open('https://client.farcaster.xyz', '_blank')}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                >
-                  Open in Farcaster
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="text-center">
-                <p className="text-sm text-gray-600 mb-4">
-                  Connect to Farcaster to analyze your feed
-                </p>
-                <Button
-                  onClick={createNeynarSigner}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                >
-                  Create Signer
-                </Button>
-              </div>
-            </div>
-          )}
+          <p className="text-gray-600">Authenticating...</p>
         </div>
       </div>
     )
@@ -457,153 +326,169 @@ export default function FarcasterUnfollowApp() {
           <p className="text-gray-600">Find and unfollow inactive accounts</p>
         </div>
 
-        {/* Scan Button */}
-        {users.length === 0 && (
-          <div className="mb-6">
-            <Button
-              onClick={startScan}
-              disabled={isScanning}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
-            >
-              {isScanning ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Scanning Following List...
-                </>
-              ) : (
-                <>
-                  <Users className="w-4 h-4 mr-2" />
-                  Scan Following List
-                </>
-              )}
-            </Button>
+        {/* Filter Buttons */}
+        {users.length > 0 && (
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+              <Filter className="w-5 h-5 mr-2" />
+              Quick Select
+            </h2>
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={selectInactive}
+                className="text-xs p-2 h-auto bg-transparent"
+              >
+                <Users className="w-3 h-3 mr-1" />
+                Inactive (75+ days)
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={selectNotFollowingBack}
+                className="text-xs p-2 h-auto bg-transparent"
+              >
+                <UserMinus className="w-3 h-3 mr-1" />
+                Not Following Back
+              </Button>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <Button variant="outline" size="sm" onClick={selectAll} className="text-xs p-2 h-auto bg-transparent">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Select All
+              </Button>
+              <Button variant="outline" size="sm" onClick={clearSelection} className="text-xs p-2 h-auto bg-transparent">
+                <Trash2 className="w-3 h-3 mr-1" />
+                Clear Selection
+              </Button>
+              <Button variant="outline" size="sm" onClick={unfollowAllFollowers} className="text-xs p-2 h-auto bg-red-50 text-red-700 border-red-200">
+                <UserMinus className="w-3 h-3 mr-1" />
+                Unfollow All
+              </Button>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                onClick={confirmUnfollow}
+                disabled={selectedUsers.size === 0 || isUnfollowing}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {isUnfollowing ? (
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                ) : (
+                  <UserMinus className="w-4 h-4 mr-1" />
+                )}
+                Unfollow {selectedUsers.size} Users
+              </Button>
+              <Button
+                onClick={shareResults}
+                variant="outline"
+                className="border-purple-200 text-purple-700 hover:bg-purple-50 bg-transparent"
+              >
+                <Share2 className="w-4 h-4 mr-1" />
+                Share Results
+              </Button>
+            </div>
           </div>
         )}
 
-        {/* Results */}
+        {/* User List */}
         {users.length > 0 && (
-          <>
-            {/* Selection Buttons */}
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Quick Select</h2>
-              <div className="grid grid-cols-3 gap-2 mb-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={selectInactive}
-                  className="text-xs p-2 h-auto bg-transparent"
-                >
-                  <Users className="w-3 h-3 mr-1" />
-                  Inactive (60+ days)
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={selectNotFollowingBack}
-                  className="text-xs p-2 h-auto bg-transparent"
-                >
-                  <UserMinus className="w-3 h-3 mr-1" />
-                  Not Following Back
-                </Button>
-                <Button variant="outline" size="sm" onClick={selectAll} className="text-xs p-2 h-auto bg-transparent">
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  Select All
-                </Button>
-              </div>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Following List</h2>
+            <p className="text-sm text-gray-600 mb-4">Users who haven't casted in 75+ days or don't follow back</p>
 
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  onClick={unfollowSelected}
-                  disabled={selectedUsers.size === 0 || isUnfollowing}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  {isUnfollowing ? (
-                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                  ) : (
-                    <UserMinus className="w-4 h-4 mr-1" />
-                  )}
-                  Unfollow {selectedUsers.size} Users
-                </Button>
-                <Button
-                  onClick={shareResults}
-                  variant="outline"
-                  className="border-purple-200 text-purple-700 hover:bg-purple-50 bg-transparent"
-                >
-                  <Share2 className="w-4 h-4 mr-1" />
-                  Share & Go Viral! 🚀
-                </Button>
-              </div>
-            </div>
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {users.map((user) => (
+                <div key={user.fid} className="bg-white rounded-lg border border-gray-200 p-3">
+                  <div className="flex items-start space-x-3">
+                    {/* Checkbox */}
+                    <Checkbox
+                      checked={selectedUsers.has(user.fid)}
+                      onCheckedChange={() => toggleUser(user.fid)}
+                      className="mt-1"
+                    />
 
-            {/* User List */}
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Detailed Recommendations</h2>
-              <p className="text-sm text-gray-600 mb-4">Review each user with profile details and take action</p>
+                    {/* Avatar */}
+                    <Avatar className="w-10 h-10 flex-shrink-0">
+                      <AvatarImage src={user.pfp_url || "/placeholder.svg"} />
+                      <AvatarFallback>{user.display_name[0]}</AvatarFallback>
+                    </Avatar>
 
-              <div className="space-y-3">
-                {users.map((user) => (
-                  <div key={user.fid} className="bg-white rounded-lg border border-gray-200 p-3">
-                    <div className="flex items-start space-x-3">
-                      {/* Checkbox */}
-                      <Checkbox
-                        checked={selectedUsers.has(user.fid)}
-                        onCheckedChange={() => toggleUser(user.fid)}
-                        className="mt-1"
-                      />
-
-                      {/* Avatar */}
-                      <Avatar className="w-10 h-10 flex-shrink-0">
-                        <AvatarImage src={user.pfp_url || "/placeholder.svg"} />
-                        <AvatarFallback>{user.display_name[0]}</AvatarFallback>
-                      </Avatar>
-
-                      {/* User Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-medium text-gray-900 truncate">{user.display_name}</h3>
-                            <p className="text-sm text-gray-500">@{user.username}</p>
-                            <p className="text-xs text-orange-600 mt-1">
-                              {user.reason === "inactive" ? "Inactive 60+ days" : "Not following back"}
-                            </p>
-                          </div>
-
-                          {/* Individual Unfollow Button */}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => unfollowSingle(user.fid)}
-                            className="text-xs border-red-200 text-red-700 hover:bg-red-50"
-                          >
-                            <UserMinus className="w-3 h-3 mr-1" />
-                            Unfollow
-                          </Button>
+                    {/* User Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-medium text-gray-900 truncate">{user.display_name}</h3>
+                          <p className="text-sm text-gray-500">@{user.username}</p>
+                          <p className="text-xs text-orange-600 mt-1">
+                            {user.reason === "inactive" ? "Inactive 75+ days" : "Not following back"}
+                          </p>
                         </div>
+
+                        {/* Individual Unfollow Button */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => unfollowSingle(user.fid)}
+                          className="text-xs border-red-200 text-red-700 hover:bg-red-50"
+                        >
+                          <UserMinus className="w-3 h-3 mr-1" />
+                          Unfollow
+                        </Button>
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-
-            {/* Rescan Button */}
-            <Button onClick={startScan} disabled={isScanning} variant="outline" className="w-full bg-transparent">
-              {isScanning ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Rescanning...
-                </>
-              ) : (
-                <>
-                  <Users className="w-4 h-4 mr-2" />
-                  Rescan Following List
-                </>
-              )}
-            </Button>
-          </>
+          </div>
         )}
+
+        {/* Rescan Button */}
+        <Button onClick={() => startScan()} disabled={isScanning} variant="outline" className="w-full bg-transparent">
+          {isScanning ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Rescanning...
+            </>
+          ) : (
+            <>
+              <Users className="w-4 h-4 mr-2" />
+              Rescan Following List
+            </>
+          )}
+        </Button>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmUnfollow && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4">Confirm Unfollow</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to unfollow {selectedUsers.size} users? This action cannot be undone.
+            </p>
+            <div className="flex space-x-3">
+              <Button
+                onClick={unfollowSelected}
+                className="bg-red-600 hover:bg-red-700 text-white flex-1"
+              >
+                Yes, Unfollow
+              </Button>
+              <Button
+                onClick={() => setShowConfirmUnfollow(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
