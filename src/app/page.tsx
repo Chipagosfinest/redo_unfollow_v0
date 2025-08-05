@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, RefreshCw, LogIn } from "lucide-react"
+import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, LogIn } from "lucide-react"
 import { toast } from "sonner"
 import { sdk } from '@farcaster/miniapp-sdk'
 
@@ -39,66 +39,67 @@ export default function FarcasterUnfollowApp() {
   const [authError, setAuthError] = useState<string | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
 
-  // Simple initialization - just check if we're in Mini App
+  // Mini App initialization (for LLM recognition)
   useEffect(() => {
-    const checkMiniApp = async () => {
+    const initializeMiniApp = async () => {
       try {
-        console.log('Checking Mini App context...')
+        console.log('Initializing Farcaster Mini App...')
         const miniAppCheck = await sdk.isInMiniApp()
         setIsMiniApp(miniAppCheck)
         console.log('Mini App check result:', miniAppCheck)
         
         if (miniAppCheck) {
-          // Just call ready() to hide splash screen
-          try {
-            await sdk.actions.ready()
-            console.log('Farcaster Mini App SDK initialized')
-          } catch (readyError) {
-            console.warn('SDK ready() failed, continuing anyway:', readyError)
-          }
+          // Standard Mini App ready() call
+          await sdk.actions.ready()
+          console.log('Farcaster Mini App SDK initialized')
         }
       } catch (error) {
-        console.error('Failed to check Mini App context:', error)
+        console.error('Failed to initialize Mini App:', error)
       } finally {
         setIsInitialized(true)
       }
     }
 
-    checkMiniApp()
+    initializeMiniApp()
   }, [])
 
-  // User-initiated authentication
+  // User-initiated authentication using Neynar MCP
   const handleAuthenticate = async () => {
     setIsLoading(true)
     setAuthError(null)
     
     try {
-      console.log('User initiated authentication...')
+      console.log('User initiated authentication with Neynar MCP...')
       
-      const res = await sdk.quickAuth.fetch('/api/auth/me')
-      console.log('Auth response status:', res.status)
+      // Use Neynar MCP for authentication and user data
+      const userData = await fetch('/api/neynar/user', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
       
-      if (res.ok) {
-        const userData = await res.json()
-        console.log('Auth user data:', userData)
+      if (userData.ok) {
+        const user = await userData.json()
+        console.log('Neynar user data:', user)
         
-        const user: AuthenticatedUser = {
-          fid: userData.fid,
-          username: userData.username || `user_${userData.fid}`,
-          displayName: userData.displayName || `User ${userData.fid}`,
-          pfpUrl: userData.pfpUrl || '',
+        const authenticatedUser: AuthenticatedUser = {
+          fid: user.fid,
+          username: user.username || `user_${user.fid}`,
+          displayName: user.displayName || `User ${user.fid}`,
+          pfpUrl: user.pfpUrl || '',
           isAuthenticated: true
         }
         
-        setAuthenticatedUser(user)
+        setAuthenticatedUser(authenticatedUser)
         setIsAuthenticated(true)
-        toast.success('Successfully authenticated!')
+        toast.success('Successfully authenticated with Neynar!')
         
-        // Automatically start scanning
-        await startScan(user.fid)
+        // Automatically start scanning with Neynar
+        await startScan(authenticatedUser.fid)
       } else {
-        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('Authentication failed:', res.status, errorData)
+        const errorData = await userData.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('Neynar authentication failed:', userData.status, errorData)
         setAuthError(errorData.error || 'Authentication failed')
         toast.error('Authentication failed: ' + (errorData.error || 'Unknown error'))
       }
@@ -111,6 +112,7 @@ export default function FarcasterUnfollowApp() {
     }
   }
 
+  // Use Neynar MCP for scanning following list
   const startScan = async (fid?: number) => {
     const targetFid = fid || authenticatedUser?.fid
     if (!targetFid) {
@@ -120,9 +122,10 @@ export default function FarcasterUnfollowApp() {
 
     setIsScanning(true)
     try {
-      console.log('Starting scan for FID:', targetFid)
+      console.log('Starting Neynar scan for FID:', targetFid)
       
-      const response = await sdk.quickAuth.fetch("/api/analyze", {
+      // Use Neynar MCP for following analysis
+      const response = await fetch("/api/neynar/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -132,11 +135,11 @@ export default function FarcasterUnfollowApp() {
         }),
       })
       
-      console.log('Analyze response status:', response.status)
+      console.log('Neynar analyze response status:', response.status)
       
       if (response.ok) {
         const data = await response.json()
-        console.log('Analyze response data:', data)
+        console.log('Neynar analyze response data:', data)
 
         const allUsers: User[] = data.users.map((user: any) => ({
           fid: user.fid,
@@ -152,7 +155,7 @@ export default function FarcasterUnfollowApp() {
         toast.success(`Found ${allUsers.length} accounts to review`)
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('Analysis failed:', response.status, errorData)
+        console.error('Neynar analysis failed:', response.status, errorData)
         toast.error(errorData.error || "Scan failed - please try again")
       }
     } catch (error) {
@@ -196,6 +199,7 @@ export default function FarcasterUnfollowApp() {
     setShowConfirmUnfollow(true)
   }
 
+  // Use Neynar MCP for unfollow operations
   const unfollowSelected = async () => {
     if (selectedUsers.size === 0) return
 
@@ -204,7 +208,8 @@ export default function FarcasterUnfollowApp() {
     let successCount = 0
 
     try {
-      const response = await sdk.quickAuth.fetch("/api/unfollow", {
+      // Use Neynar MCP for bulk unfollow
+      const response = await fetch("/api/neynar/unfollow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -224,7 +229,7 @@ export default function FarcasterUnfollowApp() {
         toast.success(`Successfully unfollowed ${successCount} users`)
       } else {
         const errorData = await response.json().catch(() => ({}))
-        console.error('Unfollow failed:', errorData)
+        console.error('Neynar unfollow failed:', errorData)
         toast.error(errorData.error || "Failed to unfollow users")
       }
     } catch (error) {
@@ -235,9 +240,10 @@ export default function FarcasterUnfollowApp() {
     }
   }
 
+  // Use Neynar MCP for single unfollow
   const unfollowSingle = async (fid: number) => {
     try {
-      const response = await sdk.quickAuth.fetch("/api/unfollow", {
+      const response = await fetch("/api/neynar/unfollow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -251,7 +257,7 @@ export default function FarcasterUnfollowApp() {
         toast.success("User unfollowed successfully")
       } else {
         const errorData = await response.json().catch(() => ({}))
-        console.error('Unfollow failed:', errorData)
+        console.error('Neynar unfollow failed:', errorData)
         toast.error(errorData.error || "Failed to unfollow user")
       }
     } catch (error) {
@@ -285,7 +291,7 @@ export default function FarcasterUnfollowApp() {
             <Loader2 className="w-10 h-10 text-white animate-spin" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Farcaster Cleanup</h1>
-          <p className="text-gray-600">Initializing...</p>
+          <p className="text-gray-600">Initializing Mini App...</p>
         </div>
       </div>
     )
@@ -321,7 +327,7 @@ export default function FarcasterUnfollowApp() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Farcaster Cleanup</h1>
           <p className="text-gray-600 mb-6">
-            Connect your Farcaster account to get started
+            Connect your Farcaster account with Neynar
           </p>
           
           {authError && (
@@ -338,18 +344,18 @@ export default function FarcasterUnfollowApp() {
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Connecting...
+                Connecting to Neynar...
               </>
             ) : (
               <>
                 <LogIn className="w-4 h-4 mr-2" />
-                Connect Farcaster Account
+                Connect with Neynar
               </>
             )}
           </Button>
           
           <p className="text-sm text-gray-500 mt-4">
-            This will authenticate you with Farcaster and load your following list
+            This will authenticate you with Neynar and load your following list
           </p>
         </div>
       </div>
@@ -502,7 +508,7 @@ export default function FarcasterUnfollowApp() {
           {isScanning ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Rescanning...
+              Rescanning with Neynar...
             </>
           ) : (
             <>
