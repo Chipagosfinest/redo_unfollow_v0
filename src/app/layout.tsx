@@ -1,40 +1,71 @@
-import type { Metadata } from 'next'
-import './globals.css'
+import type React from "react"
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
+import { Toaster } from "@/components/ui/toaster"
+
+const inter = Inter({ subsets: ["latin"] })
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://redounfollowv0.vercel.app"
+
+// Farcaster Mini App embed metadata for social sharing
+const miniAppEmbed = {
+  version: "1",
+  imageUrl: "/unfollow-icon.png",
+  button: {
+    title: "🧹 Clean Following",
+    action: {
+      type: "launch_miniapp",
+      url: APP_URL,
+      name: "Unfollow Tool",
+      splashImageUrl: "/unfollow-icon.png",
+      splashBackgroundColor: "#f9fafb",
+    },
+  },
+}
 
 export const metadata: Metadata = {
-  title: 'Farcaster Feed Cleaner',
-  description: 'Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users',
+  title: "Farcaster Cleanup - Unfollow Tool",
+  description: "Clean up your Farcaster following list",
+  icons: {
+    icon: "/unfollow-icon.png",
+    apple: "/unfollow-icon.png",
+  },
   openGraph: {
-    title: 'Farcaster Feed Cleaner',
-    description: 'Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users',
-    type: 'website',
-    url: 'https://redounfollowv0.vercel.app',
+    title: "Unfollow Tool",
+    description: "Clean up your Farcaster following list",
+    url: APP_URL,
+    siteName: "Unfollow Tool",
     images: [
       {
-        url: '/unfollow-icon.png',
-        width: 1200,
-        height: 630,
-        alt: 'Farcaster Feed Cleaner - Unfollow Tool'
+        url: "/unfollow-icon.png",
+        width: 400,
+        height: 400,
+        alt: "Unfollow Tool - Farcaster Cleanup",
       },
-      {
-        url: '/unfollow-icon.svg',
-        width: 1200,
-        height: 630,
-        alt: 'Farcaster Feed Cleaner - Unfollow Tool'
-      }
     ],
+    locale: "en_US",
+    type: "website",
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'Farcaster Feed Cleaner',
-    description: 'Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users',
-    images: ['/unfollow-icon.png'],
+    card: "summary",
+    title: "Unfollow Tool",
+    description: "Clean up your Farcaster following list",
+    images: ["/unfollow-icon.png"],
   },
+  // Farcaster Mini App embed metadata (for social sharing)
   other: {
-    'farcaster:app': 'feed-cleaner',
-    'farcaster:frame': 'vNext',
-    'walletconnect:projectId': '3435763a8b4b4b4b4b4b4b4b4b4b4b4b',
-    'walletconnect:relayUrl': 'https://relay.walletconnect.com',
+    "fc:miniapp": JSON.stringify(miniAppEmbed),
+    "fc:frame": JSON.stringify({
+      ...miniAppEmbed,
+      button: {
+        ...miniAppEmbed.button,
+        action: {
+          ...miniAppEmbed.button.action,
+          type: "launch_frame", // backward compatibility
+        },
+      },
+    }),
   },
 }
 
@@ -46,34 +77,20 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#6366f1" />
-        <meta name="description" content="Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users" />
-        <meta name="farcaster:app" content="feed-cleaner" />
-        <meta name="farcaster:frame" content="vNext" />
-        <meta name="walletconnect:projectId" content="3435763a8b4b4b4b4b4b4b4b4b4b4b4b" />
-        <meta name="walletconnect:relayUrl" content="https://relay.walletconnect.com" />
-        <meta httpEquiv="Content-Security-Policy" content="upgrade-insecure-requests" />
-        <meta property="og:title" content="Farcaster Feed Cleaner" />
-        <meta property="og:description" content="Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users" />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://redounfollowv0.vercel.app" />
-        <meta property="og:image" content="/unfollow-icon.png" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Farcaster Feed Cleaner" />
-        <meta name="twitter:description" content="Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users" />
-        <meta name="twitter:image" content="/unfollow-icon.png" />
-        <meta name="next-size-adjust" content="" />
-        <title>Farcaster Feed Cleaner</title>
-        <meta name="description" content="Clean up your Farcaster feed by identifying and unfollowing inactive accounts" />
-        <link rel="icon" href="/unfollow-icon.png" type="image/png" sizes="32x32" />
-        <link rel="icon" href="/unfollow-icon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/unfollow-icon.png" />
-        <link rel="shortcut icon" href="/unfollow-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="preconnect" href="https://auth.farcaster.xyz" />
+        <meta name="theme-color" content="#1f2937" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Unfollow Tool" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        />
       </head>
-      <body className="antialiased">
+      <body className={inter.className}>
         {children}
+        <Toaster />
       </body>
     </html>
   )
