@@ -26,6 +26,17 @@ export default function RootLayout({
         <meta name="theme-color" content="#6366f1" />
         <meta name="description" content="Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users" />
         
+        {/* Farcaster Mini App Meta Tags */}
+        <meta name="farcaster:app" content="feed-cleaner" />
+        <meta name="farcaster:frame" content="vNext" />
+        
+        {/* WalletConnect Meta Tags */}
+        <meta name="walletconnect:projectId" content="3435763a8b4b4b4b4b4b4b4b4b4b4b4b" />
+        <meta name="walletconnect:relayUrl" content="https://relay.walletconnect.com" />
+        
+        {/* Security Meta Tags */}
+        <meta httpEquiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+        
         {/* Open Graph */}
         <meta property="og:title" content="Farcaster Feed Cleaner" />
         <meta property="og:description" content="Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users" />

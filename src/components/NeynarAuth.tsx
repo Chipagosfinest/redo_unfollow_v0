@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Loader2, User, Shield, CheckCircle } from 'lucide-react'
+import { Loader2, User, Shield, CheckCircle, ExternalLink } from 'lucide-react'
+import { detectEnvironment, getFarcasterUser } from '@/lib/environment'
 
 interface NeynarUser {
   fid: number
@@ -25,6 +26,34 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
   const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState<NeynarUser | null>(null)
   const [signerStatus, setSignerStatus] = useState<'none' | 'creating' | 'pending' | 'approved'>('none')
+  const [environment, setEnvironment] = useState(detectEnvironment())
+
+  useEffect(() => {
+    // Check environment on mount
+    setEnvironment(detectEnvironment())
+    
+    // Try to get existing Farcaster user if in mini app
+    if (environment.hasFarcasterContext) {
+      const farcasterUser = getFarcasterUser()
+      if (farcasterUser) {
+        handleFarcasterUser(farcasterUser)
+      }
+    }
+  }, [])
+
+  const handleFarcasterUser = (farcasterUser: any) => {
+    const neynarUser: NeynarUser = {
+      fid: farcasterUser.fid,
+      username: farcasterUser.username,
+      displayName: farcasterUser.displayName,
+      pfpUrl: farcasterUser.pfp?.url || '',
+      isAuthenticated: true
+    }
+    
+    setUser(neynarUser)
+    onUserAuthenticated(neynarUser)
+    toast.success('Connected via Farcaster!')
+  }
 
   const createSigner = async () => {
     setIsLoading(true)
@@ -132,6 +161,12 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
     toast.info('Disconnected')
   }
 
+  const openInFarcaster = () => {
+    // Open in Warpcast or other Farcaster client
+    const url = window.location.href
+    window.open(`https://warpcast.com/~/compose?text=Check%20out%20this%20Feed%20Cleaner%20app:%20${encodeURIComponent(url)}`, '_blank')
+  }
+
   if (user) {
     return (
       <Card className="bg-white/10 border-white/20">
@@ -159,7 +194,9 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
           
           <div className="flex items-center space-x-2 mb-4">
             <CheckCircle className="w-4 h-4 text-green-400" />
-            <span className="text-sm text-green-400">Signer Approved</span>
+            <span className="text-sm text-green-400">
+              {user.signerUuid ? 'Signer Approved' : 'Connected via Farcaster'}
+            </span>
           </div>
           
           <Button
@@ -179,47 +216,69 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
       <CardHeader>
         <CardTitle className="text-white flex items-center">
           <Shield className="w-5 h-5 mr-2" />
-          Connect with Neynar
+          {environment.isMiniApp ? 'Farcaster Mini App' : 'Connect with Neynar'}
         </CardTitle>
         <CardDescription className="text-purple-200">
-          Create a signer to interact with Farcaster
+          {environment.isMiniApp 
+            ? 'You\'re in a Farcaster app. Connect your wallet to continue.'
+            : 'Create a signer to interact with Farcaster'
+          }
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {signerStatus === 'none' && (
-          <Button
-            onClick={createSigner}
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Creating Signer...
-              </>
-            ) : (
-              'Create Signer'
-            )}
-          </Button>
-        )}
-
-        {signerStatus === 'creating' && (
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-white" />
-            <p className="text-sm text-purple-200">Creating signer...</p>
-          </div>
-        )}
-
-        {signerStatus === 'pending' && (
-          <div className="text-center">
-            <div className="w-8 h-8 mx-auto mb-2">
-              <div className="animate-pulse bg-yellow-400 rounded-full w-8 h-8"></div>
+        {environment.isMiniApp ? (
+          <div className="space-y-4">
+            <div className="text-center">
+              <p className="text-sm text-purple-200 mb-4">
+                This app works best in Warpcast or other Farcaster clients
+              </p>
+              <Button
+                onClick={openInFarcaster}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Open in Farcaster App
+              </Button>
             </div>
-            <p className="text-sm text-yellow-400 mb-2">Waiting for approval...</p>
-            <p className="text-xs text-purple-200">
-              Please approve the signer in your Farcaster client
-            </p>
           </div>
+        ) : (
+          <>
+            {signerStatus === 'none' && (
+              <Button
+                onClick={createSigner}
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating Signer...
+                  </>
+                ) : (
+                  'Create Signer'
+                )}
+              </Button>
+            )}
+
+            {signerStatus === 'creating' && (
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-white" />
+                <p className="text-sm text-purple-200">Creating signer...</p>
+              </div>
+            )}
+
+            {signerStatus === 'pending' && (
+              <div className="text-center">
+                <div className="w-8 h-8 mx-auto mb-2">
+                  <div className="animate-pulse bg-yellow-400 rounded-full w-8 h-8"></div>
+                </div>
+                <p className="text-sm text-yellow-400 mb-2">Waiting for approval...</p>
+                <p className="text-xs text-purple-200">
+                  Please approve the signer in your Farcaster client
+                </p>
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

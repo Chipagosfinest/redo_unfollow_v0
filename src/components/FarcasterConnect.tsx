@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
-import { Loader2, Users, UserMinus, Activity, Shield, CheckCircle } from 'lucide-react'
+import { Loader2, Users, UserMinus, Activity, Shield, CheckCircle, ExternalLink } from 'lucide-react'
 import { NeynarAuth } from './NeynarAuth'
+import { detectEnvironment, isInFarcasterApp } from '@/lib/environment'
 
 interface User {
   fid: number
@@ -44,6 +45,11 @@ export function FarcasterConnect() {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set())
   const [isUnfollowing, setIsUnfollowing] = useState(false)
+  const [environment, setEnvironment] = useState(detectEnvironment())
+
+  useEffect(() => {
+    setEnvironment(detectEnvironment())
+  }, [])
 
   const handleUserAuthenticated = (neynarUser: NeynarUser) => {
     setUser(neynarUser)
@@ -183,9 +189,14 @@ export function FarcasterConnect() {
           <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Users className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Connect Your Farcaster Account</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            {environment.isMiniApp ? 'Connect Your Farcaster Account' : 'Connect Your Farcaster Account'}
+          </h2>
           <p className="text-purple-200 mb-6">
-            Create a signer to analyze and clean your following list
+            {environment.isMiniApp 
+              ? 'You\'re in a Farcaster app. Connect to analyze your feed.'
+              : 'Create a signer to analyze and clean your following list'
+            }
           </p>
         </div>
         
@@ -193,6 +204,23 @@ export function FarcasterConnect() {
           onUserAuthenticated={handleUserAuthenticated}
           onUserDisconnected={handleUserDisconnected}
         />
+
+        {environment.isMiniApp && (
+          <div className="mt-6 p-4 bg-white/5 rounded-lg border border-white/10">
+            <p className="text-sm text-purple-200 mb-2">
+              💡 Tip: This app works best in Warpcast or other Farcaster clients
+            </p>
+            <Button
+              onClick={() => window.open('https://warpcast.com', '_blank')}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Open in Warpcast
+            </Button>
+          </div>
+        )}
       </div>
     )
   }
@@ -235,7 +263,9 @@ export function FarcasterConnect() {
             </div>
             <div className="ml-auto flex items-center space-x-2">
               <CheckCircle className="w-4 h-4 text-green-400" />
-              <span className="text-xs text-green-400">Connected</span>
+              <span className="text-xs text-green-400">
+                {environment.isMiniApp ? 'Mini App' : 'Connected'}
+              </span>
             </div>
           </div>
         </CardContent>
@@ -283,7 +313,7 @@ export function FarcasterConnect() {
         </div>
         <Button
           onClick={unfollowSelected}
-          disabled={selectedUsers.size === 0 || isUnfollowing}
+          disabled={selectedUsers.size === 0 || isUnfollowing || !user.signerUuid}
           className="bg-red-600 hover:bg-red-700 text-white"
         >
           {isUnfollowing ? (
@@ -291,6 +321,8 @@ export function FarcasterConnect() {
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Unfollowing...
             </>
+          ) : !user.signerUuid ? (
+            'Signer Required'
           ) : (
             `Unfollow Selected (${selectedUsers.size})`
           )}
