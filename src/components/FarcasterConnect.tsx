@@ -1,240 +1,346 @@
-"use client";
+"use client"
 
-import { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import { Wallet, User } from "lucide-react";
-import { sdk } from '@farcaster/miniapp-sdk';
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { toast } from 'sonner'
+import { Loader2, Users, UserMinus, Activity, Shield, CheckCircle } from 'lucide-react'
+import { NeynarAuth } from './NeynarAuth'
 
-interface FarcasterConnectProps {
-  onAuth: (fid: number) => void;
-  onDisconnect: () => void;
-  isAuthenticated: boolean;
-  userFid: number | null;
+interface User {
+  fid: number
+  username: string
+  displayName: string
+  pfpUrl: string
+  followerCount: number
+  followingCount: number
+  lastActive?: string
+  isMutual?: boolean
+  isInactive?: boolean
 }
 
-export default function FarcasterConnect({
-  onAuth,
-  onDisconnect,
-  isAuthenticated,
-  userFid,
-}: FarcasterConnectProps) {
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [userProfile, setUserProfile] = useState<any>(null);
+interface AnalysisResult {
+  totalFollowing: number
+  inactiveUsers: User[]
+  nonMutualUsers: User[]
+  spamUsers: User[]
+  mutualUsers: User[]
+}
 
-  // Get Farcaster native wallet user (Privy-based)
-  const getFarcasterUser = useCallback(async () => {
-    try {
-      // Check if we're in Farcaster environment
-      const isInIframe = window.self !== window.top;
-      const farcaster = (window as any).farcaster;
-      
-      console.log('FarcasterConnect: Environment check', {
-        isInIframe,
-        hasFarcasterObject: !!farcaster,
-        hasUser: !!farcaster?.user,
-        hasFid: !!farcaster?.user?.fid
-      });
-      
-      // If user is already available, return it
-      if (farcaster?.user?.fid) {
-        console.log('FarcasterConnect: Found existing user:', farcaster.user);
-        return farcaster.user;
-      }
-      
-      // If we're in iframe, try to initialize SDK
-      if (isInIframe) {
-        console.log('FarcasterConnect: Initializing SDK in iframe');
-        try {
-          await sdk.actions.ready();
-          
-          // Wait for SDK to initialize
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          // Check again for user
-          if (farcaster?.user?.fid) {
-            console.log('FarcasterConnect: Found user after SDK init:', farcaster.user);
-            return farcaster.user;
-          }
-          
-          // Check for Privy wallet integration
-          if (farcaster?.privy?.user) {
-            console.log('FarcasterConnect: Found Privy user:', farcaster.privy.user);
-            return farcaster.privy.user;
-          }
-        } catch (sdkError) {
-          console.warn('Farcaster SDK initialization failed, continuing without SDK:', sdkError);
-          // Continue without SDK - user might still be available
-          if (farcaster?.user?.fid) {
-            console.log('FarcasterConnect: Found user despite SDK error:', farcaster.user);
-            return farcaster.user;
-          }
-        }
-      }
-      
-      console.log('FarcasterConnect: No user found');
-      return null;
-    } catch (error) {
-      console.error("Error getting Farcaster user:", error);
-      return null;
+interface NeynarUser {
+  fid: number
+  username: string
+  displayName: string
+  pfpUrl: string
+  signerUuid?: string
+  isAuthenticated: boolean
+}
+
+export function FarcasterConnect() {
+  const [isLoading, setIsLoading] = useState(false)
+  const [user, setUser] = useState<NeynarUser | null>(null)
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
+  const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set())
+  const [isUnfollowing, setIsUnfollowing] = useState(false)
+
+  const handleUserAuthenticated = (neynarUser: NeynarUser) => {
+    setUser(neynarUser)
+    // Start analysis when user is authenticated
+    if (neynarUser.fid) {
+      analyzeFollowing(neynarUser.fid)
     }
-  }, []);
+  }
 
-  const handleFarcasterAuth = useCallback(async (fid: number) => {
-    setIsConnecting(true);
+  const handleUserDisconnected = () => {
+    setUser(null)
+    setAnalysis(null)
+    setSelectedUsers(new Set())
+  }
+
+  const analyzeFollowing = async (fid: number) => {
+    setIsLoading(true)
     try {
-      // Get user using native Farcaster wallet (Privy-based)
-      const user = await getFarcasterUser();
-      
-      if (user) {
-        setUserProfile({
-          fid: user.fid,
-          username: user.username,
-          displayName: user.displayName,
-          pfp: { url: user.pfp?.url }
-        });
-        
-        onAuth(fid);
-        toast.success("Connected to Farcaster!");
-      } else {
-        // Fallback to API if user not available
-        const response = await fetch(`https://api.farcaster.xyz/v2/user-by-fid?fid=${fid}`);
-        if (response.ok) {
-          const data = await response.json();
-          setUserProfile(data.result?.user);
-          onAuth(fid);
-          toast.success("Connected to Farcaster!");
-        } else {
-          throw new Error("Failed to get user data");
-        }
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fid }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to analyze following')
       }
+
+      const analysisData = await response.json()
+      setAnalysis(analysisData)
+      toast.success('Analysis complete!')
     } catch (error) {
-      console.error("Error connecting to Farcaster:", error);
-      toast.error("Failed to connect to Farcaster");
+      toast.error('Failed to analyze following')
+      console.error('Analysis error:', error)
     } finally {
-      setIsConnecting(false);
+      setIsLoading(false)
     }
-  }, [onAuth, getFarcasterUser]);
+  }
 
-  useEffect(() => {
-    // Auto-connect when in Farcaster native environment
-    const initializeAuth = async () => {
-      try {
-        // Get user using native Farcaster wallet (Privy-based)
-        const user = await getFarcasterUser();
-        
-        if (user?.fid && !isAuthenticated) {
-          // Set user profile immediately
-          setUserProfile({
-            fid: user.fid,
-            username: user.username,
-            displayName: user.displayName,
-            pfp: { url: user.pfp?.url }
-          });
-          
-          handleFarcasterAuth(user.fid);
-        }
-      } catch (error) {
-        console.log('Not in Farcaster native environment or user not authenticated');
+  const toggleUserSelection = (fid: number) => {
+    const newSelected = new Set(selectedUsers)
+    if (newSelected.has(fid)) {
+      newSelected.delete(fid)
+    } else {
+      newSelected.add(fid)
+    }
+    setSelectedUsers(newSelected)
+  }
+
+  const unfollowSelected = async () => {
+    if (selectedUsers.size === 0) {
+      toast.error('Please select users to unfollow')
+      return
+    }
+
+    if (!user?.signerUuid) {
+      toast.error('No signer available. Please reconnect.')
+      return
+    }
+
+    setIsUnfollowing(true)
+    try {
+      const response = await fetch('/api/unfollow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          signerUuid: user.signerUuid,
+          targetFids: Array.from(selectedUsers)
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to unfollow users')
       }
-    };
 
-    initializeAuth();
-  }, [isAuthenticated, handleFarcasterAuth, getFarcasterUser]);
+      const result = await response.json()
+      toast.success(result.message)
+      setSelectedUsers(new Set())
+      
+      // Refresh analysis
+      if (user.fid) {
+        await analyzeFollowing(user.fid)
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to unfollow users')
+      console.error('Unfollow error:', error)
+    } finally {
+      setIsUnfollowing(false)
+    }
+  }
 
-  if (isAuthenticated && userFid) {
+  const UserCard = ({ user, type }: { user: User; type: 'inactive' | 'nonMutual' | 'spam' | 'mutual' }) => {
+    const isSelected = selectedUsers.has(user.fid)
+    const canUnfollow = type !== 'mutual'
+    
     return (
-      <div className="space-y-4">
-        {/* Connected User Profile */}
-        <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-          <div className="flex items-center space-x-3">
-            <img
-              src={userProfile?.pfp?.url || "/icon.svg"}
-              alt={userProfile?.displayName || "User"}
-              className="w-10 h-10 rounded-full"
-            />
-            <div className="flex-1">
-              <div className="flex items-center space-x-2">
-                <h3 className="font-semibold">{userProfile?.displayName || "Farcaster User"}</h3>
-                <Badge variant="secondary" className="text-xs">Connected</Badge>
+      <Card className={`transition-all duration-200 ${isSelected ? 'ring-2 ring-purple-500' : ''}`}>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => toggleUserSelection(user.fid)}
+                disabled={!canUnfollow}
+                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+              />
+              <div>
+                <h4 className="font-semibold text-sm">{user.displayName}</h4>
+                <p className="text-xs text-gray-500">@{user.username}</p>
+                <div className="flex space-x-2 mt-1">
+                  <Badge variant="outline" className="text-xs">
+                    {user.followerCount} followers
+                  </Badge>
+                  {type === 'inactive' && <Badge variant="destructive" className="text-xs">Inactive</Badge>}
+                  {type === 'nonMutual' && <Badge variant="secondary" className="text-xs">Non-mutual</Badge>}
+                  {type === 'spam' && <Badge variant="destructive" className="text-xs">Spam</Badge>}
+                  {type === 'mutual' && <Badge variant="default" className="text-xs">Mutual</Badge>}
+                </div>
               </div>
-              <p className="text-sm text-gray-600">@{userProfile?.username || "user"}</p>
             </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
-        {/* Disconnect Button */}
-        <Button
-          onClick={onDisconnect}
-          variant="outline"
-          className="w-full"
-          id="farcaster-disconnect-button"
-          name="farcaster-disconnect-button"
-        >
-          <User className="w-4 h-4 mr-2" />
-          Disconnect
-        </Button>
+  if (!user) {
+    return (
+      <div className="text-center">
+        <div className="mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Users className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Connect Your Farcaster Account</h2>
+          <p className="text-purple-200 mb-6">
+            Create a signer to analyze and clean your following list
+          </p>
+        </div>
+        
+        <NeynarAuth 
+          onUserAuthenticated={handleUserAuthenticated}
+          onUserDisconnected={handleUserDisconnected}
+        />
       </div>
-    );
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="text-center">
+        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-white" />
+        <h3 className="text-xl font-semibold text-white mb-2">Analyzing Your Feed</h3>
+        <p className="text-purple-200 mb-4">This may take a few moments...</p>
+        <Progress value={45} className="w-full max-w-md mx-auto" />
+      </div>
+    )
+  }
+
+  if (!analysis) {
+    return (
+      <div className="text-center">
+        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-white" />
+        <h3 className="text-xl font-semibold text-white mb-2">Loading Analysis</h3>
+        <p className="text-purple-200">Please wait...</p>
+      </div>
+    )
   }
 
   return (
-    <Button
-      onClick={async () => {
-        try {
-          // Get user using native Farcaster wallet (Privy-based)
-          const user = await getFarcasterUser();
-          
-          if (user?.fid) {
-            // Set user profile immediately
-            setUserProfile({
-              fid: user.fid,
-              username: user.username,
-              displayName: user.displayName,
-              pfp: { url: user.pfp?.url }
-            });
-            
-            handleFarcasterAuth(user.fid);
-          } else {
-            const isInIframe = window.self !== window.top;
-            if (isInIframe) {
-              toast.error("Please connect your Farcaster wallet first");
-            } else {
-              toast.error("Please open this app in Farcaster to connect your wallet");
-            }
-          }
-        } catch (error) {
-          console.error('Connection error:', error);
-          const isInIframe = window.self !== window.top;
-          
-          // Check if it's a CSP or network error
-          if (error instanceof TypeError && error.message.includes('fetch')) {
-            console.warn('Network error detected, this might be due to CSP restrictions');
-            toast.error("Network connection issue. Please check your connection and try again.");
-          } else if (isInIframe) {
-            toast.error("Failed to connect to Farcaster wallet");
-          } else {
-            toast.error("Please open this app in Farcaster to connect your wallet");
-          }
-        }
-      }}
-      disabled={isConnecting}
-      className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-      id="farcaster-connect-button"
-      name="farcaster-connect-button"
-    >
-      {isConnecting ? (
-        <div className="flex items-center">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-          Connecting...
+    <div className="space-y-6">
+      {/* User Info */}
+      <Card className="bg-white/10 border-white/20">
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-3">
+            <img
+              src={user.pfpUrl || '/default-avatar.png'}
+              alt={user.displayName}
+              className="w-10 h-10 rounded-full"
+            />
+            <div>
+              <h3 className="font-semibold text-white">{user.displayName}</h3>
+              <p className="text-sm text-purple-200">@{user.username}</p>
+            </div>
+            <div className="ml-auto flex items-center space-x-2">
+              <CheckCircle className="w-4 h-4 text-green-400" />
+              <span className="text-xs text-green-400">Connected</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="bg-white/10 border-white/20">
+          <CardContent className="p-4 text-center">
+            <Users className="w-6 h-6 mx-auto mb-2 text-blue-400" />
+            <div className="text-2xl font-bold text-white">{analysis.totalFollowing}</div>
+            <div className="text-xs text-purple-200">Total Following</div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-white/10 border-white/20">
+          <CardContent className="p-4 text-center">
+            <Activity className="w-6 h-6 mx-auto mb-2 text-red-400" />
+            <div className="text-2xl font-bold text-white">{analysis.inactiveUsers.length}</div>
+            <div className="text-xs text-purple-200">Inactive Users</div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-white/10 border-white/20">
+          <CardContent className="p-4 text-center">
+            <UserMinus className="w-6 h-6 mx-auto mb-2 text-yellow-400" />
+            <div className="text-2xl font-bold text-white">{analysis.nonMutualUsers.length}</div>
+            <div className="text-xs text-purple-200">Non-Mutual</div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-white/10 border-white/20">
+          <CardContent className="p-4 text-center">
+            <Shield className="w-6 h-6 mx-auto mb-2 text-green-400" />
+            <div className="text-2xl font-bold text-white">{analysis.mutualUsers.length}</div>
+            <div className="text-xs text-purple-200">Mutual Follows</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-between items-center">
+        <div className="text-sm text-purple-200">
+          Selected: {selectedUsers.size} users
         </div>
-      ) : (
-        <>
-          <Wallet className="w-4 h-4 mr-2" />
-          {window.self !== window.top ? 'Connect Farcaster Wallet' : 'Open in Farcaster App'}
-        </>
-      )}
-    </Button>
-  );
+        <Button
+          onClick={unfollowSelected}
+          disabled={selectedUsers.size === 0 || isUnfollowing}
+          className="bg-red-600 hover:bg-red-700 text-white"
+        >
+          {isUnfollowing ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Unfollowing...
+            </>
+          ) : (
+            `Unfollow Selected (${selectedUsers.size})`
+          )}
+        </Button>
+      </div>
+
+      {/* User Lists */}
+      <div className="space-y-6">
+        {analysis.inactiveUsers.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+              <Activity className="w-5 h-5 mr-2 text-red-400" />
+              Inactive Users ({analysis.inactiveUsers.length})
+            </h3>
+            <div className="grid gap-3">
+              {analysis.inactiveUsers.map(user => (
+                <UserCard key={user.fid} user={user} type="inactive" />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {analysis.nonMutualUsers.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+              <UserMinus className="w-5 h-5 mr-2 text-yellow-400" />
+              Non-Mutual Users ({analysis.nonMutualUsers.length})
+            </h3>
+            <div className="grid gap-3">
+              {analysis.nonMutualUsers.map(user => (
+                <UserCard key={user.fid} user={user} type="nonMutual" />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {analysis.spamUsers.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+              <Shield className="w-5 h-5 mr-2 text-red-400" />
+              Potential Spam ({analysis.spamUsers.length})
+            </h3>
+            <div className="grid gap-3">
+              {analysis.spamUsers.map(user => (
+                <UserCard key={user.fid} user={user} type="spam" />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 } 

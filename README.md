@@ -1,60 +1,90 @@
-# Farcaster Unfollow Tool
+# Farcaster Feed Cleaner
 
-A beautiful, modern tool to sweep who doesn't follow you back or is inactive. Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users.
+A modern, optimized tool to clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users.
 
 ## 🚀 Live App
 
-**Current Status:** Production Ready (using real Farcaster data)
-
-**Live URL:** https://redounfollowv0.vercel.app
+**Live URL:** [https://redounfollowv0.vercel.app](https://redounfollowv0.vercel.app)
 
 ## ✨ Features
 
-- **Beautiful Modern UI** - Clean, responsive design with smooth animations
 - **Smart Analysis** - Identifies inactive accounts, non-mutual follows, and spam
 - **Batch Operations** - Select and unfollow multiple users at once
+- **Modern UI** - Clean, responsive design with smooth animations
 - **Real-time Data** - Uses actual Farcaster data via Neynar API
-- **Real Data Analysis** - Uses actual Farcaster API data
+- **Secure & Private** - No data stored on servers
 
-## 🔧 Production Setup
+## 🛠️ Tech Stack
 
-The app is configured for production use:
+- **Frontend:** Next.js 15, React 19, TypeScript
+- **Styling:** Tailwind CSS, Radix UI
+- **Backend:** Next.js API Routes
+- **Deployment:** Vercel
+- **Data:** Neynar API (Farcaster)
 
-### 1. Get Neynar API Key
-1. Go to [Neynar Dashboard](https://neynar.com)
-2. Sign up and get your API key
-3. Copy the API key
+## 🚀 Quick Start
 
-### 2. Configure Vercel Environment Variables
-1. Go to your Vercel project dashboard
-2. Navigate to Settings → Environment Variables
-3. Add the following variable:
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Chipagosfinest/redo_unfollow_v0.git
+   cd redo_unfollow_v0
    ```
-   Name: NEYNAR_API_KEY
-   Value: your_neynar_api_key_here
-   Environment: Production
-   ```
-4. Redeploy the app
 
-### 3. Production Features
-- The app uses real Farcaster API data
-- You'll see your actual Farcaster following list
-- All analysis is based on real user data
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp env.example .env.local
+   ```
+   Edit `.env.local` and add your Neynar API key:
+   ```
+   NEYNAR_API_KEY=your_neynar_api_key_here
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   ```
+
+4. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 🔧 Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `NEYNAR_API_KEY` | Your Neynar API key | Yes |
+| `NEXT_PUBLIC_APP_URL` | Your app's URL | Yes |
+
+## 📦 Project Structure
+
+```
+src/
+├── app/
+│   ├── api/
+│   │   └── analyze/          # Analysis API endpoint
+│   ├── globals.css           # Global styles
+│   ├── layout.tsx            # Root layout
+│   └── page.tsx              # Home page
+├── components/
+│   ├── ui/                   # UI components (Radix)
+│   ├── FarcasterConnect.tsx  # Main app component
+│   └── ThemeProvider.tsx     # Theme provider
+└── lib/
+    ├── env.ts                # Environment utilities
+    └── utils.ts              # Utility functions
+```
 
 ## 🎨 Design Features
 
 - **Modern Gradient Backgrounds** - Beautiful purple to blue gradients
 - **Smooth Animations** - Hover effects and transitions
 - **Responsive Layout** - Works perfectly on all devices
-- **Clear Visual Hierarchy** - Easy to scan and understand
 - **Accessible Design** - Proper contrast and ARIA labels
-
-## 📊 Real Data Analysis
-
-The app analyzes your actual Farcaster data including:
-- **Inactive Users** - Accounts that haven't posted in 60+ days
-- **Non-Mutual Follows** - Users who don't follow you back
-- **Spam Detection** - Potential spam accounts
 
 ## 🔄 Development
 
@@ -67,33 +97,33 @@ npm run dev
 
 # Build for production
 npm run build
-```
 
-## 📝 Environment Variables
+# Start production server
+npm start
 
-Create a `.env.local` file for local development:
-
-```env
-NEYNAR_API_KEY=your_neynar_api_key_here
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+# Lint code
+npm run lint
 ```
 
 ## 🚀 Deployment
 
-The app is automatically deployed to Vercel. To deploy with real data:
+The app is automatically deployed to Vercel. To deploy:
 
-1. Add `NEYNAR_API_KEY` to Vercel environment variables
-2. Redeploy the app
-3. The demo mode banner will disappear and show real data
+1. Push to the `main` branch
+2. Vercel will automatically build and deploy
+3. Add environment variables in Vercel dashboard
 
-## 🎯 Production Status
+## 📝 License
 
-- [x] Configure Neynar API key in Vercel
-- [x] Test with real Farcaster data
-- [x] Add analysis features
-- [x] Implement real unfollow operations
-- [x] Deploy to production
+MIT License - see LICENSE file for details.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
 ---
 
-**Note:** This app is production ready and uses real Farcaster data. Users can connect their wallets and start cleaning their feeds immediately.
+**Note:** This app is production-ready and uses real Farcaster data. Users can connect their wallets and start cleaning their feeds immediately.

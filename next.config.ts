@@ -12,7 +12,23 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; connect-src 'self' https: wss: blob: https://api.farcaster.xyz https://farcaster.xyz https://client.farcaster.xyz https://warpcast.com https://client.warpcast.com https://privy.farcaster.xyz https://privy.warpcast.com https://auth.privy.io https://rpc.privy.systems https://cloudflareinsights.com https://api.neynar.com; frame-src 'self' https: https://warpcast.com https://farcaster.xyz; frame-ancestors 'self' https://warpcast.com https://farcaster.xyz; object-src 'none'; base-uri 'self'; form-action 'self';",
+            value: "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; connect-src 'self' https: wss: blob: https://api.farcaster.xyz https://farcaster.xyz https://client.farcaster.xyz https://warpcast.com https://client.warpcast.com https://privy.farcaster.xyz https://privy.warpcast.com https://auth.privy.io https://rpc.privy.systems https://cloudflareinsights.com https://api.neynar.com https://explorer-api.walletconnect.com https://relay.walletconnect.com https://relay.walletconnect.org https://*.walletconnect.com https://*.walletconnect.org https://*.walletconnect.io https://explorer-api.walletconnect.com https://relay.walletconnect.com https://relay.walletconnect.org https://relay.walletconnect.io https://*.datadoghq.com https://*.datadog.com https://browser-intake-datad0g.com https://public-trace-http-intake.logs.datadoghq.com https://rum-http-intake.logs.datadoghq.com; frame-src 'self' https: https://warpcast.com https://farcaster.xyz https://*.walletconnect.com https://*.walletconnect.org https://*.walletconnect.io https://*.datadoghq.com; frame-ancestors 'self' https://warpcast.com https://farcaster.xyz; object-src 'none'; base-uri 'self'; form-action 'self';",
+          },
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "https://warpcast.com",
+          },
+          {
+            key: "Access-Control-Allow-Methods",
+            value: "GET, POST, PUT, DELETE, OPTIONS",
+          },
+          {
+            key: "Access-Control-Allow-Headers",
+            value: "Content-Type, Authorization, X-Requested-With",
+          },
+          {
+            key: "Access-Control-Allow-Credentials",
+            value: "true",
           },
           {
             key: "X-Farcaster-App-Type",
