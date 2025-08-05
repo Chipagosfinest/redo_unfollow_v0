@@ -27,9 +27,25 @@ export function detectEnvironment(): EnvironmentInfo {
   // Check for WalletConnect
   const hasWalletConnect = !!(window as any).WalletConnect
 
+  // More precise detection for standalone web
+  const isStandalone = !isInIframe && !hasFarcasterObject && !isWarpcast && !hasFarcasterUser
+  const isMiniApp = isInIframe || (hasFarcasterObject && hasFarcasterUser) || isWarpcast
+
+  // Debug logging
+  console.log('Environment Detection:', {
+    isInIframe,
+    hasFarcasterObject,
+    hasFarcasterUser,
+    isWarpcast,
+    hasWalletConnect,
+    isStandalone,
+    isMiniApp,
+    userAgent: userAgent.substring(0, 100) // First 100 chars for privacy
+  })
+
   return {
-    isMiniApp: isInIframe || hasFarcasterObject || isWarpcast,
-    isStandalone: !isInIframe && !hasFarcasterObject && !isWarpcast,
+    isMiniApp,
+    isStandalone,
     hasFarcasterContext: hasFarcasterUser,
     hasWalletConnect
   }
