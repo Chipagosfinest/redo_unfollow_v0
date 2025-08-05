@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
         { 
           error: 'Invalid token', 
           details: error instanceof Error ? error.message : 'Unknown error',
-          timeout: error.message?.includes('timeout') ? true : false
+          timeout: error instanceof Error && error.message?.includes('timeout') ? true : false
         },
         { status: 401 }
       )
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
       { 
         error: 'Authentication failed', 
         details: error instanceof Error ? error.message : 'Unknown error',
-        timeout: error.message?.includes('timeout') ? true : false
+        timeout: error instanceof Error && error.message?.includes('timeout') ? true : false
       },
       { status: 500 }
     )
