@@ -1,0 +1,18 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#000000"/>
+  
+  <!-- Unfollow Button -->
+  <rect x="400" y="200" width="400" height="80" rx="12" fill="#E91E63"/>
+  
+  <!-- UNFOLLOW Text -->
+  <text x="600" y="250" text-anchor="middle" fill="#000000" font-family="Arial, sans-serif" font-size="24" font-weight="bold">UNFOLLOW</text>
+  
+  <!-- Hand Cursor -->
+  <g transform="translate(580, 320)">
+    <!-- Hand shape -->
+    <path d="M0 0 L8 0 L12 4 L16 0 L20 0 L20 8 L16 12 L12 8 L8 12 L0 12 Z" fill="#FFB6C1"/>
+    <!-- Finger pointing up -->
+    <path d="M8 0 L8 -20 L12 -20 L12 0 Z" fill="#FFB6C1"/>
+  </g>
+</svg> 

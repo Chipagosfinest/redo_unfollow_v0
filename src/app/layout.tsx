@@ -9,13 +9,26 @@ export const metadata: Metadata = {
     description: 'Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users',
     type: 'website',
     url: 'https://redounfollowv0.vercel.app',
-    images: ['🧹'],
+    images: [
+      {
+        url: '/unfollow-icon.png',
+        width: 1200,
+        height: 630,
+        alt: 'Farcaster Feed Cleaner - Unfollow Tool'
+      },
+      {
+        url: '/unfollow-icon.svg',
+        width: 1200,
+        height: 630,
+        alt: 'Farcaster Feed Cleaner - Unfollow Tool'
+      }
+    ],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'Farcaster Feed Cleaner',
     description: 'Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users',
-    images: ['🧹'],
+    images: ['/unfollow-icon.png'],
   },
   other: {
     'farcaster:app': 'feed-cleaner',
@@ -31,8 +44,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <head>
+        <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#6366f1" />
         <meta name="description" content="Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users" />
@@ -45,16 +59,18 @@ export default function RootLayout({
         <meta property="og:description" content="Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://redounfollowv0.vercel.app" />
-        <meta property="og:image" content="🧹" />
-        <meta name="twitter:card" content="summary" />
+        <meta property="og:image" content="/unfollow-icon.png" />
+        <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Farcaster Feed Cleaner" />
         <meta name="twitter:description" content="Clean up your Farcaster feed by identifying and unfollowing inactive accounts, non-mutual follows, and spam users" />
-        <meta name="twitter:image" content="🧹" />
+        <meta name="twitter:image" content="/unfollow-icon.png" />
         <meta name="next-size-adjust" content="" />
         <title>Farcaster Feed Cleaner</title>
         <meta name="description" content="Clean up your Farcaster feed by identifying and unfollowing inactive accounts" />
-        <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="16x16" />
-        <link rel="icon" href="🧹" />
+        <link rel="icon" href="/unfollow-icon.png" type="image/png" sizes="32x32" />
+        <link rel="icon" href="/unfollow-icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/unfollow-icon.png" />
+        <link rel="shortcut icon" href="/unfollow-icon.png" />
       </head>
       <body className="antialiased">
         {children}
