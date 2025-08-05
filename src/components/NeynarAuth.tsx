@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Loader2, User, Shield, CheckCircle, ExternalLink } from 'lucide-react'
+import { Loader2, User, Shield, CheckCircle, ExternalLink, Copy } from 'lucide-react'
 import { detectEnvironment, getFarcasterUser } from '@/lib/environment'
 
 interface NeynarUser {
@@ -27,6 +27,8 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
   const [user, setUser] = useState<NeynarUser | null>(null)
   const [signerStatus, setSignerStatus] = useState<'none' | 'creating' | 'pending' | 'approved'>('none')
   const [environment, setEnvironment] = useState(detectEnvironment())
+  const [approvalUrl, setApprovalUrl] = useState<string>('')
+  const [signerUuid, setSignerUuid] = useState<string>('')
 
   useEffect(() => {
     // Check environment on mount
@@ -82,6 +84,10 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
       const data = await response.json()
       console.log('Signer created:', data)
       
+      setSignerUuid(data.signer_uuid)
+      setApprovalUrl(data.signer_approval_url)
+      setSignerStatus('pending')
+      
       // Poll for signer status
       await pollSignerStatus(data.signer_uuid)
       
@@ -94,15 +100,15 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
     }
   }
 
-  const pollSignerStatus = async (signerUuid: string) => {
-    console.log('Starting to poll signer status:', signerUuid)
-    const maxAttempts = 30 // 30 seconds
+  const pollSignerStatus = async (uuid: string) => {
+    console.log('Starting to poll signer status:', uuid)
+    const maxAttempts = 60 // 60 seconds for more time
     let attempts = 0
 
     const poll = async () => {
       try {
         console.log(`Polling signer status (attempt ${attempts + 1}/${maxAttempts})`)
-        const response = await fetch(`/api/auth/signer?signer_uuid=${signerUuid}`)
+        const response = await fetch(`/api/auth/signer?signer_uuid=${uuid}`)
         const data = await response.json()
 
         console.log('Signer status response:', data)
@@ -112,9 +118,9 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
           toast.success('Signer approved!')
           
           // Get user data
-          await fetchUserData(signerUuid)
+          await fetchUserData(uuid)
           return
-        } else if (data.status === 'pending') {
+        } else if (data.status === 'pending' || data.status === 'generated') {
           setSignerStatus('pending')
           attempts++
           
@@ -144,15 +150,15 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
     await poll()
   }
 
-  const fetchUserData = async (signerUuid: string) => {
+  const fetchUserData = async (uuid: string) => {
     try {
-      console.log('Fetching user data for signer:', signerUuid)
+      console.log('Fetching user data for signer:', uuid)
       const response = await fetch('/api/auth/user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ signerUuid }),
+        body: JSON.stringify({ signerUuid: uuid }),
       })
 
       if (!response.ok) {
@@ -169,7 +175,7 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
         username: userData.username,
         displayName: userData.display_name,
         pfpUrl: userData.pfp_url,
-        signerUuid,
+        signerUuid: uuid,
         isAuthenticated: true
       }
 
@@ -186,6 +192,8 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
   const disconnect = () => {
     setUser(null)
     setSignerStatus('none')
+    setApprovalUrl('')
+    setSignerUuid('')
     onUserDisconnected()
     toast.info('Disconnected')
   }
@@ -194,6 +202,20 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
     // Open in Warpcast or other Farcaster client
     const url = window.location.href
     window.open(`https://warpcast.com/~/compose?text=Check%20out%20this%20Feed%20Cleaner%20app:%20${encodeURIComponent(url)}`, '_blank')
+  }
+
+  const copyApprovalUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(approvalUrl)
+      toast.success('Approval URL copied to clipboard!')
+    } catch (error) {
+      console.error('Failed to copy URL:', error)
+      toast.error('Failed to copy URL')
+    }
+  }
+
+  const openApprovalUrl = () => {
+    window.open(approvalUrl, '_blank')
   }
 
   if (user) {
@@ -296,20 +318,48 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
               </div>
             )}
 
-            {signerStatus === 'pending' && (
-              <div className="text-center">
-                <div className="w-8 h-8 mx-auto mb-2">
-                  <div className="animate-pulse bg-yellow-400 rounded-full w-8 h-8"></div>
+            {signerStatus === 'pending' && approvalUrl && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <div className="w-8 h-8 mx-auto mb-2">
+                    <div className="animate-pulse bg-yellow-400 rounded-full w-8 h-8"></div>
+                  </div>
+                  <p className="text-sm text-yellow-400 mb-2">Waiting for approval...</p>
+                  <p className="text-xs text-purple-200 mb-4">
+                    Please approve the signer using the link below
+                  </p>
                 </div>
-                <p className="text-sm text-yellow-400 mb-2">Waiting for approval...</p>
-                <p className="text-xs text-purple-200">
-                  Please approve the signer in your Farcaster client
-                </p>
+                
+                <div className="space-y-2">
+                  <Button
+                    onClick={openApprovalUrl}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Open Approval Link
+                  </Button>
+                  
+                  <Button
+                    onClick={copyApprovalUrl}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Approval URL
+                  </Button>
+                </div>
+                
+                <div className="text-xs text-purple-200 bg-white/5 p-2 rounded">
+                  <p className="font-semibold mb-1">Signer UUID:</p>
+                  <code className="text-xs break-all">{signerUuid}</code>
+                </div>
+                
                 <Button
                   onClick={() => setSignerStatus('none')}
                   variant="outline"
                   size="sm"
-                  className="mt-2"
+                  className="w-full"
                 >
                   Cancel
                 </Button>
