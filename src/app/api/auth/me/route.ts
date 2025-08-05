@@ -31,11 +31,17 @@ export async function GET(request: NextRequest) {
       const domain = process.env.NEXT_PUBLIC_APP_URL || 'https://redounfollowv0.vercel.app'
       console.log('Verifying token with domain:', domain)
       
-      const payload = await client.verifyJwt({
+      // Add timeout to token verification
+      const tokenPromise = client.verifyJwt({
         token,
         domain,
       })
-
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Token verification timeout')), 10000)
+      )
+      
+      const payload = await Promise.race([tokenPromise, timeoutPromise])
       console.log('Token verified successfully, FID:', payload.sub)
 
       // Get user data from Neynar API
@@ -50,8 +56,8 @@ export async function GET(request: NextRequest) {
 
       console.log('Fetching user data from Neynar for FID:', payload.sub)
 
-      // Fetch user data from Neynar
-      const neynarResponse = await fetch(
+      // Fetch user data from Neynar with timeout
+      const neynarPromise = fetch(
         `https://api.neynar.com/v2/farcaster/user/bulk?fids=${payload.sub}`,
         {
           headers: {
@@ -60,6 +66,12 @@ export async function GET(request: NextRequest) {
           },
         }
       )
+      
+      const neynarTimeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Neynar API timeout')), 15000)
+      )
+      
+      const neynarResponse = await Promise.race([neynarPromise, neynarTimeoutPromise])
 
       console.log('Neynar response status:', neynarResponse.status)
 
@@ -106,7 +118,11 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       console.error('Token verification failed:', error)
       const errorResponse = NextResponse.json(
-        { error: 'Invalid token', details: error instanceof Error ? error.message : 'Unknown error' },
+        { 
+          error: 'Invalid token', 
+          details: error instanceof Error ? error.message : 'Unknown error',
+          timeout: error.message?.includes('timeout') ? true : false
+        },
         { status: 401 }
       )
       errorResponse.headers.set('Access-Control-Allow-Origin', '*')
@@ -116,7 +132,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Auth error:', error)
     const errorResponse = NextResponse.json(
-      { error: 'Authentication failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Authentication failed', 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timeout: error.message?.includes('timeout') ? true : false
+      },
       { status: 500 }
     )
     errorResponse.headers.set('Access-Control-Allow-Origin', '*')

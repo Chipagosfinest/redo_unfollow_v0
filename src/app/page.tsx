@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2 } from "lucide-react"
+import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { sdk } from '@farcaster/miniapp-sdk'
 
@@ -37,12 +37,22 @@ export default function FarcasterUnfollowApp() {
   const [showConfirmUnfollow, setShowConfirmUnfollow] = useState(false)
   const [isMiniApp, setIsMiniApp] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [initTimeout, setInitTimeout] = useState<NodeJS.Timeout | null>(null)
 
-  // Initialize Farcaster SDK and Quick Auth
+  // Initialize Farcaster SDK and Quick Auth with timeout protection
   useEffect(() => {
     const initializeApp = async () => {
       try {
         console.log('Initializing Farcaster Mini App...')
+        
+        // Set a timeout to prevent infinite loading
+        const timeout = setTimeout(() => {
+          console.error('Initialization timeout - forcing app ready')
+          setIsLoading(false)
+          setAuthError('Initialization timeout - please refresh and try again')
+        }, 15000) // 15 second timeout
+        
+        setInitTimeout(timeout)
         
         // Check if we're in a Mini App context
         const miniAppCheck = await sdk.isInMiniApp()
@@ -52,14 +62,27 @@ export default function FarcasterUnfollowApp() {
         if (miniAppCheck) {
           console.log('Running in Farcaster Mini App context')
           
-          // Call ready() to hide splash screen
-          await sdk.actions.ready()
-          console.log('Farcaster Mini App SDK initialized')
+          // Call ready() to hide splash screen with error handling
+          try {
+            await sdk.actions.ready()
+            console.log('Farcaster Mini App SDK initialized')
+          } catch (readyError) {
+            console.warn('SDK ready() failed, continuing anyway:', readyError)
+          }
           
-          // Use Quick Auth to get authenticated user
+          // Use Quick Auth to get authenticated user with timeout
           try {
             console.log('Attempting Quick Auth...')
-            const res = await sdk.quickAuth.fetch('/api/auth/me')
+            
+            // Add timeout to the fetch request
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+            
+            const res = await sdk.quickAuth.fetch('/api/auth/me', {
+              signal: controller.signal
+            })
+            
+            clearTimeout(timeoutId)
             console.log('Quick Auth response status:', res.status)
             
             if (res.ok) {
@@ -88,14 +111,22 @@ export default function FarcasterUnfollowApp() {
             }
           } catch (error) {
             console.error('Quick Auth error:', error)
-            setAuthError('Failed to authenticate')
-            toast.error('Failed to authenticate: ' + (error instanceof Error ? error.message : 'Unknown error'))
+            if (error.name === 'AbortError') {
+              setAuthError('Authentication timeout - please try again')
+              toast.error('Authentication timeout - please try again')
+            } else {
+              setAuthError('Failed to authenticate')
+              toast.error('Failed to authenticate: ' + (error instanceof Error ? error.message : 'Unknown error'))
+            }
           }
         } else {
           console.log('Not in Mini App context')
           setAuthError('This app works best in Farcaster')
           toast.error('This app works best in Farcaster')
         }
+        
+        // Clear timeout on successful initialization
+        clearTimeout(timeout)
         
       } catch (error) {
         console.error('Failed to initialize Farcaster SDK:', error)
@@ -107,6 +138,13 @@ export default function FarcasterUnfollowApp() {
     }
 
     initializeApp()
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (initTimeout) {
+        clearTimeout(initTimeout)
+      }
+    }
   }, [])
 
   const startScan = async (fid?: number) => {
@@ -119,6 +157,11 @@ export default function FarcasterUnfollowApp() {
     setIsScanning(true)
     try {
       console.log('Starting scan for FID:', targetFid)
+      
+      // Add timeout to the scan request
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+      
       const response = await sdk.quickAuth.fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,8 +170,10 @@ export default function FarcasterUnfollowApp() {
           page: 1, 
           limit: 50 
         }),
+        signal: controller.signal
       })
       
+      clearTimeout(timeoutId)
       console.log('Analyze response status:', response.status)
       
       if (response.ok) {
@@ -154,7 +199,11 @@ export default function FarcasterUnfollowApp() {
       }
     } catch (error) {
       console.error('Scan error:', error)
-      toast.error("Scan failed - please try again: " + (error instanceof Error ? error.message : 'Unknown error'))
+      if (error.name === 'AbortError') {
+        toast.error("Scan timeout - please try again")
+      } else {
+        toast.error("Scan failed - please try again: " + (error instanceof Error ? error.message : 'Unknown error'))
+      }
     } finally {
       setIsScanning(false)
     }
@@ -273,6 +322,18 @@ export default function FarcasterUnfollowApp() {
     }
   }
 
+  const retryInitialization = () => {
+    setIsLoading(true)
+    setAuthError(null)
+    setIsAuthenticated(false)
+    setAuthenticatedUser(null)
+    setUsers([])
+    setSelectedUsers(new Set())
+    
+    // Force a page reload to restart the initialization
+    window.location.reload()
+  }
+
   // Show loading screen
   if (isLoading) {
     return (
@@ -283,6 +344,7 @@ export default function FarcasterUnfollowApp() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Farcaster Cleanup</h1>
           <p className="text-gray-600">Initializing...</p>
+          <p className="text-sm text-gray-500 mt-2">This may take a few seconds</p>
         </div>
       </div>
     )
@@ -318,12 +380,22 @@ export default function FarcasterUnfollowApp() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Authentication Error</h1>
           <p className="text-gray-600 mb-6">{authError}</p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            className="bg-purple-600 hover:bg-purple-700 text-white"
-          >
-            Try Again
-          </Button>
+          <div className="space-y-3">
+            <Button 
+              onClick={retryInitialization} 
+              className="bg-purple-600 hover:bg-purple-700 text-white w-full"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="outline"
+              className="w-full"
+            >
+              Refresh Page
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -339,6 +411,7 @@ export default function FarcasterUnfollowApp() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Farcaster Cleanup</h1>
           <p className="text-gray-600">Authenticating...</p>
+          <p className="text-sm text-gray-500 mt-2">Please wait while we connect to Farcaster</p>
         </div>
       </div>
     )
