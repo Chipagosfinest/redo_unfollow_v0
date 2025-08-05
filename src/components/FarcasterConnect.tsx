@@ -5,8 +5,21 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { toast } from 'sonner'
-import { Loader2, Users, UserMinus, Activity, Shield, CheckCircle, ExternalLink } from 'lucide-react'
+import { toast, Toaster } from 'sonner'
+import { 
+  Loader2, 
+  Users, 
+  UserMinus, 
+  Activity, 
+  Shield, 
+  CheckCircle, 
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
+  RefreshCw,
+  AlertTriangle
+} from 'lucide-react'
 import { NeynarAuth } from './NeynarAuth'
 import { detectEnvironment } from '@/lib/environment'
 
@@ -17,17 +30,24 @@ interface User {
   pfpUrl: string
   followerCount: number
   followingCount: number
-  lastActive?: string
   isMutual?: boolean
   isInactive?: boolean
+  isSpam?: boolean
+  shouldUnfollow?: boolean
 }
 
 interface AnalysisResult {
   totalFollowing: number
-  inactiveUsers: User[]
-  nonMutualUsers: User[]
-  spamUsers: User[]
-  mutualUsers: User[]
+  totalPages: number
+  currentPage: number
+  users: User[]
+  summary: {
+    inactiveCount: number
+    nonMutualCount: number
+    spamCount: number
+    mutualCount: number
+    unfollowableCount: number
+  }
 }
 
 interface NeynarUser {
@@ -45,13 +65,13 @@ export function FarcasterConnect() {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set())
   const [isUnfollowing, setIsUnfollowing] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
   const [environment] = useState(detectEnvironment())
 
   const handleUserAuthenticated = useCallback((neynarUser: NeynarUser) => {
     setUser(neynarUser)
-    // Start analysis when user is authenticated
     if (neynarUser.fid) {
-      analyzeFollowing(neynarUser.fid)
+      analyzeFollowing(neynarUser.fid, 1)
     }
   }, [])
 
@@ -59,9 +79,10 @@ export function FarcasterConnect() {
     setUser(null)
     setAnalysis(null)
     setSelectedUsers(new Set())
+    setCurrentPage(1)
   }, [])
 
-  const analyzeFollowing = useCallback(async (fid: number) => {
+  const analyzeFollowing = useCallback(async (fid: number, page: number = 1) => {
     setIsLoading(true)
     try {
       const response = await fetch('/api/analyze', {
@@ -69,7 +90,7 @@ export function FarcasterConnect() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ fid }),
+        body: JSON.stringify({ fid, page, limit: 50 }),
       })
 
       if (!response.ok) {
@@ -79,6 +100,7 @@ export function FarcasterConnect() {
 
       const analysisData = await response.json()
       setAnalysis(analysisData)
+      setCurrentPage(page)
       toast.success('Analysis complete!')
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to analyze following'
@@ -101,14 +123,56 @@ export function FarcasterConnect() {
     })
   }, [])
 
-  const unfollowSelected = useCallback(async () => {
-    if (selectedUsers.size === 0) {
-      toast.error('Please select users to unfollow')
+  const selectAllUnfollowable = useCallback(() => {
+    if (!analysis) return
+    
+    const unfollowableFids = analysis.users
+      .filter(user => user.shouldUnfollow)
+      .map(user => user.fid)
+    
+    setSelectedUsers(new Set(unfollowableFids))
+    toast.success(`Selected ${unfollowableFids.length} unfollowable users`)
+  }, [analysis])
+
+  const clearSelection = useCallback(() => {
+    setSelectedUsers(new Set())
+    toast.info('Selection cleared')
+  }, [])
+
+  const unfollowSelected = useCallback(async (mode: 'selected' | 'all_unfollowable' | 'clean_slate' = 'selected') => {
+    if (!user?.signerUuid) {
+      toast.error('No signer available. Please reconnect.')
       return
     }
 
-    if (!user?.signerUuid) {
-      toast.error('No signer available. Please reconnect.')
+    let targetFids: number[] = []
+    
+    switch (mode) {
+      case 'selected':
+        if (selectedUsers.size === 0) {
+          toast.error('Please select users to unfollow')
+          return
+        }
+        targetFids = Array.from(selectedUsers)
+        break
+      case 'all_unfollowable':
+        if (!analysis) {
+          toast.error('No analysis data available')
+          return
+        }
+        targetFids = analysis.users.filter(u => u.shouldUnfollow).map(u => u.fid)
+        break
+      case 'clean_slate':
+        if (!analysis) {
+          toast.error('No analysis data available')
+          return
+        }
+        targetFids = analysis.users.map(u => u.fid) // Unfollow everyone
+        break
+    }
+
+    if (targetFids.length === 0) {
+      toast.error('No users to unfollow')
       return
     }
 
@@ -121,7 +185,8 @@ export function FarcasterConnect() {
         },
         body: JSON.stringify({
           signerUuid: user.signerUuid,
-          targetFids: Array.from(selectedUsers)
+          targetFids,
+          mode
         }),
       })
 
@@ -132,11 +197,11 @@ export function FarcasterConnect() {
 
       const result = await response.json()
       toast.success(result.message)
-      setSelectedUsers(new Set())
       
-      // Refresh analysis
+      // Clear selection and refresh analysis
+      setSelectedUsers(new Set())
       if (user.fid) {
-        await analyzeFollowing(user.fid)
+        await analyzeFollowing(user.fid, currentPage)
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to unfollow users'
@@ -145,12 +210,16 @@ export function FarcasterConnect() {
     } finally {
       setIsUnfollowing(false)
     }
-  }, [selectedUsers, user, analyzeFollowing])
+  }, [selectedUsers, user, analysis, currentPage, analyzeFollowing])
+
+  const handlePageChange = useCallback((newPage: number) => {
+    if (!user?.fid) return
+    analyzeFollowing(user.fid, newPage)
+  }, [user, analyzeFollowing])
 
   const UserCard = useMemo(() => {
-    const UserCardComponent = ({ user, type }: { user: User; type: 'inactive' | 'nonMutual' | 'spam' | 'mutual' }) => {
+    const UserCardComponent = ({ user }: { user: User }) => {
       const isSelected = selectedUsers.has(user.fid)
-      const canUnfollow = type !== 'mutual'
       
       return (
         <Card className={`transition-all duration-200 ${isSelected ? 'ring-2 ring-purple-500' : ''}`}>
@@ -161,7 +230,6 @@ export function FarcasterConnect() {
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => toggleUserSelection(user.fid)}
-                  disabled={!canUnfollow}
                   className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                 />
                 <div>
@@ -171,10 +239,11 @@ export function FarcasterConnect() {
                     <Badge variant="outline" className="text-xs">
                       {user.followerCount.toLocaleString()} followers
                     </Badge>
-                    {type === 'inactive' && <Badge variant="destructive" className="text-xs">Inactive</Badge>}
-                    {type === 'nonMutual' && <Badge variant="secondary" className="text-xs">Non-mutual</Badge>}
-                    {type === 'spam' && <Badge variant="destructive" className="text-xs">Spam</Badge>}
-                    {type === 'mutual' && <Badge variant="default" className="text-xs">Mutual</Badge>}
+                    {user.isInactive && <Badge variant="destructive" className="text-xs">Inactive</Badge>}
+                    {!user.isMutual && <Badge variant="secondary" className="text-xs">Non-mutual</Badge>}
+                    {user.isSpam && <Badge variant="destructive" className="text-xs">Spam</Badge>}
+                    {user.isMutual && <Badge variant="default" className="text-xs">Mutual</Badge>}
+                    {user.shouldUnfollow && <Badge variant="outline" className="text-xs text-red-400">Unfollow</Badge>}
                   </div>
                 </div>
               </div>
@@ -187,18 +256,6 @@ export function FarcasterConnect() {
     UserCardComponent.displayName = 'UserCard'
     return UserCardComponent
   }, [selectedUsers, toggleUserSelection])
-
-  // Memoized stats
-  const stats = useMemo(() => {
-    if (!analysis) return null
-    
-    return [
-      { label: 'Total Following', value: analysis.totalFollowing, icon: Users, color: 'text-blue-400' },
-      { label: 'Inactive Users', value: analysis.inactiveUsers.length, icon: Activity, color: 'text-red-400' },
-      { label: 'Non-Mutual', value: analysis.nonMutualUsers.length, icon: UserMinus, color: 'text-yellow-400' },
-      { label: 'Mutual Follows', value: analysis.mutualUsers.length, icon: Shield, color: 'text-green-400' },
-    ]
-  }, [analysis])
 
   if (!user) {
     return (
@@ -265,110 +322,174 @@ export function FarcasterConnect() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* User Info */}
-      <Card className="bg-white/10 border-white/20">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-3">
-            <img
-              src={user.pfpUrl || '/default-avatar.png'}
-              alt={user.displayName}
-              className="w-10 h-10 rounded-full"
-            />
-            <div>
-              <h3 className="font-semibold text-white">{user.displayName}</h3>
-              <p className="text-sm text-purple-200">@{user.username}</p>
+    <>
+      <div className="space-y-6">
+        {/* User Info */}
+        <Card className="bg-white/10 border-white/20">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <img
+                src={user.pfpUrl || '/default-avatar.png'}
+                alt={user.displayName}
+                className="w-10 h-10 rounded-full"
+              />
+              <div>
+                <h3 className="font-semibold text-white">{user.displayName}</h3>
+                <p className="text-sm text-purple-200">@{user.username}</p>
+              </div>
+              <div className="ml-auto flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4 text-green-400" />
+                <span className="text-xs text-green-400">
+                  {environment.isMiniApp ? 'Mini App' : 'Connected'}
+                </span>
+              </div>
             </div>
-            <div className="ml-auto flex items-center space-x-2">
-              <CheckCircle className="w-4 h-4 text-green-400" />
-              <span className="text-xs text-green-400">
-                {environment.isMiniApp ? 'Mini App' : 'Connected'}
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {stats?.map((stat, index) => (
-          <Card key={index} className="bg-white/10 border-white/20">
+        {/* Summary Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <Card className="bg-white/10 border-white/20">
             <CardContent className="p-4 text-center">
-              <stat.icon className={`w-6 h-6 mx-auto mb-2 ${stat.color}`} />
-              <div className="text-2xl font-bold text-white">{stat.value.toLocaleString()}</div>
-              <div className="text-xs text-purple-200">{stat.label}</div>
+              <Users className="w-6 h-6 mx-auto mb-2 text-blue-400" />
+              <div className="text-2xl font-bold text-white">{analysis.totalFollowing.toLocaleString()}</div>
+              <div className="text-xs text-purple-200">Total Following</div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          
+          <Card className="bg-white/10 border-white/20">
+            <CardContent className="p-4 text-center">
+              <Activity className="w-6 h-6 mx-auto mb-2 text-red-400" />
+              <div className="text-2xl font-bold text-white">{analysis.summary.inactiveCount.toLocaleString()}</div>
+              <div className="text-xs text-purple-200">Inactive</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 border-white/20">
+            <CardContent className="p-4 text-center">
+              <UserMinus className="w-6 h-6 mx-auto mb-2 text-yellow-400" />
+              <div className="text-2xl font-bold text-white">{analysis.summary.nonMutualCount.toLocaleString()}</div>
+              <div className="text-xs text-purple-200">Non-Mutual</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-white/10 border-white/20">
+            <CardContent className="p-4 text-center">
+              <Shield className="w-6 h-6 mx-auto mb-2 text-green-400" />
+              <div className="text-2xl font-bold text-white">{analysis.summary.mutualCount.toLocaleString()}</div>
+              <div className="text-xs text-purple-200">Mutual</div>
+            </CardContent>
+          </Card>
 
-      {/* Action Buttons */}
-      <div className="flex justify-between items-center">
-        <div className="text-sm text-purple-200">
-          Selected: {selectedUsers.size} users
+          <Card className="bg-white/10 border-white/20">
+            <CardContent className="p-4 text-center">
+              <AlertTriangle className="w-6 h-6 mx-auto mb-2 text-orange-400" />
+              <div className="text-2xl font-bold text-white">{analysis.summary.unfollowableCount.toLocaleString()}</div>
+              <div className="text-xs text-purple-200">Unfollowable</div>
+            </CardContent>
+          </Card>
         </div>
-        <Button
-          onClick={unfollowSelected}
-          disabled={selectedUsers.size === 0 || isUnfollowing || !user.signerUuid}
-          className="bg-red-600 hover:bg-red-700 text-white"
-        >
-          {isUnfollowing ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Unfollowing...
-            </>
-          ) : !user.signerUuid ? (
-            'Signer Required'
-          ) : (
-            `Unfollow Selected (${selectedUsers.size})`
-          )}
-        </Button>
+
+        {/* Bulk Action Buttons */}
+        <div className="flex flex-wrap gap-3 justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-purple-200">
+              Selected: {selectedUsers.size} users
+            </span>
+            {selectedUsers.size > 0 && (
+              <Button
+                onClick={clearSelection}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+          
+          <div className="flex gap-2">
+            <Button
+              onClick={selectAllUnfollowable}
+              variant="outline"
+              size="sm"
+              className="text-xs"
+            >
+              Select All Unfollowable
+            </Button>
+            
+            <Button
+              onClick={() => unfollowSelected('selected')}
+              disabled={selectedUsers.size === 0 || isUnfollowing || !user.signerUuid}
+              className="bg-red-600 hover:bg-red-700 text-white text-xs"
+            >
+              {isUnfollowing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Unfollowing...
+                </>
+              ) : (
+                `Unfollow Selected (${selectedUsers.size})`
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Nuclear Options */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Button
+            onClick={() => unfollowSelected('all_unfollowable')}
+            disabled={isUnfollowing || !user.signerUuid}
+            className="bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            <UserMinus className="w-4 h-4 mr-2" />
+            Unfollow All Unfollowable ({analysis.summary.unfollowableCount})
+          </Button>
+          
+          <Button
+            onClick={() => unfollowSelected('clean_slate')}
+            disabled={isUnfollowing || !user.signerUuid}
+            className="bg-red-700 hover:bg-red-800 text-white"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Clean Slate - Unfollow Everyone ({analysis.totalFollowing})
+          </Button>
+        </div>
+
+        {/* User List */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-white">
+              Users (Page {currentPage} of {analysis.totalPages})
+            </h3>
+            <div className="flex space-x-2">
+              <Button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage <= 1}
+                variant="outline"
+                size="sm"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= analysis.totalPages}
+                variant="outline"
+                size="sm"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          
+          <div className="grid gap-3">
+            {analysis.users.map(user => (
+              <UserCard key={user.fid} user={user} />
+            ))}
+          </div>
+        </div>
       </div>
-
-      {/* User Lists */}
-      <div className="space-y-6">
-        {analysis.inactiveUsers.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-              <Activity className="w-5 h-5 mr-2 text-red-400" />
-              Inactive Users ({analysis.inactiveUsers.length})
-            </h3>
-            <div className="grid gap-3">
-              {analysis.inactiveUsers.map(user => (
-                <UserCard key={user.fid} user={user} type="inactive" />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {analysis.nonMutualUsers.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-              <UserMinus className="w-5 h-5 mr-2 text-yellow-400" />
-              Non-Mutual Users ({analysis.nonMutualUsers.length})
-            </h3>
-            <div className="grid gap-3">
-              {analysis.nonMutualUsers.map(user => (
-                <UserCard key={user.fid} user={user} type="nonMutual" />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {analysis.spamUsers.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
-              <Shield className="w-5 h-5 mr-2 text-red-400" />
-              Potential Spam ({analysis.spamUsers.length})
-            </h3>
-            <div className="grid gap-3">
-              {analysis.spamUsers.map(user => (
-                <UserCard key={user.fid} user={user} type="spam" />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      <Toaster />
+    </>
   )
 } 

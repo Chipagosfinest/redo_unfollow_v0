@@ -10,23 +10,31 @@ interface User {
   lastActive?: string
   isMutual?: boolean
   isInactive?: boolean
+  isSpam?: boolean
+  shouldUnfollow?: boolean
 }
 
 interface AnalysisResult {
   totalFollowing: number
-  inactiveUsers: User[]
-  nonMutualUsers: User[]
-  spamUsers: User[]
-  mutualUsers: User[]
+  totalPages: number
+  currentPage: number
+  users: User[]
+  summary: {
+    inactiveCount: number
+    nonMutualCount: number
+    spamCount: number
+    mutualCount: number
+    unfollowableCount: number
+  }
 }
 
-// Cache for API responses (5 minutes)
+// Cache for API responses (2 minutes for faster updates)
 const cache = new Map<string, { data: AnalysisResult; timestamp: number }>()
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+const CACHE_DURATION = 2 * 60 * 1000 // 2 minutes
 
 export async function POST(request: NextRequest) {
   try {
-    const { fid } = await request.json()
+    const { fid, page = 1, limit = 50 } = await request.json()
 
     if (!fid || typeof fid !== 'number') {
       return NextResponse.json(
@@ -36,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check cache first
-    const cacheKey = `analyze_${fid}`
+    const cacheKey = `analyze_${fid}_${page}_${limit}`
     const cached = cache.get(cacheKey)
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       return NextResponse.json(cached.data)
@@ -52,12 +60,12 @@ export async function POST(request: NextRequest) {
 
     // Fetch data with timeout
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000)
 
     try {
-      // Get following list
+      // Get following list with pagination
       const followingResponse = await fetch(
-        `https://api.neynar.com/v2/farcaster/user/following?fid=${fid}&limit=100`,
+        `https://api.neynar.com/v2/farcaster/user/following?fid=${fid}&limit=1000`,
         {
           headers: {
             'api_key': apiKey,
@@ -77,11 +85,11 @@ export async function POST(request: NextRequest) {
       }
 
       const followingData = await followingResponse.json()
-      const following = followingData.users || []
+      const allFollowing = followingData.users || []
 
-      // Get followers list
+      // Get followers list for mutual detection
       const followersResponse = await fetch(
-        `https://api.neynar.com/v2/farcaster/user/followers?fid=${fid}&limit=100`,
+        `https://api.neynar.com/v2/farcaster/user/followers?fid=${fid}&limit=1000`,
         {
           headers: {
             'api_key': apiKey,
@@ -101,59 +109,60 @@ export async function POST(request: NextRequest) {
       }
 
       const followersData = await followersResponse.json()
-      const followers = followersData.users || []
+      const allFollowers = followersData.users || []
 
       clearTimeout(timeoutId)
 
       // Create sets for efficient lookup
-      const followerFids = new Set(followers.map((user: any) => user.user.fid))
+      const followerFids = new Set(allFollowers.map((user: any) => user.user.fid))
 
-      // Analyze users with optimized processing
-      const analysis: AnalysisResult = {
-        totalFollowing: following.length,
-        inactiveUsers: [],
-        nonMutualUsers: [],
-        spamUsers: [],
-        mutualUsers: []
+      // Analyze all users first
+      const allAnalyzedUsers: User[] = allFollowing.map((user: any) => {
+        const userData = user.user
+        const isMutual = followerFids.has(userData.fid)
+        
+        // Calculate metrics
+        const followerCount = userData.follower_count || 0
+        const followingCount = userData.following_count || 0
+        const isInactive = followerCount < 5 && followingCount > 100
+        const isSpam = followerCount < 10 && followingCount > 500
+        const shouldUnfollow = !isMutual || isInactive || isSpam
+
+        return {
+          fid: userData.fid,
+          username: userData.username || 'unknown',
+          displayName: userData.display_name || userData.username || 'Unknown User',
+          pfpUrl: userData.pfp_url || '',
+          followerCount,
+          followingCount,
+          isMutual,
+          isInactive,
+          isSpam,
+          shouldUnfollow
+        }
+      })
+
+      // Calculate summary
+      const summary = {
+        inactiveCount: allAnalyzedUsers.filter(u => u.isInactive).length,
+        nonMutualCount: allAnalyzedUsers.filter(u => !u.isMutual).length,
+        spamCount: allAnalyzedUsers.filter(u => u.isSpam).length,
+        mutualCount: allAnalyzedUsers.filter(u => u.isMutual).length,
+        unfollowableCount: allAnalyzedUsers.filter(u => u.shouldUnfollow).length
       }
 
-      // Process users in batches for better performance
-      const batchSize = 50
-      for (let i = 0; i < following.length; i += batchSize) {
-        const batch = following.slice(i, i + batchSize)
-        
-        for (const user of batch) {
-          const userData = user.user
-          const isMutual = followerFids.has(userData.fid)
-          
-          const analyzedUser: User = {
-            fid: userData.fid,
-            username: userData.username || 'unknown',
-            displayName: userData.display_name || userData.username || 'Unknown User',
-            pfpUrl: userData.pfp_url || '',
-            followerCount: userData.follower_count || 0,
-            followingCount: userData.following_count || 0,
-            isMutual
-          }
+      // Paginate results
+      const startIndex = (page - 1) * limit
+      const endIndex = startIndex + limit
+      const paginatedUsers = allAnalyzedUsers.slice(startIndex, endIndex)
+      const totalPages = Math.ceil(allAnalyzedUsers.length / limit)
 
-          // Categorize users
-          if (isMutual) {
-            analysis.mutualUsers.push(analyzedUser)
-          } else {
-            analysis.nonMutualUsers.push(analyzedUser)
-          }
-
-          // Detect potential spam (low followers, high following ratio)
-          if (userData.follower_count < 10 && userData.following_count > 500) {
-            analysis.spamUsers.push(analyzedUser)
-          }
-
-          // Detect inactive users
-          if (userData.follower_count < 5 && userData.following_count > 100) {
-            analyzedUser.isInactive = true
-            analysis.inactiveUsers.push(analyzedUser)
-          }
-        }
+      const analysis: AnalysisResult = {
+        totalFollowing: allAnalyzedUsers.length,
+        totalPages,
+        currentPage: page,
+        users: paginatedUsers,
+        summary
       }
 
       // Cache the result
