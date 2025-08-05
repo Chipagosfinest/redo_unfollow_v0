@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
 import { Loader2, Users, UserMinus, Activity, Shield, CheckCircle, ExternalLink } from 'lucide-react'
 import { NeynarAuth } from './NeynarAuth'
-import { detectEnvironment, isInFarcasterApp } from '@/lib/environment'
+import { detectEnvironment } from '@/lib/environment'
 
 interface User {
   fid: number
@@ -45,27 +45,23 @@ export function FarcasterConnect() {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set())
   const [isUnfollowing, setIsUnfollowing] = useState(false)
-  const [environment, setEnvironment] = useState(detectEnvironment())
+  const [environment] = useState(detectEnvironment())
 
-  useEffect(() => {
-    setEnvironment(detectEnvironment())
-  }, [])
-
-  const handleUserAuthenticated = (neynarUser: NeynarUser) => {
+  const handleUserAuthenticated = useCallback((neynarUser: NeynarUser) => {
     setUser(neynarUser)
     // Start analysis when user is authenticated
     if (neynarUser.fid) {
       analyzeFollowing(neynarUser.fid)
     }
-  }
+  }, [])
 
-  const handleUserDisconnected = () => {
+  const handleUserDisconnected = useCallback(() => {
     setUser(null)
     setAnalysis(null)
     setSelectedUsers(new Set())
-  }
+  }, [])
 
-  const analyzeFollowing = async (fid: number) => {
+  const analyzeFollowing = useCallback(async (fid: number) => {
     setIsLoading(true)
     try {
       const response = await fetch('/api/analyze', {
@@ -77,31 +73,35 @@ export function FarcasterConnect() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to analyze following')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to analyze following')
       }
 
       const analysisData = await response.json()
       setAnalysis(analysisData)
       toast.success('Analysis complete!')
     } catch (error) {
-      toast.error('Failed to analyze following')
+      const message = error instanceof Error ? error.message : 'Failed to analyze following'
+      toast.error(message)
       console.error('Analysis error:', error)
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
-  const toggleUserSelection = (fid: number) => {
-    const newSelected = new Set(selectedUsers)
-    if (newSelected.has(fid)) {
-      newSelected.delete(fid)
-    } else {
-      newSelected.add(fid)
-    }
-    setSelectedUsers(newSelected)
-  }
+  const toggleUserSelection = useCallback((fid: number) => {
+    setSelectedUsers(prev => {
+      const newSelected = new Set(prev)
+      if (newSelected.has(fid)) {
+        newSelected.delete(fid)
+      } else {
+        newSelected.add(fid)
+      }
+      return newSelected
+    })
+  }, [])
 
-  const unfollowSelected = async () => {
+  const unfollowSelected = useCallback(async () => {
     if (selectedUsers.size === 0) {
       toast.error('Please select users to unfollow')
       return
@@ -139,48 +139,66 @@ export function FarcasterConnect() {
         await analyzeFollowing(user.fid)
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to unfollow users')
+      const message = error instanceof Error ? error.message : 'Failed to unfollow users'
+      toast.error(message)
       console.error('Unfollow error:', error)
     } finally {
       setIsUnfollowing(false)
     }
-  }
+  }, [selectedUsers, user, analyzeFollowing])
 
-  const UserCard = ({ user, type }: { user: User; type: 'inactive' | 'nonMutual' | 'spam' | 'mutual' }) => {
-    const isSelected = selectedUsers.has(user.fid)
-    const canUnfollow = type !== 'mutual'
-    
-    return (
-      <Card className={`transition-all duration-200 ${isSelected ? 'ring-2 ring-purple-500' : ''}`}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={() => toggleUserSelection(user.fid)}
-                disabled={!canUnfollow}
-                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-              />
-              <div>
-                <h4 className="font-semibold text-sm">{user.displayName}</h4>
-                <p className="text-xs text-gray-500">@{user.username}</p>
-                <div className="flex space-x-2 mt-1">
-                  <Badge variant="outline" className="text-xs">
-                    {user.followerCount} followers
-                  </Badge>
-                  {type === 'inactive' && <Badge variant="destructive" className="text-xs">Inactive</Badge>}
-                  {type === 'nonMutual' && <Badge variant="secondary" className="text-xs">Non-mutual</Badge>}
-                  {type === 'spam' && <Badge variant="destructive" className="text-xs">Spam</Badge>}
-                  {type === 'mutual' && <Badge variant="default" className="text-xs">Mutual</Badge>}
+  const UserCard = useMemo(() => {
+    const UserCardComponent = ({ user, type }: { user: User; type: 'inactive' | 'nonMutual' | 'spam' | 'mutual' }) => {
+      const isSelected = selectedUsers.has(user.fid)
+      const canUnfollow = type !== 'mutual'
+      
+      return (
+        <Card className={`transition-all duration-200 ${isSelected ? 'ring-2 ring-purple-500' : ''}`}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => toggleUserSelection(user.fid)}
+                  disabled={!canUnfollow}
+                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                />
+                <div>
+                  <h4 className="font-semibold text-sm">{user.displayName}</h4>
+                  <p className="text-xs text-gray-500">@{user.username}</p>
+                  <div className="flex space-x-2 mt-1">
+                    <Badge variant="outline" className="text-xs">
+                      {user.followerCount.toLocaleString()} followers
+                    </Badge>
+                    {type === 'inactive' && <Badge variant="destructive" className="text-xs">Inactive</Badge>}
+                    {type === 'nonMutual' && <Badge variant="secondary" className="text-xs">Non-mutual</Badge>}
+                    {type === 'spam' && <Badge variant="destructive" className="text-xs">Spam</Badge>}
+                    {type === 'mutual' && <Badge variant="default" className="text-xs">Mutual</Badge>}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
+          </CardContent>
+        </Card>
+      )
+    }
+    
+    UserCardComponent.displayName = 'UserCard'
+    return UserCardComponent
+  }, [selectedUsers, toggleUserSelection])
+
+  // Memoized stats
+  const stats = useMemo(() => {
+    if (!analysis) return null
+    
+    return [
+      { label: 'Total Following', value: analysis.totalFollowing, icon: Users, color: 'text-blue-400' },
+      { label: 'Inactive Users', value: analysis.inactiveUsers.length, icon: Activity, color: 'text-red-400' },
+      { label: 'Non-Mutual', value: analysis.nonMutualUsers.length, icon: UserMinus, color: 'text-yellow-400' },
+      { label: 'Mutual Follows', value: analysis.mutualUsers.length, icon: Shield, color: 'text-green-400' },
+    ]
+  }, [analysis])
 
   if (!user) {
     return (
@@ -190,7 +208,7 @@ export function FarcasterConnect() {
             <Users className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">
-            {environment.isMiniApp ? 'Connect Your Farcaster Account' : 'Connect Your Farcaster Account'}
+            Connect Your Farcaster Account
           </h2>
           <p className="text-purple-200 mb-6">
             {environment.isMiniApp 
@@ -273,37 +291,15 @@ export function FarcasterConnect() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-white/10 border-white/20">
-          <CardContent className="p-4 text-center">
-            <Users className="w-6 h-6 mx-auto mb-2 text-blue-400" />
-            <div className="text-2xl font-bold text-white">{analysis.totalFollowing}</div>
-            <div className="text-xs text-purple-200">Total Following</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-white/10 border-white/20">
-          <CardContent className="p-4 text-center">
-            <Activity className="w-6 h-6 mx-auto mb-2 text-red-400" />
-            <div className="text-2xl font-bold text-white">{analysis.inactiveUsers.length}</div>
-            <div className="text-xs text-purple-200">Inactive Users</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-white/10 border-white/20">
-          <CardContent className="p-4 text-center">
-            <UserMinus className="w-6 h-6 mx-auto mb-2 text-yellow-400" />
-            <div className="text-2xl font-bold text-white">{analysis.nonMutualUsers.length}</div>
-            <div className="text-xs text-purple-200">Non-Mutual</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-white/10 border-white/20">
-          <CardContent className="p-4 text-center">
-            <Shield className="w-6 h-6 mx-auto mb-2 text-green-400" />
-            <div className="text-2xl font-bold text-white">{analysis.mutualUsers.length}</div>
-            <div className="text-xs text-purple-200">Mutual Follows</div>
-          </CardContent>
-        </Card>
+        {stats?.map((stat, index) => (
+          <Card key={index} className="bg-white/10 border-white/20">
+            <CardContent className="p-4 text-center">
+              <stat.icon className={`w-6 h-6 mx-auto mb-2 ${stat.color}`} />
+              <div className="text-2xl font-bold text-white">{stat.value.toLocaleString()}</div>
+              <div className="text-xs text-purple-200">{stat.label}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Action Buttons */}

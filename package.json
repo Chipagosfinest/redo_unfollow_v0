@@ -1,16 +1,16 @@
 {
-  "name": "redo_unfollow_v0",
-  "version": "0.1.0",
+  "name": "farcaster-feed-cleaner",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@neynar/nodejs-sdk": "^3.32.0",
-    "@neynar/react": "^1.2.7",
     "@radix-ui/react-checkbox": "^1.3.2",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-progress": "^1.1.7",
@@ -35,5 +35,8 @@
     "eslint-config-next": "15.4.5",
     "tailwindcss": "^4.1.11",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
