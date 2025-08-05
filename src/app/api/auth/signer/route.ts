@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       signer_uuid: result.signer_uuid,
       status: result.status,
       public_key: result.public_key,
-      signer_approval_url: result.signer_approval_url || `https://warpcast.com/~/signer-approval?signer_uuid=${result.signer_uuid}`
+      signer_approval_url: result.signer_approval_url || `https://farcaster.com/~/signer-approval?signer_uuid=${result.signer_uuid}`
     })
   } catch (error) {
     console.error('Signer creation error:', error)

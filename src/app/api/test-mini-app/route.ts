@@ -7,9 +7,8 @@ export async function GET(request: NextRequest) {
     const origin = request.headers.get('origin') || ''
     
     // Check for common mini app indicators
-    const isWarpcast = userAgent.toLowerCase().includes('warpcast')
     const isFarcaster = userAgent.toLowerCase().includes('farcaster')
-    const hasFarcasterOrigin = origin.includes('warpcast.com') || origin.includes('farcaster.com')
+    const hasFarcasterOrigin = origin.includes('farcaster.com')
     
     return NextResponse.json({
       status: 'ok',
@@ -18,21 +17,21 @@ export async function GET(request: NextRequest) {
         userAgent: userAgent.substring(0, 100),
         referer: referer.substring(0, 100),
         origin: origin.substring(0, 100),
-        isWarpcast,
         isFarcaster,
         hasFarcasterOrigin,
-        detectedAsMiniApp: isWarpcast || isFarcaster || hasFarcasterOrigin
+        detectedAsMiniApp: isFarcaster || hasFarcasterOrigin
       },
       testingInstructions: {
         standalone: 'Test in regular browser - should show "Create Signer" button',
-        miniApp: 'Test in Warpcast or Farcaster client - should auto-detect user',
+        miniApp: 'Test in Farcaster client - should auto-detect user',
         manualTest: 'Add ?test=mini-app to URL to simulate mini app environment'
       }
     })
   } catch (error) {
-    return NextResponse.json({
-      status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('Test mini app error:', error)
+    return NextResponse.json(
+      { error: 'Failed to test mini app detection' },
+      { status: 500 }
+    )
   }
 } 

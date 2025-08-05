@@ -3,6 +3,7 @@ export interface EnvironmentInfo {
   isStandalone: boolean
   hasFarcasterContext: boolean
   hasWalletConnect: boolean
+  clientType: 'farcaster' | 'standalone' | 'unknown'
 }
 
 export function detectEnvironment(): EnvironmentInfo {
@@ -11,7 +12,8 @@ export function detectEnvironment(): EnvironmentInfo {
       isMiniApp: false,
       isStandalone: true,
       hasFarcasterContext: false,
-      hasWalletConnect: false
+      hasWalletConnect: false,
+      clientType: 'unknown'
     }
   }
 
@@ -20,26 +22,35 @@ export function detectEnvironment(): EnvironmentInfo {
   const hasFarcasterObject = !!(window as any).farcaster
   const hasFarcasterUser = hasFarcasterObject && !!(window as any).farcaster?.user
   
-  // Check if we're in Warpcast or other Farcaster client
+  // Check if we're in Farcaster client
   const userAgent = window.navigator.userAgent.toLowerCase()
-  const isWarpcast = userAgent.includes('warpcast') || userAgent.includes('farcaster')
+  const isFarcaster = userAgent.includes('farcaster')
   
   // Check for WalletConnect
   const hasWalletConnect = !!(window as any).WalletConnect
 
+  // Determine client type
+  let clientType: 'farcaster' | 'standalone' | 'unknown' = 'unknown'
+  if (isFarcaster || hasFarcasterObject) {
+    clientType = 'farcaster'
+  } else if (!isInIframe && !hasFarcasterObject) {
+    clientType = 'standalone'
+  }
+
   // More precise detection for standalone web
-  const isStandalone = !isInIframe && !hasFarcasterObject && !isWarpcast && !hasFarcasterUser
-  const isMiniApp = isInIframe || (hasFarcasterObject && hasFarcasterUser) || isWarpcast
+  const isStandalone = !isInIframe && !hasFarcasterObject && !isFarcaster && !hasFarcasterUser
+  const isMiniApp = isInIframe || (hasFarcasterObject && hasFarcasterUser) || isFarcaster
 
   // Debug logging
   console.log('Environment Detection:', {
     isInIframe,
     hasFarcasterObject,
     hasFarcasterUser,
-    isWarpcast,
+    isFarcaster,
     hasWalletConnect,
     isStandalone,
     isMiniApp,
+    clientType,
     userAgent: userAgent.substring(0, 100) // First 100 chars for privacy
   })
 
@@ -47,7 +58,8 @@ export function detectEnvironment(): EnvironmentInfo {
     isMiniApp,
     isStandalone,
     hasFarcasterContext: hasFarcasterUser,
-    hasWalletConnect
+    hasWalletConnect,
+    clientType
   }
 }
 
@@ -57,9 +69,23 @@ export function getFarcasterUser() {
   const env = detectEnvironment()
   
   if (env.hasFarcasterContext) {
-    return (window as any).farcaster?.user
+    const farcasterUser = (window as any).farcaster?.user
+    console.log('Farcaster user found:', farcasterUser)
+    return farcasterUser
   }
   
+  // Try to get user from different Farcaster client contexts
+  if (env.clientType === 'farcaster') {
+    // Some clients might expose user data differently
+    const possibleUser = (window as any).farcaster?.user || 
+                        (window as any).fc?.user
+    if (possibleUser) {
+      console.log('Found user in client context:', possibleUser)
+      return possibleUser
+    }
+  }
+  
+  console.log('No Farcaster user found')
   return null
 }
 
@@ -69,4 +95,8 @@ export function isInFarcasterApp(): boolean {
 
 export function isStandaloneWeb(): boolean {
   return detectEnvironment().isStandalone
+}
+
+export function getClientType(): 'farcaster' | 'standalone' | 'unknown' {
+  return detectEnvironment().clientType
 } 

@@ -7,10 +7,9 @@ export async function GET(request: NextRequest) {
     const origin = request.headers.get('origin') || ''
     
     // Check for Farcaster context indicators
-    const isWarpcast = userAgent.toLowerCase().includes('warpcast')
     const isFarcaster = userAgent.toLowerCase().includes('farcaster')
-    const hasFarcasterOrigin = origin.includes('warpcast.com') || origin.includes('farcaster.com')
-    const hasFarcasterReferer = referer.includes('warpcast.com') || referer.includes('farcaster.com')
+    const hasFarcasterOrigin = origin.includes('farcaster.com')
+    const hasFarcasterReferer = referer.includes('farcaster.com')
     
     return NextResponse.json({
       status: 'ok',
@@ -19,15 +18,14 @@ export async function GET(request: NextRequest) {
         userAgent: userAgent.substring(0, 100),
         referer: referer.substring(0, 100),
         origin: origin.substring(0, 100),
-        isWarpcast,
         isFarcaster,
         hasFarcasterOrigin,
         hasFarcasterReferer,
-        detectedAsFarcaster: isWarpcast || isFarcaster || hasFarcasterOrigin || hasFarcasterReferer
+        detectedAsFarcaster: isFarcaster || hasFarcasterOrigin || hasFarcasterReferer
       },
       testingInstructions: {
         standalone: 'Test in regular browser - should show "Create Signer" button',
-        miniApp: 'Test in Warpcast or Farcaster client - should auto-detect user',
+        miniApp: 'Test in Farcaster client - should auto-detect user',
         manualTest: 'Add ?test=mini-app to URL to simulate mini app environment',
         debugMode: 'Check browser console for environment detection logs'
       },
@@ -38,9 +36,10 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    return NextResponse.json({
-      status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    console.error('Test Farcaster error:', error)
+    return NextResponse.json(
+      { error: 'Failed to test Farcaster detection' },
+      { status: 500 }
+    )
   }
 } 
