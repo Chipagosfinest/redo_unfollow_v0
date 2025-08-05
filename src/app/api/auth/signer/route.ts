@@ -8,11 +8,13 @@ export async function POST(request: NextRequest) {
     // Create a new signer
     const result = await client.createSigner()
     
+    console.log('Signer creation result:', result)
+    
     return NextResponse.json({
       signer_uuid: result.signer_uuid,
       status: result.status,
       public_key: result.public_key,
-      signer_approval_url: result.signer_approval_url
+      signer_approval_url: result.signer_approval_url || `https://warpcast.com/~/signer-approval?signer_uuid=${result.signer_uuid}`
     })
   } catch (error) {
     console.error('Signer creation error:', error)
@@ -45,6 +47,8 @@ export async function GET(request: NextRequest) {
 
     // Get signer status
     const result = await client.lookupSigner({ signerUuid })
+    
+    console.log('Signer lookup result:', result)
     
     return NextResponse.json({
       signer_uuid: result.signer_uuid,
