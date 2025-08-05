@@ -65,5 +65,8 @@
       "source": "/api/auth/(.*)",
       "destination": "/api/auth/$1"
     }
+  ],
+  "domains": [
+    "redounfollowv0.vercel.app"
   ]
 } 
