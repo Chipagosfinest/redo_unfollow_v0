@@ -76,10 +76,8 @@ export default function FarcasterUnfollowApp() {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          // Pass Mini App context data
-          'x-user-fid': sdk.user?.fid?.toString() || '',
-          'x-user-username': sdk.user?.username || '',
-          'x-user-display-name': sdk.user?.displayName || '',
+          // For now, we'll get user data from the API directly
+          // In a real Mini App, this would come from the context
         },
       })
       
