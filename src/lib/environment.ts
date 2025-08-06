@@ -41,19 +41,6 @@ export function detectEnvironment(): EnvironmentInfo {
   const isStandalone = !isInIframe && !hasFarcasterObject && !isFarcaster && !hasFarcasterUser
   const isMiniApp = isInIframe || (hasFarcasterObject && hasFarcasterUser) || isFarcaster
 
-  // Debug logging
-  console.log('Environment Detection:', {
-    isInIframe,
-    hasFarcasterObject,
-    hasFarcasterUser,
-    isFarcaster,
-    hasWalletConnect,
-    isStandalone,
-    isMiniApp,
-    clientType,
-    userAgent: userAgent.substring(0, 100) // First 100 chars for privacy
-  })
-
   return {
     isMiniApp,
     isStandalone,
@@ -70,7 +57,6 @@ export function getFarcasterUser() {
   
   if (env.hasFarcasterContext) {
     const farcasterUser = (window as any).farcaster?.user
-    console.log('Farcaster user found:', farcasterUser)
     return farcasterUser
   }
   
@@ -80,12 +66,10 @@ export function getFarcasterUser() {
     const possibleUser = (window as any).farcaster?.user || 
                         (window as any).fc?.user
     if (possibleUser) {
-      console.log('Found user in client context:', possibleUser)
       return possibleUser
     }
   }
   
-  console.log('No Farcaster user found')
   return null
 }
 

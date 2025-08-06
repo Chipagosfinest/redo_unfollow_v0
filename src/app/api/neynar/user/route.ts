@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('User endpoint called')
-    
     const apiKey = process.env.NEYNAR_API_KEY
     if (!apiKey) {
-      console.error('API key not configured')
       return NextResponse.json(
         { error: 'API key not configured' },
         { status: 500 }
@@ -19,14 +16,11 @@ export async function GET(request: NextRequest) {
     const userDisplayName = request.headers.get('x-user-display-name')
     
     if (!userFid) {
-      console.error('No user FID provided in headers')
       return NextResponse.json(
         { error: 'User not authenticated' },
         { status: 401 }
       )
     }
-
-    console.log('Fetching live user data for FID:', userFid)
 
     // Get real user data from API
     const userResponse = await fetch(
@@ -40,7 +34,6 @@ export async function GET(request: NextRequest) {
     )
 
     if (!userResponse.ok) {
-      console.error('Failed to fetch user data:', userResponse.status)
       return NextResponse.json(
         { error: 'Failed to fetch user data' },
         { status: 500 }
@@ -51,7 +44,6 @@ export async function GET(request: NextRequest) {
     const user = userData.users?.[0]
 
     if (!user) {
-      console.error('User not found in API response')
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
@@ -66,8 +58,6 @@ export async function GET(request: NextRequest) {
       followerCount: user.followerCount,
       followingCount: user.followingCount,
     }
-
-    console.log('Returning live user data:', liveUser)
     
     const response = NextResponse.json(liveUser)
     response.headers.set('Access-Control-Allow-Origin', '*')
@@ -77,7 +67,6 @@ export async function GET(request: NextRequest) {
     return response
 
   } catch (error) {
-    console.error('User endpoint error:', error)
     const errorResponse = NextResponse.json(
       { 
         error: 'Failed to get user data', 

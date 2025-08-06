@@ -44,18 +44,15 @@ export default function FarcasterUnfollowApp() {
   useEffect(() => {
     const initializeMiniApp = async () => {
       try {
-        console.log('Initializing Farcaster Mini App...')
         const miniAppCheck = await sdk.isInMiniApp()
         setIsMiniApp(miniAppCheck)
-        console.log('Mini App check result:', miniAppCheck)
         
         if (miniAppCheck) {
           // Standard Mini App ready() call
           await sdk.actions.ready()
-          console.log('Farcaster Mini App SDK initialized')
         }
       } catch (error) {
-        console.error('Failed to initialize Mini App:', error)
+        // Silent error handling for production
       } finally {
         setIsInitialized(true)
       }
@@ -70,14 +67,10 @@ export default function FarcasterUnfollowApp() {
     setAuthError(null)
     
     try {
-      console.log('User initiated authentication...')
-      
       // Get real user from Mini App context
       const farcasterUser = getFarcasterUser()
-      console.log('Farcaster user from context:', farcasterUser)
       
       if (!farcasterUser || !farcasterUser.fid) {
-        console.error('No Farcaster user found in context')
         setAuthError('No Farcaster user found. Please open this app in Warpcast or another Farcaster client.')
         toast.error('No Farcaster user found. Please open this app in Warpcast or another Farcaster client.')
         return
@@ -96,7 +89,6 @@ export default function FarcasterUnfollowApp() {
       
       if (userData.ok) {
         const user = await userData.json()
-        console.log('User data:', user)
         
         const authenticatedUser: AuthenticatedUser = {
           fid: user.fid,
@@ -114,12 +106,10 @@ export default function FarcasterUnfollowApp() {
         await startScan(authenticatedUser.fid)
       } else {
         const errorData = await userData.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('Authentication failed:', userData.status, errorData)
         setAuthError(errorData.error || 'Authentication failed')
         toast.error('Authentication failed: ' + (errorData.error || 'Unknown error'))
       }
     } catch (error) {
-      console.error('Authentication error:', error)
       setAuthError('Failed to authenticate')
       toast.error('Failed to authenticate: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
@@ -137,8 +127,6 @@ export default function FarcasterUnfollowApp() {
 
     setIsScanning(true)
     try {
-      console.log('Starting scan for FID:', targetFid)
-      
       // Analyze following list
       const response = await fetch("/api/neynar/analyze", {
         method: "POST",
@@ -150,11 +138,8 @@ export default function FarcasterUnfollowApp() {
         }),
       })
       
-      console.log('Analyze response status:', response.status)
-      
       if (response.ok) {
         const data = await response.json()
-        console.log('Analyze response data:', data)
 
         const allUsers: User[] = data.users.map((user: any) => ({
           fid: user.fid,
@@ -170,11 +155,9 @@ export default function FarcasterUnfollowApp() {
         toast.success(`Found ${allUsers.length} accounts to review`)
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('Analysis failed:', response.status, errorData)
         toast.error(errorData.error || "Scan failed - please try again")
       }
     } catch (error) {
-      console.error('Scan error:', error)
       toast.error("Scan failed - please try again: " + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setIsScanning(false)
@@ -244,11 +227,9 @@ export default function FarcasterUnfollowApp() {
         toast.success(`Successfully unfollowed ${successCount} users`)
       } else {
         const errorData = await response.json().catch(() => ({}))
-        console.error('Neynar unfollow failed:', errorData)
         toast.error(errorData.error || "Failed to unfollow users")
       }
     } catch (error) {
-      console.error('Unfollow error:', error)
       toast.error("Failed to unfollow users")
     } finally {
       setIsUnfollowing(false)
@@ -272,11 +253,9 @@ export default function FarcasterUnfollowApp() {
         toast.success("User unfollowed successfully")
       } else {
         const errorData = await response.json().catch(() => ({}))
-        console.error('Neynar unfollow failed:', errorData)
         toast.error(errorData.error || "Failed to unfollow user")
       }
     } catch (error) {
-      console.error('Unfollow error:', error)
       toast.error("Failed to unfollow user")
     }
   }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { NeynarAPIClient, isApiErrorResponse } from '@neynar/nodejs-sdk'
+import { NeynarAPIClient } from '@neynar/nodejs-sdk'
 
 const client = new NeynarAPIClient({ apiKey: process.env.NEYNAR_API_KEY! })
 
@@ -37,15 +37,6 @@ export async function POST(request: NextRequest) {
       following_count: userData.following_count
     })
   } catch (error) {
-    console.error('User data fetch error:', error)
-    
-    if (isApiErrorResponse(error)) {
-      return NextResponse.json(
-        { error: error.response.data.message || 'API Error' },
-        { status: error.response.status }
-      )
-    }
-    
     return NextResponse.json(
       { error: 'Failed to fetch user data' },
       { status: 500 }

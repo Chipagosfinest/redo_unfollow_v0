@@ -17,8 +17,6 @@ export async function POST(request: NextRequest) {
     const { action } = await request.json()
     
     if (action === 'flush_cache') {
-      console.log('🔄 Cache flush requested')
-      
       // Clear any in-memory caches
       if ((global as any).cache) {
         (global as any).cache.clear()
@@ -36,8 +34,6 @@ export async function POST(request: NextRequest) {
         }
       })
       
-      console.log('✅ Cache flushed successfully')
-      
       return NextResponse.json({
         success: true,
         message: 'Cache flushed successfully',
@@ -53,7 +49,6 @@ export async function POST(request: NextRequest) {
     })
     
   } catch (error) {
-    console.error('Debug endpoint error:', error)
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

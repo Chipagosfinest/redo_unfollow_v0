@@ -35,16 +35,13 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
     // Check environment on mount
     const env = detectEnvironment()
     setEnvironment(env)
-    console.log('NeynarAuth mounted with environment:', env)
     
     // Try to get existing Farcaster user if in mini app
     if (env.hasFarcasterContext) {
       const farcasterUser = getFarcasterUser()
       if (farcasterUser) {
-        console.log('Found Farcaster user:', farcasterUser)
         handleFarcasterUser(farcasterUser)
       } else {
-        console.log('No Farcaster user found in context')
         setIsCheckingFarcaster(false)
       }
     } else {
@@ -57,12 +54,10 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
     if (!isCheckingFarcaster && !user) {
       const timer = setTimeout(() => {
         const env = detectEnvironment()
-        console.log('Delayed environment check:', env)
         
         if (env.hasFarcasterContext) {
           const farcasterUser = getFarcasterUser()
           if (farcasterUser) {
-            console.log('Found Farcaster user on delayed check:', farcasterUser)
             handleFarcasterUser(farcasterUser)
           }
         }
@@ -87,7 +82,6 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
   }
 
   const createSigner = async () => {
-    console.log('Creating signer...')
     setIsLoading(true)
     setSignerStatus('creating')
     
@@ -99,16 +93,12 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
         },
       })
 
-      console.log('Signer creation response status:', response.status)
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        console.error('Signer creation failed:', errorData)
         throw new Error(errorData.error || 'Failed to create signer')
       }
 
       const data = await response.json()
-      console.log('Signer created:', data)
       
       setSignerUuid(data.signer_uuid)
       setApprovalUrl(data.signer_approval_url)
@@ -118,7 +108,6 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
       await pollSignerStatus(data.signer_uuid)
       
     } catch (error) {
-      console.error('Signer creation error:', error)
       toast.error(`Failed to create signer: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setSignerStatus('none')
     } finally {
@@ -133,11 +122,8 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
 
     const poll = async () => {
       try {
-        console.log(`Polling signer status (attempt ${attempts + 1}/${maxAttempts})`)
         const response = await fetch(`/api/auth/signer?signer_uuid=${uuid}`)
         const data = await response.json()
-
-        console.log('Signer status response:', data)
 
         if (data.status === 'approved') {
           setSignerStatus('approved')
@@ -157,7 +143,6 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
             setSignerStatus('none')
           }
         } else {
-          console.log('Unknown signer status:', data.status)
           attempts++
           if (attempts < maxAttempts) {
             setTimeout(poll, 1000)
@@ -167,7 +152,6 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
           }
         }
       } catch (error) {
-        console.error('Polling error:', error)
         toast.error('Failed to check signer status')
         setSignerStatus('none')
       }
@@ -178,7 +162,6 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
 
   const fetchUserData = async (uuid: string) => {
     try {
-      console.log('Fetching user data for signer:', uuid)
       const response = await fetch('/api/auth/user', {
         method: 'POST',
         headers: {
@@ -189,12 +172,10 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        console.error('User data fetch failed:', errorData)
         throw new Error(errorData.error || 'Failed to fetch user data')
       }
 
       const userData = await response.json()
-      console.log('User data received:', userData)
       
       const neynarUser: NeynarUser = {
         fid: userData.fid,
@@ -210,7 +191,6 @@ export function NeynarAuth({ onUserAuthenticated, onUserDisconnected }: NeynarAu
       toast.success('Successfully authenticated!')
       
     } catch (error) {
-      console.error('User data fetch error:', error)
       toast.error(`Failed to fetch user data: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }

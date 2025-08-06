@@ -2,22 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Analyze endpoint called')
-    
     const { fid, page = 1, limit = 50 } = await request.json()
     
     const apiKey = process.env.NEYNAR_API_KEY
     if (!apiKey) {
-      console.error('API key not configured')
       return NextResponse.json(
         { error: 'API key not configured' },
         { status: 500 }
       )
     }
 
-    console.log(`Analyzing following list for FID: ${fid}`)
-
-    // Fetch following list using Neynar API
+    // Fetch following list using API
     const followingResponse = await fetch(
       `https://api.neynar.com/v2/farcaster/user/following?fid=${fid}&limit=1000`,
       {
@@ -29,7 +24,6 @@ export async function POST(request: NextRequest) {
     )
 
     if (!followingResponse.ok) {
-      console.error('Failed to fetch following:', followingResponse.status)
       return NextResponse.json(
         { error: 'Failed to fetch following list' },
         { status: 500 }
@@ -39,7 +33,7 @@ export async function POST(request: NextRequest) {
     const followingData = await followingResponse.json()
     const following = followingData.users || []
 
-    // Fetch followers list using Neynar API
+    // Fetch followers list using API
     const followersResponse = await fetch(
       `https://api.neynar.com/v2/farcaster/user/followers?fid=${fid}&limit=1000`,
       {
@@ -51,7 +45,6 @@ export async function POST(request: NextRequest) {
     )
 
     if (!followersResponse.ok) {
-      console.error('Failed to fetch followers:', followersResponse.status)
       return NextResponse.json(
         { error: 'Failed to fetch followers list' },
         { status: 500 }
@@ -65,7 +58,7 @@ export async function POST(request: NextRequest) {
     const followerFids = new Set(followers.map((f: any) => f.fid))
     const followingFids = new Set(following.map((f: any) => f.fid))
 
-    // Analyze users using Neynar data
+    // Analyze users using API data
     const usersToUnfollow: any[] = []
 
     for (const user of following) {
@@ -100,8 +93,6 @@ export async function POST(request: NextRequest) {
     const endIndex = startIndex + limit
     const paginatedUsers = usersToUnfollow.slice(startIndex, endIndex)
 
-    console.log(`Found ${usersToUnfollow.length} users to unfollow (showing ${paginatedUsers.length})`)
-
     const response = NextResponse.json({
       users: paginatedUsers,
       summary: {
@@ -121,7 +112,6 @@ export async function POST(request: NextRequest) {
     return response
 
   } catch (error) {
-    console.error('Analyze error:', error)
     const errorResponse = NextResponse.json(
       { 
         error: 'Failed to analyze following', 
