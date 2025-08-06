@@ -334,15 +334,15 @@ export default function FarcasterUnfollowApp() {
 
     setIsScanning(true)
     try {
-      // Analyze following list
-      const response = await fetch("/api/neynar/analyze", {
+      // Analyze following list using Supabase
+      const response = await fetch("/api/supabase/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           fid: targetFid, 
           page: 1, 
           limit: 50,
-          authMethod: authenticatedUser?.authMethod || 'miniapp'
+          useCache: true
         }),
       })
       
