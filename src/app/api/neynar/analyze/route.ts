@@ -70,8 +70,10 @@ export async function POST(request: NextRequest) {
       
       console.log(`🔍 Fetching oldest ${limit} follows (offset: ${offset})`)
       
+      // For now, let's use the simple approach without cursor
+      console.log(`🔍 Fetching following data (simple approach)`)
       followingResponse = await fetch(
-        `https://api.neynar.com/v2/farcaster/following?viewer_fid=${fid}&fid=${fid}&limit=${limit}&cursor=${offset}`,
+        `https://api.neynar.com/v2/farcaster/following?viewer_fid=${fid}&fid=${fid}&limit=${limit}`,
         {
           headers: {
             'accept': 'application/json',
