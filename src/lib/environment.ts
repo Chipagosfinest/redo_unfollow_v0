@@ -34,17 +34,18 @@ export function detectEnvironment(): EnvironmentInfo {
   // Check for WalletConnect
   const hasWalletConnect = !!(window as any).WalletConnect
 
+  // More precise detection - only consider it a Mini App if we have actual Farcaster context
+  const hasRealFarcasterContext = hasFarcasterUser || (isFarcaster && hasFarcasterObject)
+  const isMiniApp = hasRealFarcasterContext && (isInIframe || isFarcaster)
+  const isStandalone = !hasRealFarcasterContext && !isInIframe && !isFarcaster
+
   // Determine client type
   let clientType: 'farcaster' | 'standalone' | 'unknown' = 'unknown'
-  if (isFarcaster || hasFarcasterObject) {
+  if (hasRealFarcasterContext && (isFarcaster || hasFarcasterObject)) {
     clientType = 'farcaster'
-  } else if (!isInIframe && !hasFarcasterObject) {
+  } else if (isStandalone) {
     clientType = 'standalone'
   }
-
-  // More precise detection for standalone web
-  const isStandalone = !isInIframe && !hasFarcasterObject && !isFarcaster && !hasFarcasterUser
-  const isMiniApp = isInIframe || (hasFarcasterObject && hasFarcasterUser) || isFarcaster
 
   return {
     isMiniApp,

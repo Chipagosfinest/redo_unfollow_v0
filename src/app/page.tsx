@@ -48,12 +48,19 @@ export default function FarcasterUnfollowApp() {
         setIsMiniApp(miniAppCheck)
         
         if (miniAppCheck) {
-          // Standard Mini App ready() call
-          await sdk.actions.ready()
+          // Only call ready() if we're actually in a Mini App environment
+          const env = detectEnvironment()
+          if (env.hasFarcasterContext || env.isFarcasterClient) {
+            await sdk.actions.ready()
+          } else {
+            // We're not actually in a Mini App, just the SDK thinks we are
+            setIsMiniApp(false)
+          }
         }
       } catch (error) {
         // Handle SDK initialization errors gracefully
         console.warn('Mini App SDK initialization warning:', error)
+        setIsMiniApp(false)
       } finally {
         setIsInitialized(true)
       }
@@ -78,8 +85,8 @@ export default function FarcasterUnfollowApp() {
           setAuthError('User context not available. Please refresh the app.')
           toast.error('User context not available. Please refresh the app.')
         } else {
-          setAuthError('Please open this app in Warpcast or another Farcaster client to use it.')
-          toast.error('Please open this app in Warpcast or another Farcaster client to use it.')
+          setAuthError('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
+          toast.error('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
         }
         return
       }
@@ -331,7 +338,7 @@ export default function FarcasterUnfollowApp() {
           <p className="text-gray-600 mb-6">
             {isMiniApp 
               ? 'Connect your Farcaster account to start scanning'
-              : 'Open this app in Warpcast or another Farcaster client to use it'
+              : 'This app works in Farcaster clients like Warpcast'
             }
           </p>
           
