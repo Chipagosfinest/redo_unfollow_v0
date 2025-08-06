@@ -112,9 +112,9 @@ export async function POST(request: NextRequest) {
     // Helper function to add delay between API calls
     const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
-    // Process users in batches to respect rate limits
-    const batchSize = 10 // Process 10 users at a time
-    const delayBetweenBatches = 2000 // 2 seconds between batches (300 RPM = 5 RPS, so we stay well under)
+    // Process users in batches to respect rate limits (Growth plan: 600 RPM = 10 RPS)
+    const batchSize = 20 // Process 20 users at a time (doubled from 10)
+    const delayBetweenBatches = 1000 // 1 second between batches (600 RPM = 10 RPS, so we stay well under)
     
     console.log(`🔄 Processing ${following.length} users in batches of ${batchSize}...`)
 
@@ -124,8 +124,8 @@ export async function POST(request: NextRequest) {
       
       // Process batch in parallel with individual delays
       const batchPromises = batch.map(async (user: any, index: number) => {
-        // Add small delay between individual requests within batch
-        await delay(index * 100) // 100ms between each request in batch
+        // Add small delay between individual requests within batch (faster for Growth plan)
+        await delay(index * 50) // 50ms between each request in batch (halved from 100ms)
         
         const analysis = {
           fid: user.fid,

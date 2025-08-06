@@ -350,7 +350,7 @@ export default function FarcasterCleanupApp() {
       const requestBody = { 
         fid: authenticatedUser.fid,
         filters,
-        limit: 1000, // Increased limit for your 900+ following
+        limit: 100, // API limit is 1-100, backend will handle pagination
         threshold: 60
       }
       console.log('📤 Request body being sent:', requestBody)
@@ -679,61 +679,72 @@ export default function FarcasterCleanupApp() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-md mx-auto space-y-4">
-        {/* Header */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <h1 className="text-xl font-bold text-gray-900 mb-4">🧹 Farcaster Cleanup</h1>
-          
-          {/* Action Buttons */}
-          <div className="flex space-x-2">
-            <Button 
-              onClick={() => {
-                console.log('🚨 ANALYZE BUTTON CLICKED!')
-                analyzeFollowingList()
-              }}
-              disabled={isAnalyzing}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
-            >
-              {isAnalyzing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analyzing...
-                </>
+        {/* User Profile Header */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-4">
+          <div className="text-center">
+            <div className="flex items-center justify-center mb-4">
+              {authenticatedUser?.pfpUrl ? (
+                <img 
+                  src={authenticatedUser.pfpUrl} 
+                  alt="Profile" 
+                  className="w-16 h-16 rounded-full border-4 border-purple-100"
+                />
               ) : (
-                <>
-                  <Users className="w-4 h-4 mr-2" />
-                  Analyze Following List
-                </>
+                <div className="w-16 h-16 rounded-full bg-purple-100 border-4 border-purple-200 flex items-center justify-center">
+                  <User className="w-8 h-8 text-purple-600" />
+                </div>
               )}
-            </Button>
-            <Button 
-              onClick={() => {
-                console.log('🚨 REFRESH BUTTON CLICKED!')
-                analyzeFollowingList()
-              }}
-              disabled={isAnalyzing}
-              variant="outline"
-              className="px-3"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
-          </div>
-          
-          {/* Analysis Progress */}
-          {isAnalyzing && analysisProgress && (
-            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">
-                  {analysisProgress}
-                </span>
-              </div>
-              <p className="text-xs text-blue-700 mt-2">
-                This may take a few minutes for large following lists...
-              </p>
             </div>
-          )}
-
+            <h2 className="text-xl font-bold text-gray-900 mb-1">
+              {authenticatedUser?.displayName || authenticatedUser?.username}
+            </h2>
+            <p className="text-gray-500 text-sm mb-4">
+              @{authenticatedUser?.username}
+            </p>
+            
+            {/* Main Action */}
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Who You Follow
+              </h3>
+              <Button 
+                onClick={() => {
+                  console.log('🚨 ANALYZE BUTTON CLICKED!')
+                  analyzeFollowingList()
+                }}
+                disabled={isAnalyzing}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-lg"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                    Analyzing Your Following...
+                  </>
+                ) : (
+                  <>
+                    <Users className="w-5 h-5 mr-3" />
+                    Analyze Following List
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
+
+        {/* Analysis Progress */}
+        {isAnalyzing && analysisProgress && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center space-x-2">
+              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+              <span className="text-sm font-medium text-blue-900">
+                {analysisProgress}
+              </span>
+            </div>
+                          <p className="text-xs text-blue-700 mt-2">
+                Turbo mode enabled! Processing your following list at high speed...
+              </p>
+          </div>
+        )}
 
         {/* Progress Indicator */}
         {unfollowProgress.isActive && (
