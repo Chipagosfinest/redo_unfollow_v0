@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
     console.log(`API Key present: ${apiKey ? 'YES' : 'NO'}`)
     console.log(`API Key length: ${apiKey?.length || 0}`)
     console.log(`API Key preview: ${apiKey ? `${apiKey.substring(0, 8)}...` : 'NONE'}`)
+    console.log(`Using correct Neynar endpoints: /v2/farcaster/following and /v2/farcaster/followers`)
     
     if (!apiKey) {
       console.error('NEYNAR_API_KEY not configured')
