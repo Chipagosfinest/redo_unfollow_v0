@@ -37,6 +37,8 @@ export default function FarcasterUnfollowApp() {
   const [authError, setAuthError] = useState<string | null>(null)
   const [isMiniApp, setIsMiniApp] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
+  const [isUnfollowing, setIsUnfollowing] = useState(false)
+  const [showConfirmUnfollow, setShowConfirmUnfollow] = useState(false)
 
   // Suppress browser extension conflicts
   useEffect(() => {
