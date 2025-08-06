@@ -111,9 +111,9 @@ async function processAnalysisJob(jobId: string) {
       },
       body: JSON.stringify({
         fid: job.userId,
-        filters: job.config.filters,
-        limit: job.config.limit || 1000,
-        threshold: job.config.threshold || 30
+        filters: job.analysisConfig.filters,
+        limit: job.analysisConfig.limit || 1000,
+        threshold: job.analysisConfig.threshold || 30
       })
     })
 
