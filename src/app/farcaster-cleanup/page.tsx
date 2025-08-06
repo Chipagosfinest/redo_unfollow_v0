@@ -98,6 +98,7 @@ export default function FarcasterCleanupApp() {
     total: number
     isActive: boolean
   }>({ current: 0, total: 0, isActive: false })
+  const [analysisProgress, setAnalysisProgress] = useState<string>('')
 
   // Suppress browser extension conflicts and add ready() to window for debugging
   useEffect(() => {
@@ -334,16 +335,19 @@ export default function FarcasterCleanupApp() {
 
     console.log('✅ User authenticated, starting analysis...')
     setIsAnalyzing(true)
+    setAnalysisProgress('Starting analysis...')
     
     try {
       console.log('📡 Making API request to /api/neynar/cleanup...')
+      setAnalysisProgress('Fetching your following list...')
+      
       const response = await fetch("/api/neynar/cleanup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           fid: authenticatedUser.fid,
           filters,
-          limit: 100,
+          limit: 1000, // Increased limit for your 900+ following
           threshold: 60
         }),
       })
@@ -705,6 +709,20 @@ export default function FarcasterCleanupApp() {
             </Button>
           </div>
           
+          {/* Analysis Progress */}
+          {isAnalyzing && analysisProgress && (
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2">
+                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                <span className="text-sm font-medium text-blue-900">
+                  {analysisProgress}
+                </span>
+              </div>
+              <p className="text-xs text-blue-700 mt-2">
+                This may take a few minutes for large following lists...
+              </p>
+            </div>
+          )}
 
         </div>
 
