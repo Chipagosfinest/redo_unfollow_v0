@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       `https://api.neynar.com/v2/farcaster/user/following?viewer_fid=${fid}&fid=${fid}&limit=1000`,
       {
         headers: {
-          'api_key': apiKey,
+          'Authorization': `Bearer ${apiKey}`,
           'accept': 'application/json',
         },
       }
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       `https://api.neynar.com/v2/farcaster/user/followers?viewer_fid=${fid}&fid=${fid}&limit=1000`,
       {
         headers: {
-          'api_key': apiKey,
+          'Authorization': `Bearer ${apiKey}`,
           'accept': 'application/json',
         },
       }
