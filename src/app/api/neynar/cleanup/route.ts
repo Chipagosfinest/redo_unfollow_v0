@@ -1,5 +1,151 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Rate limiting and retry configuration
+const RATE_LIMIT_CONFIG = {
+  maxRetries: 3,
+  baseDelay: 1000, // 1 second base delay
+  maxDelay: 10000, // 10 seconds max delay
+  batchSize: 20,
+  delayBetweenBatches: 1000,
+  delayBetweenRequests: 50
+}
+
+// Circuit breaker state
+let circuitBreaker = {
+  failures: 0,
+  lastFailureTime: 0,
+  isOpen: false,
+  threshold: 5,
+  timeout: 30000 // 30 seconds
+}
+
+// Helper function for exponential backoff delay
+const exponentialBackoff = (attempt: number, baseDelay: number = 1000) => {
+  const delay = Math.min(baseDelay * Math.pow(2, attempt), RATE_LIMIT_CONFIG.maxDelay)
+  return new Promise(resolve => setTimeout(resolve, delay))
+}
+
+// Helper function to check if circuit breaker should be open
+const shouldOpenCircuitBreaker = () => {
+  const now = Date.now()
+  if (circuitBreaker.failures >= circuitBreaker.threshold) {
+    if (now - circuitBreaker.lastFailureTime < circuitBreaker.timeout) {
+      return true
+    } else {
+      // Reset circuit breaker after timeout
+      circuitBreaker.failures = 0
+      circuitBreaker.isOpen = false
+    }
+  }
+  return false
+}
+
+// Robust API request function with retry logic
+async function makeApiRequest(url: string, options: RequestInit, retryCount = 0): Promise<Response> {
+  if (shouldOpenCircuitBreaker()) {
+    throw new Error('Circuit breaker is open - too many recent failures')
+  }
+
+  try {
+    console.log(`🌐 Making API request to: ${url}`)
+    const startTime = Date.now()
+    
+    const response = await fetch(url, options)
+    const duration = Date.now() - startTime
+    
+    console.log(`📡 API response: ${response.status} (${duration}ms)`)
+    
+    if (response.ok) {
+      // Reset failure count on success
+      circuitBreaker.failures = 0
+      return response
+    }
+    
+    // Handle rate limiting
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After')
+      const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : RATE_LIMIT_CONFIG.baseDelay * Math.pow(2, retryCount)
+      
+      console.log(`⏳ Rate limited (429). Waiting ${waitTime}ms before retry ${retryCount + 1}`)
+      await new Promise(resolve => setTimeout(resolve, waitTime))
+      
+      if (retryCount < RATE_LIMIT_CONFIG.maxRetries) {
+        return makeApiRequest(url, options, retryCount + 1)
+      }
+    }
+    
+    // Handle other errors
+    if (response.status >= 500 && retryCount < RATE_LIMIT_CONFIG.maxRetries) {
+      console.log(`🔄 Server error ${response.status}, retrying... (attempt ${retryCount + 1})`)
+      await exponentialBackoff(retryCount)
+      return makeApiRequest(url, options, retryCount + 1)
+    }
+    
+    return response
+    
+  } catch (error) {
+    console.error(`❌ API request failed:`, error)
+    
+    // Update circuit breaker
+    circuitBreaker.failures++
+    circuitBreaker.lastFailureTime = Date.now()
+    
+    if (retryCount < RATE_LIMIT_CONFIG.maxRetries) {
+      console.log(`🔄 Network error, retrying... (attempt ${retryCount + 1})`)
+      await exponentialBackoff(retryCount)
+      return makeApiRequest(url, options, retryCount + 1)
+    }
+    
+    throw error
+  }
+}
+
+// Queue for managing concurrent requests
+class RequestQueue {
+  private queue: Array<() => Promise<any>> = []
+  private processing = false
+  private concurrentLimit = 5
+  private activeRequests = 0
+
+  async add<T>(requestFn: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.queue.push(async () => {
+        try {
+          this.activeRequests++
+          const result = await requestFn()
+          resolve(result)
+        } catch (error) {
+          reject(error)
+        } finally {
+          this.activeRequests--
+          this.processQueue()
+        }
+      })
+      
+      this.processQueue()
+    })
+  }
+
+  private async processQueue() {
+    if (this.processing || this.queue.length === 0 || this.activeRequests >= this.concurrentLimit) {
+      return
+    }
+
+    this.processing = true
+    
+    while (this.queue.length > 0 && this.activeRequests < this.concurrentLimit) {
+      const requestFn = this.queue.shift()
+      if (requestFn) {
+        requestFn()
+      }
+    }
+    
+    this.processing = false
+  }
+}
+
+const requestQueue = new RequestQueue()
+
 export async function POST(request: NextRequest) {
   try {
     const requestBody = await request.json()
@@ -41,26 +187,22 @@ export async function POST(request: NextRequest) {
     console.log(`⏰ Threshold: ${threshold} days`)
     console.log(`🔑 API Key present: ${apiKey ? 'Yes' : 'No'} (length: ${apiKey?.length})`)
 
-    // 1. Fetch following list
+    // 1. Fetch following list with retry logic
     console.log(`🔍 Fetching following list...`)
     const followingUrl = `https://api.neynar.com/v2/farcaster/following?fid=${fid}&viewer_fid=${fid}&limit=${limit}`
-    console.log(`🌐 Following URL: ${followingUrl}`)
     
-    const followingResponse = await fetch(followingUrl, {
-      headers: {
-        'accept': 'application/json',
-        'x-api-key': apiKey,
-      },
-    })
-
-    console.log(`📡 Following response status: ${followingResponse.status}`)
-    console.log(`📡 Following response headers:`, Object.fromEntries(followingResponse.headers.entries()))
+    const followingResponse = await requestQueue.add(() => 
+      makeApiRequest(followingUrl, {
+        headers: {
+          'accept': 'application/json',
+          'x-api-key': apiKey,
+        },
+      })
+    )
 
     if (!followingResponse.ok) {
       const errorText = await followingResponse.text()
       console.error(`❌ Following API error: ${followingResponse.status} - ${errorText}`)
-      console.error(`❌ Request URL: ${followingUrl}`)
-      console.error(`❌ API Key length: ${apiKey.length}`)
       return NextResponse.json(
         { error: `Failed to fetch following list: ${followingResponse.status} - ${errorText}` },
         { status: 500 }
@@ -73,19 +215,21 @@ export async function POST(request: NextRequest) {
 
     // 2. Fetch followers list for mutual analysis
     console.log(`🔍 Fetching followers list...`)
-    const followersResponse = await fetch(
-      `https://api.neynar.com/v2/farcaster/followers?fid=${fid}&viewer_fid=${fid}&limit=${limit}`,
-      {
-        headers: {
-          'accept': 'application/json',
-          'x-api-key': apiKey,
-        },
-      }
+    const followersResponse = await requestQueue.add(() => 
+      makeApiRequest(
+        `https://api.neynar.com/v2/farcaster/followers?fid=${fid}&viewer_fid=${fid}&limit=${limit}`,
+        {
+          headers: {
+            'accept': 'application/json',
+            'x-api-key': apiKey,
+          },
+        }
+      )
     )
 
     if (!followersResponse.ok) {
       const errorText = await followersResponse.text()
-      console.error(`Followers API error: ${followersResponse.status} - ${errorText}`)
+      console.error(`❌ Followers API error: ${followersResponse.status} - ${errorText}`)
       return NextResponse.json(
         { error: `Failed to fetch followers list: ${followersResponse.status}` },
         { status: 500 }
@@ -115,7 +259,7 @@ export async function POST(request: NextRequest) {
     
     console.log(`🔄 Sorted following list - prioritizing oldest and non-mutual follows first`)
 
-    // 4. Analyze each following user with rate limiting
+    // 4. Analyze each following user with improved rate limiting
     const analyzedUsers: any[] = []
     const filterCounts = {
       nonMutual: 0,
@@ -124,102 +268,98 @@ export async function POST(request: NextRequest) {
       nuclear: 0
     }
 
-    // Helper function to add delay between API calls
-    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+    // Process users in batches with improved rate limiting
+    console.log(`🔄 Processing ${following.length} users in batches of ${RATE_LIMIT_CONFIG.batchSize}...`)
 
-    // Process users in batches to respect rate limits (Growth plan: 600 RPM = 10 RPS)
-    const batchSize = 20 // Process 20 users at a time (doubled from 10)
-    const delayBetweenBatches = 1000 // 1 second between batches (600 RPM = 10 RPS, so we stay well under)
-    
-    console.log(`🔄 Processing ${following.length} users in batches of ${batchSize}...`)
-
-    for (let i = 0; i < following.length; i += batchSize) {
-      const batch = following.slice(i, i + batchSize)
-      console.log(`📦 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(following.length / batchSize)} (${batch.length} users)`)
+    for (let i = 0; i < following.length; i += RATE_LIMIT_CONFIG.batchSize) {
+      const batch = following.slice(i, i + RATE_LIMIT_CONFIG.batchSize)
+      console.log(`📦 Processing batch ${Math.floor(i / RATE_LIMIT_CONFIG.batchSize) + 1}/${Math.ceil(following.length / RATE_LIMIT_CONFIG.batchSize)} (${batch.length} users)`)
       
-      // Process batch in parallel with individual delays
+      // Process batch with controlled concurrency
       const batchPromises = batch.map(async (user: any, index: number) => {
-        // Add small delay between individual requests within batch (faster for Growth plan)
-        await delay(index * 50) // 50ms between each request in batch (halved from 100ms)
+        // Add delay between individual requests within batch
+        await new Promise(resolve => setTimeout(resolve, index * RATE_LIMIT_CONFIG.delayBetweenRequests))
         
-        const analysis = {
-          fid: user.fid,
-          username: user.username,
-          displayName: user.displayName,
-          pfpUrl: user.pfp?.url || '',
-          followerCount: user.followerCount,
-          followingCount: user.followingCount,
-          isMutual: followerFids.has(user.fid),
-          lastActiveStatus: user.lastActiveStatus,
-          reasons: [] as string[],
-          shouldUnfollow: false
-        }
-
-        // Check non-mutual follows first (no API call needed)
-        if (!analysis.isMutual) {
-          analysis.reasons.push('Non-mutual follow')
-          filterCounts.nonMutual++
-          if (filters.nonMutual) {
-            analysis.shouldUnfollow = true
+        return requestQueue.add(async () => {
+          const analysis = {
+            fid: user.fid,
+            username: user.username,
+            displayName: user.displayName,
+            pfpUrl: user.pfp?.url || '',
+            followerCount: user.followerCount,
+            followingCount: user.followingCount,
+            isMutual: followerFids.has(user.fid),
+            lastActiveStatus: user.lastActiveStatus,
+            reasons: [] as string[],
+            shouldUnfollow: false
           }
-        }
 
-        // Only check interactions if we need to (not already marked for unfollow)
-        if (!analysis.shouldUnfollow && filters.noInteractionWithYou) {
-          try {
-            const interactionsResponse = await fetch(
-              `https://api.neynar.com/v2/farcaster/user/interactions?fids=${fid},${user.fid}&type=follows`,
-              {
-                headers: {
-                  'accept': 'application/json',
-                  'x-api-key': apiKey,
-                },
-              }
-            )
+          // Check non-mutual follows first (no API call needed)
+          if (!analysis.isMutual) {
+            analysis.reasons.push('Non-mutual follow')
+            filterCounts.nonMutual++
+            if (filters.nonMutual) {
+              analysis.shouldUnfollow = true
+            }
+          }
 
-            if (interactionsResponse.ok) {
-              const interactionsData = await interactionsResponse.json()
-              const interactions = interactionsData.interactions || []
-              
-              // Check if there are recent interactions (within last 60 days)
-              const recentInteractions = interactions.filter((interaction: any) => {
-                const interactionTime = new Date(interaction.most_recent_timestamp).getTime()
-                const daysSinceInteraction = (Date.now() - interactionTime) / (1000 * 60 * 60 * 24)
-                return daysSinceInteraction <= threshold
-              })
+          // Only check interactions if we need to (not already marked for unfollow)
+          if (!analysis.shouldUnfollow && filters.noInteractionWithYou) {
+            try {
+              const interactionsResponse = await makeApiRequest(
+                `https://api.neynar.com/v2/farcaster/user/interactions?fids=${fid},${user.fid}&type=follows`,
+                {
+                  headers: {
+                    'accept': 'application/json',
+                    'x-api-key': apiKey,
+                  },
+                }
+              )
 
-              if (recentInteractions.length === 0) {
-                analysis.reasons.push('No recent interactions')
-                filterCounts.noInteractionWithYou++
-                if (filters.noInteractionWithYou) {
-                  analysis.shouldUnfollow = true
+              if (interactionsResponse.ok) {
+                const interactionsData = await interactionsResponse.json()
+                const interactions = interactionsData.interactions || []
+                
+                // Check if there are recent interactions (within last 60 days)
+                const recentInteractions = interactions.filter((interaction: any) => {
+                  const interactionTime = new Date(interaction.most_recent_timestamp).getTime()
+                  const daysSinceInteraction = (Date.now() - interactionTime) / (1000 * 60 * 60 * 24)
+                  return daysSinceInteraction <= threshold
+                })
+
+                if (recentInteractions.length === 0) {
+                  analysis.reasons.push('No recent interactions')
+                  filterCounts.noInteractionWithYou++
+                  if (filters.noInteractionWithYou) {
+                    analysis.shouldUnfollow = true
+                  }
                 }
               }
+            } catch (error) {
+              console.error(`❌ Failed to fetch interactions for user ${user.fid}:`, error)
+              // Skip this user if we can't fetch interaction data
+              analysis.reasons.push('Unable to verify interactions')
             }
-          } catch (error) {
-            console.error(`❌ Failed to fetch interactions for user ${user.fid}:`, error)
-            // Skip this user if we can't fetch interaction data
-            analysis.reasons.push('Unable to verify interactions')
           }
-        }
 
-        // Nuclear option - unfollow everyone
-        if (filters.nuclear) {
-          analysis.reasons.push('Nuclear option')
-          filterCounts.nuclear++
-          analysis.shouldUnfollow = true
-        }
+          // Nuclear option - unfollow everyone
+          if (filters.nuclear) {
+            analysis.reasons.push('Nuclear option')
+            filterCounts.nuclear++
+            analysis.shouldUnfollow = true
+          }
 
-        return analysis
+          return analysis
+        })
       })
 
       const batchResults = await Promise.all(batchPromises)
       analyzedUsers.push(...batchResults)
       
       // Add delay between batches
-      if (i + batchSize < following.length) {
-        console.log(`⏳ Waiting ${delayBetweenBatches}ms before next batch...`)
-        await delay(delayBetweenBatches)
+      if (i + RATE_LIMIT_CONFIG.batchSize < following.length) {
+        console.log(`⏳ Waiting ${RATE_LIMIT_CONFIG.delayBetweenBatches}ms before next batch...`)
+        await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_CONFIG.delayBetweenBatches))
       }
     }
 
@@ -232,7 +372,11 @@ export async function POST(request: NextRequest) {
       mutualFollows: analyzedUsers.filter(u => u.isMutual).length,
       nonMutualFollows: analyzedUsers.filter(u => !u.isMutual).length,
       usersToUnfollow: usersToUnfollow.length,
-      filterCounts
+      filterCounts,
+      circuitBreakerState: {
+        failures: circuitBreaker.failures,
+        isOpen: circuitBreaker.isOpen
+      }
     })
     
     // Debug: Show some sample users for testing
