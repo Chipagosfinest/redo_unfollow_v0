@@ -347,7 +347,8 @@ export default function FarcasterCleanupApp() {
       setAnalysisProgress('Fetching your following list...')
       
       // Simulate progress updates
-      const progressInterval = setInterval(() => {
+      let progressInterval: NodeJS.Timeout
+      progressInterval = setInterval(() => {
         setAnalysisProgress(prev => {
           if (prev?.includes('Processing batch')) {
             const current = parseInt(prev.match(/batch (\d+)/)?.[1] || '1')
@@ -403,7 +404,9 @@ export default function FarcasterCleanupApp() {
       console.error('❌ Analysis failed:', error)
       toast.error("Analysis failed - please try again")
     } finally {
-      clearInterval(progressInterval)
+      if (progressInterval) {
+        clearInterval(progressInterval)
+      }
       setIsAnalyzing(false)
       setAnalysisProgress('')
       console.log('🏁 Analysis process finished')
