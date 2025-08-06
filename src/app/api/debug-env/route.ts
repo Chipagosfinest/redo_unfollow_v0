@@ -20,13 +20,13 @@ export async function POST(request: NextRequest) {
       console.log('🔄 Cache flush requested')
       
       // Clear any in-memory caches
-      if (global.cache) {
-        global.cache.clear()
+      if ((global as any).cache) {
+        (global as any).cache.clear()
       }
       
       // Force garbage collection if available
-      if (global.gc) {
-        global.gc()
+      if ((global as any).gc) {
+        (global as any).gc()
       }
       
       // Clear any module caches
