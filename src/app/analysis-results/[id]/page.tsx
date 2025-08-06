@@ -37,7 +37,7 @@ interface AnalysisJob {
   error?: string
 }
 
-export default function AnalysisResultsPage({ params }: { params: { id: string } }) {
+export default function AnalysisResultsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const [job, setJob] = useState<AnalysisJob | null>(null)
   const [loading, setLoading] = useState(true)
@@ -47,7 +47,8 @@ export default function AnalysisResultsPage({ params }: { params: { id: string }
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const response = await fetch(`/api/analysis/job/${params.id}`)
+        const resolvedParams = await params
+        const response = await fetch(`/api/analysis/job/${resolvedParams.id}`)
         if (response.ok) {
           const data = await response.json()
           setJob(data.job)
@@ -63,7 +64,7 @@ export default function AnalysisResultsPage({ params }: { params: { id: string }
     }
 
     fetchJob()
-  }, [params.id])
+  }, [params])
 
   const toggleUser = (fid: number) => {
     setSelectedUsers(prev => {

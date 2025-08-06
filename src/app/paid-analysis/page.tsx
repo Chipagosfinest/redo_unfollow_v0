@@ -154,10 +154,43 @@ export default function PaidAnalysisPage() {
       const data = await response.json()
 
       if (data.success) {
-        toast.success('Analysis job created! You will be notified when it\'s ready.')
-        
-        // Reload user data to show the new job
-        await loadUserData(authenticatedUser.fid)
+        // Handle payment using Farcaster SDK
+        try {
+          console.log('💰 Initiating payment via Farcaster SDK...')
+          
+          const paymentResult = await sdk.actions.sendToken({
+            token: data.paymentDetails.token,
+            amount: data.paymentDetails.amount,
+            recipientFid: data.paymentDetails.recipientFid
+          })
+
+          if (paymentResult.success) {
+            console.log('✅ Payment successful:', paymentResult.send.transaction)
+            
+            // Update payment status in database
+            await fetch('/api/payments/complete', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                paymentId: data.payment.id,
+                transactionHash: paymentResult.send.transaction
+              })
+            })
+
+            toast.success('Payment successful! Analysis job started.')
+            
+            // Reload user data to show the new job
+            await loadUserData(authenticatedUser.fid)
+          } else {
+            console.error('❌ Payment failed:', paymentResult.reason)
+            toast.error(`Payment failed: ${paymentResult.reason}`)
+          }
+        } catch (paymentError) {
+          console.error('❌ Payment error:', paymentError)
+          toast.error('Payment failed. Please try again.')
+        }
       } else {
         toast.error(data.error || 'Failed to create analysis job')
       }

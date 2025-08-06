@@ -3,86 +3,70 @@ import { db } from '@/lib/database'
 
 export async function POST(request: NextRequest) {
   try {
-    const { 
-      userId, 
-      analysisConfig, 
-      paymentMethod = 'farcaster',
-      amount = 5.00,
-      currency = 'USD',
-      recipientFid = 4044 // Your FID for receiving payments
-    } = await request.json()
+    const { paymentId, transactionHash } = await request.json()
 
-    if (!userId) {
+    if (!paymentId) {
       return NextResponse.json(
-        { error: 'User ID (FID) is required' },
+        { error: 'Payment ID is required' },
         { status: 400 }
       )
     }
 
-    console.log(`💰 Creating payment for user ${userId}`)
-    console.log(`📊 Analysis config:`, analysisConfig)
-    console.log(`💳 Payment method: ${paymentMethod}`)
+    console.log(`💰 Completing payment ${paymentId} with transaction ${transactionHash}`)
 
-    // Create payment record
-    const payment = await db.createPayment({
-      userId,
-      amount,
-      currency,
-      status: 'pending',
-      paymentMethod,
-      analysisJobId: '' // Will be updated after job creation
+    // Update payment status
+    const updatedPayment = await db.updatePayment(paymentId, {
+      status: 'completed',
+      completedAt: new Date()
     })
 
-    // Create analysis job
-    const analysisJob = await db.createAnalysisJob({
-      userId,
-      status: 'pending',
-      paymentId: payment.id,
-      paymentAmount: amount,
-      paymentCurrency: currency,
-      analysisConfig: {
-        filters: analysisConfig.filters || {
-          nonMutual: true,
-          noInteractionWithYou: true,
-          youNoInteraction: true,
-          nuclear: false
-        },
-        limit: analysisConfig.limit || 1000,
-        threshold: analysisConfig.threshold || 60
+    if (!updatedPayment) {
+      return NextResponse.json(
+        { error: 'Payment not found' },
+        { status: 404 }
+      )
+    }
+
+    // Get the associated analysis job
+    const analysisJob = await db.getAnalysisJob(updatedPayment.analysisJobId)
+    if (!analysisJob) {
+      return NextResponse.json(
+        { error: 'Analysis job not found' },
+        { status: 404 }
+      )
+    }
+
+    // Start background analysis
+    setTimeout(async () => {
+      try {
+        await processAnalysisJob(analysisJob.id)
+      } catch (error) {
+        console.error(`❌ Background analysis failed for job ${analysisJob.id}:`, error)
+        await db.updateAnalysisJob(analysisJob.id, { 
+          status: 'failed', 
+          error: error instanceof Error ? error.message : 'Unknown error'
+        })
       }
-    })
+    }, 1000)
 
-    // Update payment with job ID
-    await db.updatePayment(payment.id, { analysisJobId: analysisJob.id })
-
-    console.log(`✅ Created payment ${payment.id} and analysis job ${analysisJob.id}`)
-
-    // Return payment details for frontend to handle
     return NextResponse.json({
       success: true,
       payment: {
-        id: payment.id,
-        status: 'pending',
-        amount,
-        currency,
-        recipientFid
+        id: updatedPayment.id,
+        status: 'completed',
+        transactionHash
       },
       analysisJob: {
         id: analysisJob.id,
-        status: 'pending'
-      },
-      paymentDetails: {
-        token: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // Base USDC
-        amount: '5000000', // 5 USDC in wei (6 decimals)
-        recipientFid
+        status: 'processing'
       }
     })
 
   } catch (error) {
-    console.error('❌ Payment creation failed:', error)
+    console.error('❌ Payment completion failed:', error)
     return NextResponse.json(
       { 
-        error: 'Failed to create payment',
+        error: 'Failed to complete payment',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
