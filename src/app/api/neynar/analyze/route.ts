@@ -2,20 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Neynar MCP analyze endpoint called')
+    console.log('Analyze endpoint called')
     
     const { fid, page = 1, limit = 50 } = await request.json()
     
     const apiKey = process.env.NEYNAR_API_KEY
     if (!apiKey) {
-      console.error('Neynar API key not configured')
+      console.error('API key not configured')
       return NextResponse.json(
-        { error: 'Neynar API key not configured' },
+        { error: 'API key not configured' },
         { status: 500 }
       )
     }
 
-    console.log(`Analyzing following list for FID: ${fid} using Neynar MCP`)
+    console.log(`Analyzing following list for FID: ${fid}`)
 
     // Fetch following list using Neynar API
     const followingResponse = await fetch(
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     const endIndex = startIndex + limit
     const paginatedUsers = usersToUnfollow.slice(startIndex, endIndex)
 
-    console.log(`Found ${usersToUnfollow.length} users to unfollow using Neynar MCP (showing ${paginatedUsers.length})`)
+    console.log(`Found ${usersToUnfollow.length} users to unfollow (showing ${paginatedUsers.length})`)
 
     const response = NextResponse.json({
       users: paginatedUsers,
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
     return response
 
   } catch (error) {
-    console.error('Neynar analyze error:', error)
+    console.error('Analyze error:', error)
     const errorResponse = NextResponse.json(
       { 
         error: 'Failed to analyze following', 

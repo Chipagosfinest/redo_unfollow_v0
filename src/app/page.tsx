@@ -69,19 +69,23 @@ export default function FarcasterUnfollowApp() {
     setAuthError(null)
     
     try {
-      console.log('User initiated authentication with Neynar MCP...')
+      console.log('User initiated authentication...')
       
-      // Use Neynar MCP for authentication and user data
+      // Get user data from Mini App context
       const userData = await fetch('/api/neynar/user', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          // Pass Mini App context data
+          'x-user-fid': sdk.user?.fid?.toString() || '',
+          'x-user-username': sdk.user?.username || '',
+          'x-user-display-name': sdk.user?.displayName || '',
         },
       })
       
       if (userData.ok) {
         const user = await userData.json()
-        console.log('Neynar user data:', user)
+        console.log('User data:', user)
         
         const authenticatedUser: AuthenticatedUser = {
           fid: user.fid,
@@ -93,13 +97,13 @@ export default function FarcasterUnfollowApp() {
         
         setAuthenticatedUser(authenticatedUser)
         setIsAuthenticated(true)
-        toast.success('Successfully authenticated with Neynar!')
+        toast.success('Successfully authenticated!')
         
-        // Automatically start scanning with Neynar
+        // Automatically start scanning
         await startScan(authenticatedUser.fid)
       } else {
         const errorData = await userData.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('Neynar authentication failed:', userData.status, errorData)
+        console.error('Authentication failed:', userData.status, errorData)
         setAuthError(errorData.error || 'Authentication failed')
         toast.error('Authentication failed: ' + (errorData.error || 'Unknown error'))
       }
@@ -112,7 +116,7 @@ export default function FarcasterUnfollowApp() {
     }
   }
 
-  // Use Neynar MCP for scanning following list
+  // Scan following list
   const startScan = async (fid?: number) => {
     const targetFid = fid || authenticatedUser?.fid
     if (!targetFid) {
@@ -122,9 +126,9 @@ export default function FarcasterUnfollowApp() {
 
     setIsScanning(true)
     try {
-      console.log('Starting Neynar scan for FID:', targetFid)
+      console.log('Starting scan for FID:', targetFid)
       
-      // Use Neynar MCP for following analysis
+      // Analyze following list
       const response = await fetch("/api/neynar/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -135,11 +139,11 @@ export default function FarcasterUnfollowApp() {
         }),
       })
       
-      console.log('Neynar analyze response status:', response.status)
+      console.log('Analyze response status:', response.status)
       
       if (response.ok) {
         const data = await response.json()
-        console.log('Neynar analyze response data:', data)
+        console.log('Analyze response data:', data)
 
         const allUsers: User[] = data.users.map((user: any) => ({
           fid: user.fid,
@@ -155,7 +159,7 @@ export default function FarcasterUnfollowApp() {
         toast.success(`Found ${allUsers.length} accounts to review`)
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('Neynar analysis failed:', response.status, errorData)
+        console.error('Analysis failed:', response.status, errorData)
         toast.error(errorData.error || "Scan failed - please try again")
       }
     } catch (error) {
@@ -344,18 +348,18 @@ export default function FarcasterUnfollowApp() {
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Connecting to Neynar...
+                Connecting to scan...
               </>
             ) : (
               <>
                 <LogIn className="w-4 h-4 mr-2" />
-                Connect with Neynar
+                Connect to Scan
               </>
             )}
           </Button>
           
           <p className="text-sm text-gray-500 mt-4">
-            This will authenticate you with Neynar and load your following list
+            This will authenticate you and load your following list
           </p>
         </div>
       </div>
