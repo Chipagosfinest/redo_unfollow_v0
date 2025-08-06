@@ -627,50 +627,29 @@ export default function FarcasterCleanupApp() {
           </div>
         )}
 
-        {/* Main Action Button */}
-        {users.length === 0 && (
-          <div className="mb-6 space-y-3">
-            <Button 
-              onClick={analyzeFollowingList}
-              disabled={isAnalyzing}
-              className="bg-purple-600 hover:bg-purple-700 text-white w-full"
-            >
-              {isAnalyzing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analyzing Following List...
-                </>
-              ) : (
-                <>
-                  <Users className="w-4 h-4 mr-2" />
-                  Analyze Following List
-                </>
-              )}
-            </Button>
-            
-            {/* Notification Opt-in */}
-            {!notificationsEnabled && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Bell className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-900">
-                      Get notified every 5 days
-                    </span>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={enableNotifications}
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
-                  >
-                    Enable
-                  </Button>
+        {/* Notification Opt-in */}
+        {isAuthenticated && !notificationsEnabled && users.length === 0 && (
+          <div className="mb-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Bell className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">
+                    Get notified every 5 days
+                  </span>
                 </div>
-                <p className="text-xs text-blue-700 mt-2">
-                  We'll remind you to review your following list and keep your feed clean
-                </p>
+                <Button
+                  size="sm"
+                  onClick={enableNotifications}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
+                >
+                  Enable
+                </Button>
               </div>
-            )}
+              <p className="text-xs text-blue-700 mt-2">
+                We'll remind you to review your following list and keep your feed clean
+              </p>
+            </div>
           </div>
         )}
 
@@ -901,6 +880,29 @@ export default function FarcasterCleanupApp() {
               </>
             )}
           </Button>
+        )}
+
+        {/* Always show analyze button when authenticated */}
+        {isAuthenticated && (
+          <div className="mb-6">
+            <Button 
+              onClick={analyzeFollowingList}
+              disabled={isAnalyzing}
+              className="bg-purple-600 hover:bg-purple-700 text-white w-full"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Analyzing Following List...
+                </>
+              ) : (
+                <>
+                  <Users className="w-4 h-4 mr-2" />
+                  {users.length > 0 ? 'Re-analyze Following List' : 'Analyze Following List'}
+                </>
+              )}
+            </Button>
+          </div>
         )}
       </div>
 
