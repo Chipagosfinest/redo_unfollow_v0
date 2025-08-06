@@ -342,12 +342,13 @@ export default function FarcasterCleanupApp() {
     setIsAnalyzing(true)
     setAnalysisProgress('Starting analysis...')
     
+    let progressInterval: NodeJS.Timeout | undefined
+    
     try {
       console.log('📡 Making API request to /api/neynar/cleanup...')
       setAnalysisProgress('Fetching your following list...')
       
       // Simulate progress updates
-      let progressInterval: NodeJS.Timeout
       progressInterval = setInterval(() => {
         setAnalysisProgress(prev => {
           if (prev?.includes('Processing batch')) {
