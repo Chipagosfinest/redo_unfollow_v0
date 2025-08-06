@@ -311,7 +311,7 @@ export default function FarcasterCleanupApp() {
       const requestBody = { 
         fid: authenticatedUser.fid,
         filters,
-        limit: 1000, // TURBO MODE - much higher limit
+        limit: 100, // Respect Neynar API limit (1-100)
         threshold: 30 // TURBO MODE - much more aggressive
       }
       

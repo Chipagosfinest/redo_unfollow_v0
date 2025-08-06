@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
         youNoInteraction: true,
         nuclear: false
       },
-      limit = 1000, // TURBO MODE - much higher limit
+      limit = 100, // Respect Neynar API limit (1-100)
       threshold = 30, // TURBO MODE - much more aggressive (30 days instead of 60)
       testMode = false // Show all users for debugging
     } = requestBody
