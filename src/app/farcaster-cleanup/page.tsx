@@ -161,18 +161,8 @@ export default function FarcasterCleanupApp() {
           // Check for multiple wallet providers
           const ethereum = (window as any).ethereum
           if (ethereum && ethereum.providers?.length > 1) {
-            console.log('⚠️ Multiple wallet providers detected:', ethereum.providers.length)
             // Try to use the first provider to avoid conflicts
             (window as any).ethereum = ethereum.providers[0]
-          }
-          
-          // Prevent ethereum property conflicts
-          if (ethereum) {
-            Object.defineProperty(window, 'ethereum', {
-              value: ethereum,
-              writable: false,
-              configurable: false
-            })
           }
         }
         
