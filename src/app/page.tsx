@@ -334,15 +334,16 @@ export default function FarcasterUnfollowApp() {
 
     setIsScanning(true)
     try {
-      // Analyze following list using Supabase
-      const response = await fetch("/api/supabase/analyze", {
+      // Analyze following list using Neynar API
+      const response = await fetch("/api/neynar/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           fid: targetFid, 
           page: 1, 
           limit: 50,
-          useCache: true
+          threshold: 60, // 60 days for interaction analysis
+          strategy: 'comprehensive' // Get comprehensive analysis
         }),
       })
       
@@ -673,6 +674,22 @@ export default function FarcasterUnfollowApp() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-md mx-auto">
+        {/* New App Banner */}
+        <div className="bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-lg">🧹 Try Farcaster Cleanup!</h3>
+              <p className="text-purple-100 text-sm">Our new comprehensive cleanup tool</p>
+            </div>
+            <a 
+              href="/farcaster-cleanup" 
+              className="bg-white text-purple-600 px-3 py-1 rounded text-sm font-medium hover:bg-purple-50 transition-colors"
+            >
+              Try Now
+            </a>
+          </div>
+        </div>
+
         {/* Header with user info */}
         <div className="text-center mb-6">
           <div className="flex items-center justify-center mb-4">

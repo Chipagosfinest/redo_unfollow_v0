@@ -1,30 +1,77 @@
 {
   "app": {
-    "name": "Feed Cleaner",
-    "description": "Sweep who doesn't follow you back or is inactive. Clean your Farcaster feed with smart analysis and batch unfollow operations",
+    "name": "Farcaster Cleanup",
+    "description": "Comprehensive Farcaster management suite. Clean up your following list with smart filters, analytics dashboard, whitelist protection, and bulk unfollow operations.",
     "icon": "🧹",
     "url": "https://redounfollowv0.vercel.app",
     "verified": true,
     "category": "social",
-    "tags": ["farcaster", "unfollow", "feed-cleanup", "social", "feed-cleaner"]
+    "tags": ["farcaster", "unfollow", "cleanup", "analytics", "whitelist", "social", "feed-cleaner", "management"]
   },
   "permissions": [
     "farcaster_user",
-    "farcaster_follows"
+    "farcaster_follows",
+    "farcaster_followers"
   ],
   "features": [
     "smart_analysis",
-    "batch_operations",
+    "bulk_operations",
+    "analytics_dashboard",
+    "whitelist_protection",
+    "settings_configuration",
     "real_time_data",
+    "progress_tracking",
+    "export_capabilities",
     "production_ready"
+  ],
+  "pages": [
+    {
+      "name": "Farcaster Cleanup",
+      "path": "/farcaster-cleanup",
+      "description": "Main cleanup interface with smart filters and bulk operations"
+    },
+    {
+      "name": "Analytics Dashboard",
+      "path": "/analytics",
+      "description": "Detailed insights about your Farcaster network"
+    },
+    {
+      "name": "Whitelist Manager",
+      "path": "/whitelist",
+      "description": "Protect users from being unfollowed"
+    },
+    {
+      "name": "Settings",
+      "path": "/settings",
+      "description": "Configure your cleanup preferences"
+    }
   ],
   "sdk": {
     "version": "1.0.0",
-    "ready_call": true
+    "ready_call": true,
+    "context_access": true
   },
   "metadata": {
     "author": "alec.eth",
-    "version": "1.0.0",
-    "last_updated": "2025-08-04"
+    "version": "2.0.0",
+    "last_updated": "2025-01-27",
+    "miniapp_version": "1.0.0",
+    "compatibility": {
+      "warpcast": ">=1.0.0",
+      "farcaster": ">=1.0.0"
+    }
+  },
+  "ui": {
+    "theme": "light",
+    "primary_color": "#6366f1",
+    "secondary_color": "#8b5cf6",
+    "background_color": "#f9fafb"
+  },
+  "capabilities": {
+    "authentication": "farcaster_sdk",
+    "data_export": true,
+    "analytics": true,
+    "notifications": true,
+    "settings_persistence": true
   }
 } 

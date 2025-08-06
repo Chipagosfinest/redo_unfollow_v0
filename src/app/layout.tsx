@@ -10,14 +10,14 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://redounfollowv0.verce
 
 // Farcaster Mini App embed metadata for social sharing
 const miniAppEmbed = {
-  version: "1",
+  version: "2.0.0",
   imageUrl: "/unfollow-icon.png",
   button: {
-    title: "🧹 Clean Following",
+    title: "🧹 Farcaster Cleanup",
     action: {
       type: "launch_miniapp",
-      url: APP_URL,
-      name: "Unfollow Tool",
+      url: `${APP_URL}/farcaster-cleanup`,
+      name: "Farcaster Cleanup",
       splashImageUrl: "/unfollow-icon.png",
       splashBackgroundColor: "#f9fafb",
     },
@@ -25,33 +25,39 @@ const miniAppEmbed = {
 }
 
 export const metadata: Metadata = {
-  title: "Farcaster Cleanup - Unfollow Tool",
-  description: "Clean up your Farcaster following list",
+  title: "Farcaster Cleanup - Comprehensive Management Suite",
+  description: "Comprehensive Farcaster management suite with smart cleanup, analytics dashboard, whitelist protection, and bulk unfollow operations",
+  keywords: ["farcaster", "cleanup", "unfollow", "analytics", "whitelist", "social", "management"],
+  authors: [{ name: "alec.eth" }],
+  creator: "alec.eth",
+  publisher: "Farcaster Cleanup",
   icons: {
     icon: "/unfollow-icon.png",
     apple: "/unfollow-icon.png",
+    shortcut: "/unfollow-icon.png",
   },
   openGraph: {
-    title: "Unfollow Tool",
-    description: "Clean up your Farcaster following list",
+    title: "Farcaster Cleanup - Comprehensive Management Suite",
+    description: "Clean up your Farcaster following list with smart filters, analytics dashboard, whitelist protection, and bulk unfollow operations",
     url: APP_URL,
-    siteName: "Unfollow Tool",
+    siteName: "Farcaster Cleanup",
     images: [
       {
         url: "/unfollow-icon.png",
         width: 400,
         height: 400,
-        alt: "Unfollow Tool - Farcaster Cleanup",
+        alt: "Farcaster Cleanup - Comprehensive Management Suite",
       },
     ],
     locale: "en_US",
     type: "website",
   },
   twitter: {
-    card: "summary",
-    title: "Unfollow Tool",
-    description: "Clean up your Farcaster following list",
+    card: "summary_large_image",
+    title: "Farcaster Cleanup - Comprehensive Management Suite",
+    description: "Clean up your Farcaster following list with smart filters, analytics dashboard, whitelist protection, and bulk unfollow operations",
     images: ["/unfollow-icon.png"],
+    creator: "@aleceth",
   },
   // Farcaster Mini App embed metadata (for social sharing)
   other: {
@@ -66,6 +72,13 @@ export const metadata: Metadata = {
         },
       },
     }),
+    "fc:app": JSON.stringify({
+      name: "Farcaster Cleanup",
+      description: "Comprehensive Farcaster management suite",
+      icon: "🧹",
+      url: `${APP_URL}/farcaster-cleanup`,
+      verified: true,
+    }),
   },
 }
 
@@ -78,15 +91,26 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <link rel="farcaster-manifest" href="/farcaster-manifest.json" />
         <link rel="preconnect" href="https://auth.farcaster.xyz" />
-        <meta name="theme-color" content="#1f2937" />
+        <link rel="preconnect" href="https://api.neynar.com" />
+        <meta name="theme-color" content="#6366f1" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Unfollow Tool" />
+        <meta name="apple-mobile-web-app-title" content="Farcaster Cleanup" />
+        <meta name="application-name" content="Farcaster Cleanup" />
+        <meta name="msapplication-TileColor" content="#6366f1" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
         />
+        {/* Farcaster Mini App specific meta tags */}
+        <meta name="farcaster:app" content="Farcaster Cleanup" />
+        <meta name="farcaster:version" content="2.0.0" />
+        <meta name="farcaster:verified" content="true" />
+        <meta name="farcaster:category" content="social" />
+        <meta name="farcaster:tags" content="farcaster,unfollow,cleanup,analytics,whitelist,social,management" />
       </head>
       <body className={inter.className}>
         {children}

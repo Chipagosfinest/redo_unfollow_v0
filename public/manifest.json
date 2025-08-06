@@ -1,8 +1,8 @@
 {
-  "name": "Farcaster Cleanup - Unfollow Tool",
+  "name": "Farcaster Cleanup - Comprehensive Management Suite",
   "short_name": "Farcaster Cleanup",
-  "description": "Clean up your Farcaster following list by finding and unfollowing inactive accounts",
-  "start_url": "/",
+  "description": "Comprehensive Farcaster management suite with smart cleanup, analytics dashboard, whitelist protection, and bulk unfollow operations",
+  "start_url": "/farcaster-cleanup",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#6366f1",
@@ -10,10 +10,67 @@
     {
       "src": "/unfollow-icon.png",
       "sizes": "400x400",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "categories": ["social", "productivity"],
+  "categories": ["social", "productivity", "utilities"],
   "lang": "en",
-  "dir": "ltr"
+  "dir": "ltr",
+  "orientation": "portrait",
+  "scope": "/",
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "screenshots": [
+    {
+      "src": "/screenshot-cleanup.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshot-analytics.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Cleanup",
+      "short_name": "Cleanup",
+      "description": "Start Farcaster cleanup",
+      "url": "/farcaster-cleanup",
+      "icons": [
+        {
+          "src": "/unfollow-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "short_name": "Analytics",
+      "description": "View analytics dashboard",
+      "url": "/analytics",
+      "icons": [
+        {
+          "src": "/unfollow-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Whitelist",
+      "short_name": "Whitelist",
+      "description": "Manage protected users",
+      "url": "/whitelist",
+      "icons": [
+        {
+          "src": "/unfollow-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
 } 

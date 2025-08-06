@@ -1,0 +1,3 @@
+fid,username,display_name,follower_count,following_count,last_cast_date,days_inactive
+100,"early_user1","Early User 1",200,30,"2024-01-08",82
+500,"early_user2","Early User 2",150,25,"2024-01-03",87

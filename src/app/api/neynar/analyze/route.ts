@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     const following = followingData.users || []
     
     // If we didn't get enough data with cursor, try without cursor as fallback
-    if (following.length < 10 && totalFollowing > 100) {
+    if (following.length < 10 && following.length > 0) {
       console.log(`⚠️ Cursor approach didn't work, trying without cursor...`)
       const fallbackResponse = await fetch(
         `https://api.neynar.com/v2/farcaster/following?viewer_fid=${fid}&fid=${fid}&limit=100`,
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
     console.log(`🔍 Analysis setup:`, {
       totalFollowing: following.length,
       totalFollowers: followers.length,
-      mutualFollows: following.filter(f => followerFids.has(f.fid)).length,
+      mutualFollows: following.filter((f: any) => followerFids.has(f.fid)).length,
       thresholdDays: threshold
     })
 
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
       const lastActiveTime = user.lastActiveStatus ? new Date(user.lastActiveStatus).getTime() : null
       const daysSinceActive = lastActiveTime ? (Date.now() - lastActiveTime) / (1000 * 60 * 60 * 24) : null
       const isInactive = user.lastActiveStatus === 'inactive' || 
-                        (lastActiveTime && daysSinceActive > threshold)
+                        (lastActiveTime && daysSinceActive !== null && daysSinceActive > threshold)
 
       const analysis = {
         fid: user.fid,

@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://redounfollowv0.vercel.app/sitemap.xml
+
+# Farcaster Mini App specific
+Allow: /farcaster-cleanup
+Allow: /analytics
+Allow: /whitelist
+Allow: /settings
+
+# Disallow API endpoints from crawling
+Disallow: /api/
+Disallow: /_next/
+Disallow: /static/ 

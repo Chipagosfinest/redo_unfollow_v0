@@ -1,0 +1,4 @@
+fid,username,display_name,follower_count,following_count,last_cast_date,days_inactive
+1234,"sample_user1","Sample User 1",1500,200,"2024-01-15",75
+5678,"sample_user2","Sample User 2",1200,150,"2024-01-10",80
+9012,"sample_user3","Sample User 3",800,100,"2024-01-05",85

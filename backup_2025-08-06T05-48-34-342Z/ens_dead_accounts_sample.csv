@@ -1,0 +1,3 @@
+fid,username,display_name,follower_count,following_count,last_cast_date,days_inactive
+3456,"user1.eth","ENS User 1",500,80,"2024-01-20",70
+7890,"user2.eth","ENS User 2",300,50,"2024-01-12",78

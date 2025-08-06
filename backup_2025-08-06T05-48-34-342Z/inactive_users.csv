@@ -1,0 +1,12 @@
+fid,username,display_name,pfp_url,last_cast_date,days_inactive,follower_count,following_count,inactivity_score
+1000,yan,Yan,https://via.placeholder.com/150,2024-01-01,180,169,202,90
+1001,inactive_user,Inactive User,https://via.placeholder.com/150,2024-02-01,150,50,30,85
+1002,old_account,Old Account,https://via.placeholder.com/150,2023-12-01,250,75,50,95
+1003,ghost_user,Ghost User,https://via.placeholder.com/150,2023-11-01,300,25,15,98
+1004,silent_caster,Silent Caster,https://via.placeholder.com/150,2024-03-01,120,200,150,80
+1005,forgotten_user,Forgotten User,https://via.placeholder.com/150,2023-10-01,350,10,5,99
+1006,abandoned_account,Abandoned Account,https://via.placeholder.com/150,2024-01-15,165,45,20,88
+1007,quiet_follower,Quiet Follower,https://via.placeholder.com/150,2024-02-15,135,80,60,82
+1008,missing_user,Missing User,https://via.placeholder.com/150,2023-09-01,400,15,8,100
+1009,gone_away,Gone Away,https://via.placeholder.com/150,2024-03-15,105,120,90,78
+1010,disappeared,Disappeared,https://via.placeholder.com/150,2023-08-01,450,5,2,100 

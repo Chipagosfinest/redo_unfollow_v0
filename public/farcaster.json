@@ -1,0 +1,18 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjU0NDgsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHg2MWQwMEFENzYwNjhGOEQ0NzQwYzM1OEM4QzAzYUFFYjUxMGI1OTBEIn0",
+    "payload": "eyJkb21haW4iOiJmYXJjYXN0ZXItY2xlYW51cC5hcHAifQ",
+    "signature": "MHg3NmRkOWVlMjE4OGEyMjliNzExZjUzOTkxYTc1NmEzMGZjNTA3NmE5OTU5OWJmOWFmYjYyMzAyZWQxMWQ2MWFmNTExYzlhYWVjNjQ3OWMzODcyMTI5MzA2YmJhYjdhMTE0MmRhMjA4MmNjNTM5MTJiY2MyMDRhMWFjZTY2NjE5OTFj"
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "Farcaster Cleanup",
+    "iconUrl": "https://farcaster-cleanup.app/unfollow-icon.svg",
+    "homeUrl": "https://farcaster-cleanup.app",
+    "imageUrl": "https://farcaster-cleanup.app/image.png",
+    "buttonTitle": "Clean up your feed",
+    "splashImageUrl": "https://farcaster-cleanup.app/splash.png",
+    "splashBackgroundColor": "#8b5cf6",
+    "webhookUrl": "https://farcaster-cleanup.app/api/webhook"
+  }
+} 

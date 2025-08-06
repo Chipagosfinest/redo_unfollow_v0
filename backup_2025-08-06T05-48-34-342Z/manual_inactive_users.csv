@@ -1,0 +1,28 @@
+fid,username,display_name,follower_count,following_count,last_cast_date,days_inactive
+1234,"example_user1","Example User 1",2500,300,"2024-01-15",75
+5678,"example_user2","Example User 2",1800,200,"2024-01-10",80
+9012,"example_user3","Example User 3",1200,150,"2024-01-05",85
+3456,"user1.eth","ENS User 1",800,100,"2024-01-20",70
+7890,"user2.eth","ENS User 2",600,80,"2024-01-12",78
+100,"early_user1","Early User 1",400,50,"2024-01-08",82
+500,"early_user2","Early User 2",300,40,"2024-01-03",87
+2000,"dev_user1","Developer 1",900,120,"2024-01-18",72
+3000,"dev_user2","Developer 2",700,90,"2024-01-14",76
+4000,"short_user","Short User",1500,180,"2024-01-09",81
+10000,"known_inactive1","Known Inactive 1",2000,250,"2024-01-01",89
+11000,"known_inactive2","Known Inactive 2",1600,200,"2024-01-02",88
+12000,"known_inactive3","Known Inactive 3",1300,160,"2024-01-03",87
+13000,"known_inactive4","Known Inactive 4",1100,140,"2024-01-04",86
+14000,"known_inactive5","Known Inactive 5",950,120,"2024-01-05",85
+15000,"user3.eth","ENS User 3",500,70,"2024-01-06",84
+16000,"user4.eth","ENS User 4",450,60,"2024-01-07",83
+17000,"user5.eth","ENS User 5",400,55,"2024-01-08",82
+200,"early_user3","Early User 3",250,30,"2024-01-09",81
+300,"early_user4","Early User 4",200,25,"2024-01-10",80
+400,"early_user5","Early User 5",180,22,"2024-01-11",79
+5000,"dev_user3","Developer 3",600,80,"2024-01-12",78
+6000,"dev_user4","Developer 4",550,75,"2024-01-13",77
+7000,"dev_user5","Developer 5",500,70,"2024-01-14",76
+8000,"abc","Short User 1",1200,150,"2024-01-15",75
+9000,"xyz","Short User 2",1000,130,"2024-01-16",74
+10001,"def","Short User 3",900,120,"2024-01-17",73
