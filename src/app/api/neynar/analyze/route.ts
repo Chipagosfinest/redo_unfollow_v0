@@ -43,12 +43,14 @@ export async function POST(request: NextRequest) {
     )
 
     console.log(`Following API response status: ${followingResponse.status}`)
+    console.log(`Following API response headers:`, Object.fromEntries(followingResponse.headers.entries()))
 
     if (!followingResponse.ok) {
       const errorText = await followingResponse.text()
       console.error(`Following API error: ${followingResponse.status} - ${errorText}`)
+      console.error(`Following API URL: https://api.neynar.com/v2/farcaster/user/following?viewer_fid=${fid}&fid=${fid}&limit=1000`)
       return NextResponse.json(
-        { error: `Failed to fetch following list: ${followingResponse.status}` },
+        { error: `Failed to fetch following list: ${followingResponse.status}`, details: errorText },
         { status: 500 }
       )
     }
@@ -69,12 +71,14 @@ export async function POST(request: NextRequest) {
     )
 
     console.log(`Followers API response status: ${followersResponse.status}`)
+    console.log(`Followers API response headers:`, Object.fromEntries(followersResponse.headers.entries()))
 
     if (!followersResponse.ok) {
       const errorText = await followersResponse.text()
       console.error(`Followers API error: ${followersResponse.status} - ${errorText}`)
+      console.error(`Followers API URL: https://api.neynar.com/v2/farcaster/user/followers?viewer_fid=${fid}&fid=${fid}&limit=1000`)
       return NextResponse.json(
-        { error: `Failed to fetch followers list: ${followersResponse.status}` },
+        { error: `Failed to fetch followers list: ${followersResponse.status}`, details: errorText },
         { status: 500 }
       )
     }
