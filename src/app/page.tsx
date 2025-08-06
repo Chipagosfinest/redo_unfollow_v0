@@ -65,8 +65,19 @@ export default function FarcasterUnfollowApp() {
         setIsMiniApp(miniAppCheck)
         
         if (miniAppCheck) {
-          // Always call ready() when SDK detects Mini App environment
-          await sdk.actions.ready()
+          // Wait for context to be available, then call ready
+          try {
+            // You can access context like this:
+            const context = sdk.context
+            console.log('User FID:', context.user?.fid)
+            
+            // Always call ready() when your UI is ready
+            await sdk.actions.ready()
+          } catch (error) {
+            console.error('Failed to initialize:', error)
+            // Still call ready() even if there are errors
+            await sdk.actions.ready()
+          }
         }
       } catch (error) {
         // Handle SDK initialization errors gracefully
@@ -95,6 +106,47 @@ export default function FarcasterUnfollowApp() {
       const farcasterUser = getFarcasterUser()
       
       if (!farcasterUser || !farcasterUser.fid) {
+        // Try to get user from SDK context first
+        if (isMiniApp) {
+          try {
+            const context = sdk.context
+            if (context.user?.fid) {
+              // Use SDK context user
+              const userData = await fetch('/api/neynar/user', {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-user-fid': context.user.fid.toString(),
+                  'x-user-username': context.user.username || '',
+                  'x-user-display-name': context.user.displayName || '',
+                },
+              })
+              
+              if (userData.ok) {
+                const user = await userData.json()
+                
+                const authenticatedUser: AuthenticatedUser = {
+                  fid: user.fid,
+                  username: user.username || `user_${user.fid}`,
+                  displayName: user.displayName || `User ${user.fid}`,
+                  pfpUrl: user.pfpUrl || '',
+                  isAuthenticated: true
+                }
+                
+                setAuthenticatedUser(authenticatedUser)
+                setIsAuthenticated(true)
+                toast.success('Successfully authenticated!')
+                
+                // Automatically start scanning
+                await startScan(authenticatedUser.fid)
+                return
+              }
+            }
+          } catch (error) {
+            console.warn('Failed to get user from SDK context:', error)
+          }
+        }
+        
         // Provide better guidance based on environment
         const env = detectEnvironment()
         if (env.isMiniApp) {
