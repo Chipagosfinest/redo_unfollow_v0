@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
 
 const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY
 const RATE_LIMIT_DELAY = 100 // 100ms between requests to avoid rate limiting
@@ -170,36 +169,6 @@ async function checkUserInactivity(fid: number, minFollowers: number = 10, maxFo
   }
 }
 
-// Cache inactive user data in Supabase
-async function cacheInactiveUser(userData: InactiveUserData): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('inactive_users')
-      .upsert({
-        fid: userData.fid,
-        username: userData.username,
-        display_name: userData.display_name,
-        pfp_url: userData.pfp_url,
-        last_cast: userData.last_cast_date,
-        last_active_status: userData.last_cast_date,
-        inactive_score: userData.inactive_score,
-        followers_count: userData.followers_count,
-        following_count: userData.following_count,
-        updated_at: new Date().toISOString(),
-      })
-
-    if (error) {
-      console.error('Error caching inactive user:', error)
-      return false
-    }
-
-    return true
-  } catch (error) {
-    console.error('Error caching inactive user:', error)
-    return false
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
     const { fids, limit = 10, minFollowers = 10, maxFollowers = 50 } = await request.json()
@@ -223,8 +192,6 @@ export async function POST(request: NextRequest) {
       const inactiveUser = await checkUserInactivity(fid, minFollowers, maxFollowers)
       
       if (inactiveUser) {
-        // Cache the inactive user
-        await cacheInactiveUser(inactiveUser)
         results.push(inactiveUser)
         
         console.log(`Found inactive user: ${inactiveUser.username} (${inactiveUser.days_since_last_cast} days, ${inactiveUser.followers_count} followers)`)
@@ -254,29 +221,12 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const minScore = parseInt(searchParams.get('min_score') || '30')
-
-    const { data, error } = await supabase
-      .from('inactive_users')
-      .select('*')
-      .gte('inactive_score', minScore)
-      .order('inactive_score', { ascending: false })
-      .limit(limit)
-
-    if (error) {
-      console.error('Error fetching inactive users:', error)
-      return NextResponse.json(
-        { error: 'Database error' },
-        { status: 500 }
-      )
-    }
-
+    // For GET requests, we'll return a simple message since we don't have a database
     return NextResponse.json({
       success: true,
-      count: data?.length || 0,
-      results: data || []
+      message: 'Use POST method to check for inactive users',
+      count: 0,
+      results: []
     })
 
   } catch (error) {
