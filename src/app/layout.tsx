@@ -1,11 +1,11 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "sonner"
 import ErrorBoundary from "@/components/ErrorBoundary"
 
-const inter = Inter({ subsets: ["latin"] })
+// Using system fonts instead of Google Fonts to avoid ad blocker issues
+const inter = { className: "font-sans" }
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://redounfollowv0.vercel.app"
 
