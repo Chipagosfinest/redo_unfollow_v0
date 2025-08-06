@@ -285,7 +285,7 @@ export default function FarcasterCleanupApp() {
 
     setIsAnalyzing(true)
     setAnalysisProgress('Starting analysis...')
-    let progressInterval: NodeJS.Timeout | null = null
+    const progressInterval: NodeJS.Timeout | null = null
 
     try {
       // Add retry mechanism for blocked requests
