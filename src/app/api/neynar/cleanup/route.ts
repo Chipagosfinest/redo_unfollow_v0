@@ -11,12 +11,18 @@ const RATE_LIMIT_CONFIG = {
 }
 
 // Circuit breaker state
-let circuitBreaker = {
+const circuitBreaker = {
   failures: 0,
   lastFailureTime: 0,
   isOpen: false,
   threshold: 5,
   timeout: 30000 // 30 seconds
+} as {
+  failures: number
+  lastFailureTime: number
+  isOpen: boolean
+  threshold: number
+  timeout: number
 }
 
 // Helper function for exponential backoff delay
