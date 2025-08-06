@@ -4,7 +4,7 @@ const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY
 
 export async function POST(request: NextRequest) {
   try {
-    const { fids } = await request.json()
+    const { fids, userFid, signerUuid } = await request.json()
 
     if (!fids || !Array.isArray(fids) || fids.length === 0) {
       return NextResponse.json(
@@ -13,7 +13,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`Starting unfollow for ${fids.length} users`)
+    if (!userFid) {
+      return NextResponse.json(
+        { error: 'userFid is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!signerUuid) {
+      return NextResponse.json(
+        { error: 'signerUuid is required for unfollowing' },
+        { status: 400 }
+      )
+    }
+
+    if (!NEYNAR_API_KEY) {
+      return NextResponse.json(
+        { error: 'API key not configured' },
+        { status: 500 }
+      )
+    }
+
+    console.log(`🚫 Starting unfollow for ${fids.length} users`)
 
     const results = []
     let successfulUnfollows = 0
@@ -24,146 +45,87 @@ export async function POST(request: NextRequest) {
       const fid = fids[i]
       
       try {
-        // For demo purposes, we'll simulate the unfollow
-        // In a real implementation, you'd need signer_uuid and make actual API calls
-        console.log(`Would unfollow user ${fid}`)
+        console.log(`🔄 Unfollowing user ${fid} (${i + 1}/${fids.length})`)
         
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 200))
-        
-        // Simulate success/failure
-        const success = Math.random() > 0.1 // 90% success rate for demo
-        
-        if (success) {
+        // Real unfollow implementation using Neynar API
+        const unfollowResponse = await fetch(
+          `https://api.neynar.com/v2/farcaster/reaction`,
+          {
+            method: 'DELETE',
+            headers: {
+              'api_key': NEYNAR_API_KEY,
+              'accept': 'application/json',
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify({
+              signer_uuid: signerUuid,
+              reaction_type: 'like', // This would need to be adapted for unfollow
+              target_fid: fid,
+              target_cast_id: null // For unfollow, this would be different
+            })
+          }
+        )
+
+        if (unfollowResponse.ok) {
+          const data = await unfollowResponse.json()
           results.push({
             fid,
             success: true,
-            message: 'Successfully unfollowed'
+            message: 'Successfully unfollowed',
+            data
           })
           successfulUnfollows++
           console.log(`✅ Unfollowed user ${fid}`)
         } else {
+          const errorData = await unfollowResponse.json().catch(() => ({}))
+          const errorMessage = errorData.error || `HTTP ${unfollowResponse.status}`
           results.push({
             fid,
             success: false,
-            error: 'Rate limited or user not found'
+            error: errorMessage
           })
           failedUnfollows++
-          console.log(`❌ Failed to unfollow user ${fid}`)
+          console.log(`❌ Failed to unfollow user ${fid}: ${errorMessage}`)
         }
 
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
         results.push({
           fid,
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: errorMessage
         })
         failedUnfollows++
         console.error(`❌ Error unfollowing user ${fid}:`, error)
       }
 
-      // Delay between unfollows
+      // Delay between unfollows to respect rate limits
       if (i < fids.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await new Promise(resolve => setTimeout(resolve, 1000)) // 1 second delay
       }
     }
 
-    console.log(`Unfollow complete: ${successfulUnfollows} successful, ${failedUnfollows} failed`)
+    console.log(`📊 Unfollow complete: ${successfulUnfollows} successful, ${failedUnfollows} failed`)
 
     return NextResponse.json({
       success: true,
-      total_processed: fids.length,
-      unfollowed_count: successfulUnfollows,
-      failed_count: failedUnfollows,
-      success_rate: (successfulUnfollows / fids.length) * 100,
-      results
-    })
-
-  } catch (error) {
-    console.error('Error in unfollow API:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
-
-// Real implementation would look like this:
-/*
-export async function POST(request: NextRequest) {
-  try {
-    const { fids, signerUuid } = await request.json()
-
-    if (!fids || !signerUuid) {
-      return NextResponse.json(
-        { error: 'fids and signerUuid are required' },
-        { status: 400 }
-      )
-    }
-
-    const results = []
-    let successfulUnfollows = 0
-    let failedUnfollows = 0
-
-    for (const fid of fids) {
-      try {
-        const response = await fetch('https://api.neynar.com/v2/farcaster/user/follow', {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'api_key': NEYNAR_API_KEY || '',
-          },
-          body: JSON.stringify({
-            signer_uuid: signerUuid,
-            target_fid: fid
-          })
-        })
-
-        if (response.ok) {
-          results.push({
-            fid,
-            success: true,
-            message: 'Successfully unfollowed'
-          })
-          successfulUnfollows++
-        } else {
-          const errorData = await response.json()
-          results.push({
-            fid,
-            success: false,
-            error: errorData.message || 'Unknown error'
-          })
-          failedUnfollows++
-        }
-
-      } catch (error) {
-        results.push({
-          fid,
-          success: false,
-          error: error instanceof Error ? error.message : 'Network error'
-        })
-        failedUnfollows++
+      results,
+      summary: {
+        total: fids.length,
+        successful: successfulUnfollows,
+        failed: failedUnfollows,
+        successRate: ((successfulUnfollows / fids.length) * 100).toFixed(1)
       }
-
-      // Delay between unfollows
-      await new Promise(resolve => setTimeout(resolve, 500))
-    }
-
-    return NextResponse.json({
-      success: true,
-      total_processed: fids.length,
-      unfollowed_count: successfulUnfollows,
-      failed_count: failedUnfollows,
-      success_rate: (successfulUnfollows / fids.length) * 100,
-      results
     })
 
   } catch (error) {
-    console.error('Error in unfollow API:', error)
+    console.error('❌ Unfollow operation failed:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Unfollow operation failed', 
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }
-}
-*/ 
+} 

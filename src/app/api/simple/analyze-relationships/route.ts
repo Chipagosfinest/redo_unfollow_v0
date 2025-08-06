@@ -2,6 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY
 
+interface Relationship {
+  fid: number
+  username: string
+  displayName: string
+  pfpUrl: string
+  followerCount: number
+  followingCount: number
+  isMutual: boolean
+  daysSinceInteraction: number
+  reasons: string[]
+  shouldUnfollow: boolean
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { userFid } = await request.json()
@@ -13,110 +26,132 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`Analyzing relationships for user ${userFid}`)
+    if (!NEYNAR_API_KEY) {
+      return NextResponse.json(
+        { error: 'API key not configured' },
+        { status: 500 }
+      )
+    }
 
-    // Get user's following list
+    console.log(`🔍 Analyzing relationships for user ${userFid}`)
+
+    // Fetch user's following list
     const followingResponse = await fetch(
-      `https://api.neynar.com/v2/farcaster/user/following?fid=${userFid}&limit=1000`,
+      `https://api.neynar.com/v2/farcaster/user/following?fid=${userFid}&limit=100`,
       {
         headers: {
-          'api_key': NEYNAR_API_KEY || '',
-        },
+          'api_key': NEYNAR_API_KEY,
+          'accept': 'application/json',
+        }
       }
     )
 
     if (!followingResponse.ok) {
-      return NextResponse.json(
-        { error: 'Failed to fetch following list' },
-        { status: 500 }
-      )
+      const errorData = await followingResponse.json().catch(() => ({}))
+      throw new Error(errorData.error || `Failed to fetch following list: ${followingResponse.status}`)
     }
 
     const followingData = await followingResponse.json()
     const followingUsers = followingData.users || []
 
-    console.log(`Found ${followingUsers.length} users that ${userFid} follows`)
-
-    const relationships = []
-    let processed = 0
-
-    // Process in small batches to avoid rate limits
-    const batchSize = 3
-    for (let i = 0; i < followingUsers.length; i += batchSize) {
-      const batch = followingUsers.slice(i, i + batchSize)
-      
-      for (const user of batch) {
-        try {
-          // Check if they follow back
-          const followersResponse = await fetch(
-            `https://api.neynar.com/v2/farcaster/user/followers?fid=${userFid}&limit=1000`,
-            {
-              headers: {
-                'api_key': NEYNAR_API_KEY || '',
-              },
-            }
-          )
-
-          let isMutualFollow = false
-          if (followersResponse.ok) {
-            const followersData = await followersResponse.json()
-            isMutualFollow = followersData.users?.some((follower: any) => follower.fid === user.fid) || false
-          }
-
-          // Simple interaction check (we'll use a default for demo)
-          // In a real implementation, you'd check actual interaction history
-          const daysSinceInteraction = Math.floor(Math.random() * 120) + 1 // Demo: random 1-120 days
-
-          // Determine if they should be unfollowed
-          const shouldUnfollow = !isMutualFollow || daysSinceInteraction >= 60
-
-          if (shouldUnfollow) {
-            relationships.push({
-              fid: user.fid,
-              username: user.username,
-              display_name: user.display_name,
-              pfp_url: user.pfp_url,
-              is_mutual_follow: isMutualFollow,
-              days_since_interaction: daysSinceInteraction,
-              should_unfollow: true
-            })
-          }
-
-          processed++
-          console.log(`Processed ${processed}/${followingUsers.length}: @${user.username}`)
-
-        } catch (error) {
-          console.error(`Error processing user ${user.fid}:`, error)
+    // Fetch user's followers list
+    const followersResponse = await fetch(
+      `https://api.neynar.com/v2/farcaster/user/followers?fid=${userFid}&limit=100`,
+      {
+        headers: {
+          'api_key': NEYNAR_API_KEY,
+          'accept': 'application/json',
         }
-
-        // Small delay between users
-        await new Promise(resolve => setTimeout(resolve, 500))
       }
+    )
 
-      // Delay between batches
-      if (i + batchSize < followingUsers.length) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-      }
+    if (!followersResponse.ok) {
+      const errorData = await followersResponse.json().catch(() => ({}))
+      throw new Error(errorData.error || `Failed to fetch followers list: ${followersResponse.status}`)
     }
 
-    console.log(`Analysis complete: ${relationships.length} relationships to review`)
+    const followersData = await followersResponse.json()
+    const followers = followersData.users || []
+
+    // Create a set of follower FIDs for quick lookup
+    const followerFids = new Set(followers.map((f: any) => f.fid))
+
+    // Analyze each following relationship
+    const relationships: Relationship[] = []
+
+    for (const user of followingUsers) {
+      const isMutual = followerFids.has(user.fid)
+      const reasons: string[] = []
+
+      // Check if they don't follow back
+      if (!isMutual) {
+        reasons.push('Does not follow you back')
+      }
+
+      // Check for recent activity (last 60 days)
+      const lastCastDate = user.last_cast_date ? new Date(user.last_cast_date) : null
+      const daysSinceLastCast = lastCastDate ? 
+        Math.floor((Date.now() - lastCastDate.getTime()) / (1000 * 60 * 60 * 24)) : 
+        null
+
+      if (daysSinceLastCast && daysSinceLastCast > 60) {
+        reasons.push(`No activity for ${daysSinceLastCast} days`)
+      }
+
+      // Check follower/following ratio for potential bot detection
+      const followerRatio = user.follower_count > 0 ? user.following_count / user.follower_count : 0
+      if (followerRatio > 10) {
+        reasons.push('Suspicious follower/following ratio')
+      }
+
+      // Determine if should unfollow based on criteria
+      const shouldUnfollow = reasons.length > 0
+
+      relationships.push({
+        fid: user.fid,
+        username: user.username,
+        displayName: user.display_name,
+        pfpUrl: user.pfp_url,
+        followerCount: user.follower_count,
+        followingCount: user.following_count,
+        isMutual,
+        daysSinceInteraction: daysSinceLastCast || 0,
+        reasons,
+        shouldUnfollow
+      })
+    }
+
+    // Sort by priority (non-mutual first, then by activity)
+    relationships.sort((a, b) => {
+      if (!a.isMutual && b.isMutual) return -1
+      if (a.isMutual && !b.isMutual) return 1
+      return b.daysSinceInteraction - a.daysSinceInteraction
+    })
+
+    const unfollowCandidates = relationships.filter(r => r.shouldUnfollow)
+    const mutualFollowers = relationships.filter(r => r.isMutual)
+
+    console.log(`✅ Analysis complete: ${relationships.length} total, ${unfollowCandidates.length} candidates`)
 
     return NextResponse.json({
       success: true,
-      total_processed: processed,
-      relationships_found: relationships.length,
-      relationships: relationships.sort((a, b) => {
-        // Sort by priority: non-mutual first, then by days since interaction
-        if (!a.is_mutual_follow && b.is_mutual_follow) return -1
-        if (a.is_mutual_follow && !b.is_mutual_follow) return 1
-        return b.days_since_interaction - a.days_since_interaction
-      })
+      relationships,
+      summary: {
+        total: relationships.length,
+        mutual: mutualFollowers.length,
+        nonMutual: relationships.length - mutualFollowers.length,
+        unfollowCandidates: unfollowCandidates.length,
+        inactiveUsers: relationships.filter(r => r.daysSinceInteraction > 60).length
+      }
     })
 
   } catch (error) {
-    console.error('Error in analyze-relationships:', error)
+    console.error('❌ Relationship analysis failed:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Failed to analyze relationships', 
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

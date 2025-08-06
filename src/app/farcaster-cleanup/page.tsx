@@ -91,7 +91,8 @@ export default function FarcasterCleanupApp() {
     nuclear: false
   })
   const [showFilters, setShowFilters] = useState(true)
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false)
+  // TODO: Notifications state - Uncomment when Farcaster manifest integration is complete
+  // const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [unfollowProgress, setUnfollowProgress] = useState<{
     current: number
     total: number
@@ -144,6 +145,8 @@ export default function FarcasterCleanupApp() {
           // Set up event listeners after SDK is ready
           console.log('🎧 Setting up Mini App event listeners...')
           
+          // TODO: Mini App notification events - Uncomment when Farcaster manifest integration is complete
+          /*
           // Listen for Mini App being added
           sdk.on('miniapp_added' as any, () => {
             console.log('📱 Mini App added event received')
@@ -157,7 +160,10 @@ export default function FarcasterCleanupApp() {
             setNotificationsEnabled(false)
             toast.info('Mini App removed')
           })
+          */
           
+          // TODO: Notifications event listeners - Uncomment when Farcaster manifest integration is complete
+          /*
           // Listen for notifications being enabled
           sdk.on('notifications_enabled' as any, () => {
             console.log('🔔 Notifications enabled event received')
@@ -171,6 +177,7 @@ export default function FarcasterCleanupApp() {
             setNotificationsEnabled(false)
             toast.info('Notifications disabled')
           })
+          */
           
           console.log('✅ Event listeners set up successfully')
         } else {
@@ -202,12 +209,6 @@ export default function FarcasterCleanupApp() {
 
   // Initialize auth context
   useEffect(() => {
-    // Add a simple DOM event listener to test clicks
-    const testClickHandler = () => {
-      console.log('🚨 DOM CLICK EVENT DETECTED!')
-    }
-    
-    document.addEventListener('click', testClickHandler)
     
     const initializeAuth = async () => {
       try {
@@ -275,7 +276,8 @@ export default function FarcasterCleanupApp() {
     
     // Cleanup function
     return () => {
-      document.removeEventListener('click', testClickHandler)
+      console.log('🧹 Cleaning up event listeners...')
+      sdk.removeAllListeners()
     }
   }, [])
 
@@ -526,7 +528,8 @@ export default function FarcasterCleanupApp() {
     }
   }
 
-  // Enable notifications
+  // TODO: Enable notifications - Requires Farcaster manifest integration
+  /*
   const enableNotifications = async () => {
     console.log('🔔 Enable notifications button clicked!')
     try {
@@ -567,6 +570,7 @@ export default function FarcasterCleanupApp() {
       console.error('Error sending notification:', error)
     }
   }
+  */
 
   // Show loading screen during initialization
   if (!isInitialized) {
@@ -701,69 +705,7 @@ export default function FarcasterCleanupApp() {
             </Button>
           </div>
           
-          {/* Test Button */}
-          <div className="mt-2">
-            <Button 
-              onClick={() => {
-                console.log('🚨 TEST BUTTON CLICKED!')
-                alert('Test button works!')
-              }}
-              variant="outline"
-              className="w-full text-xs"
-            >
-              🧪 Test Click (Should Show Alert)
-            </Button>
-            
-            {/* Raw HTML Button Test */}
-            <button 
-              onClick={() => {
-                console.log('🚨 RAW HTML BUTTON CLICKED!')
-                alert('Raw HTML button works!')
-              }}
-              className="mt-2 w-full p-2 bg-red-500 text-white rounded text-xs"
-            >
-              🔥 Raw HTML Button Test
-            </button>
-            
-            {/* SDK Test Button */}
-            <Button 
-              onClick={async () => {
-                console.log('🚨 SDK TEST BUTTON CLICKED!')
-                try {
-                  const isMiniApp = await sdk.isInMiniApp()
-                  console.log('Is Mini App:', isMiniApp)
-                  alert(`SDK Test: Is Mini App = ${isMiniApp}`)
-                } catch (error) {
-                  console.error('SDK test failed:', error)
-                  alert(`SDK Test Error: ${error}`)
-                }
-              }}
-              variant="outline"
-              className="w-full text-xs mt-2"
-            >
-              🔧 SDK Test (Check Console)
-            </Button>
-            
-            {/* SDK Actions Test Button */}
-            <Button 
-              onClick={async () => {
-                console.log('🚨 SDK ACTIONS TEST BUTTON CLICKED!')
-                try {
-                  // Test if we can call SDK actions
-                  await sdk.actions.ready()
-                  console.log('✅ SDK actions.ready() works!')
-                  alert('SDK Actions Test: ready() works!')
-                } catch (error) {
-                  console.error('SDK actions test failed:', error)
-                  alert(`SDK Actions Error: ${error}`)
-                }
-              }}
-              variant="outline"
-              className="w-full text-xs mt-2"
-            >
-              ⚡ SDK Actions Test
-            </Button>
-          </div>
+
         </div>
 
         {/* Progress Indicator */}
@@ -789,7 +731,7 @@ export default function FarcasterCleanupApp() {
           </div>
         )}
 
-        {/* Notification Opt-in */}
+        {/* TODO: Notifications - Requires Farcaster manifest integration
         {isAuthenticated && !notificationsEnabled && users.length === 0 && (
           <div className="mb-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -817,6 +759,7 @@ export default function FarcasterCleanupApp() {
             </div>
           </div>
         )}
+        */}
 
         {/* Filters */}
         {users.length > 0 && (

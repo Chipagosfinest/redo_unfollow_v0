@@ -144,16 +144,10 @@ export async function POST(request: NextRequest) {
           }
         }
       } catch (error) {
-        console.error(`Failed to fetch interactions for user ${user.fid}:`, error)
-        // Fallback to simulated data if API fails
-        const hasInteractionWithYou = Math.random() > 0.7
-        if (!hasInteractionWithYou) {
-          analysis.reasons.push('No interaction with you')
-          filterCounts.noInteractionWithYou++
-          if (filters.noInteractionWithYou) {
-            analysis.shouldUnfollow = true
-          }
-        }
+        console.error(`❌ Failed to fetch interactions for user ${user.fid}:`, error)
+        // Skip this user if we can't fetch interaction data
+        analysis.reasons.push('Unable to verify interactions')
+        continue
       }
 
       // Nuclear option - unfollow everyone

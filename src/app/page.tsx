@@ -9,7 +9,7 @@ import { toast } from "sonner"
 import { sdk } from '@farcaster/miniapp-sdk'
 import { getFarcasterUser, detectEnvironment } from '@/lib/environment'
 import { authManager, AuthContext } from '@/lib/auth-context'
-import { TestControls } from '@/components/TestControls'
+
 
 // CRITICAL: Call ready() immediately when module loads
 if (typeof window !== 'undefined') {

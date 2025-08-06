@@ -31,6 +31,7 @@ export default function SimpleUnfollowPage() {
   const [selectedFids, setSelectedFids] = useState<Set<number>>(new Set())
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isUnfollowing, setIsUnfollowing] = useState(false)
+  const [authenticatedUser, setAuthenticatedUser] = useState<{ fid: number } | null>(null)
   const [filters, setFilters] = useState<FilterState>({
     nonMutual: true,
     noInteractionWithYou: true,
@@ -43,7 +44,7 @@ export default function SimpleUnfollowPage() {
     toast.info('Analyzing your relationships...')
 
     try {
-      const userFid = 4044 // Demo user
+      const userFid = authenticatedUser?.fid || 4044 // Use authenticated user or fallback
       
       const response = await fetch('/api/simple/analyze-relationships', {
         method: 'POST',
