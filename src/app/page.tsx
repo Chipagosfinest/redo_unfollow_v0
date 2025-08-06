@@ -28,17 +28,32 @@ interface AuthenticatedUser {
 }
 
 export default function FarcasterUnfollowApp() {
+  const [isLoading, setIsLoading] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set())
-  const [isUnfollowing, setIsUnfollowing] = useState(false)
   const [isScanning, setIsScanning] = useState(false)
-  const [showConfirmUnfollow, setShowConfirmUnfollow] = useState(false)
-  const [isMiniApp, setIsMiniApp] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [isMiniApp, setIsMiniApp] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
+
+  // Suppress browser extension conflicts
+  useEffect(() => {
+    const originalError = console.error
+    console.error = (...args) => {
+      const message = args.join(' ')
+      if (message.includes('ethereum') || message.includes('isZerion') || message.includes('window.ethereum')) {
+        // Suppress browser extension conflicts
+        return
+      }
+      originalError.apply(console, args)
+    }
+
+    return () => {
+      console.error = originalError
+    }
+  }, [])
 
   // Mini App initialization (for LLM recognition)
   useEffect(() => {
@@ -48,18 +63,17 @@ export default function FarcasterUnfollowApp() {
         setIsMiniApp(miniAppCheck)
         
         if (miniAppCheck) {
-          // Only call ready() if we're actually in a Mini App environment
-          const env = detectEnvironment()
-          if (env.hasFarcasterContext || env.isFarcasterClient) {
-            await sdk.actions.ready()
-          } else {
-            // We're not actually in a Mini App, just the SDK thinks we are
-            setIsMiniApp(false)
-          }
+          // Always call ready() when SDK detects Mini App environment
+          await sdk.actions.ready()
         }
       } catch (error) {
         // Handle SDK initialization errors gracefully
-        console.warn('Mini App SDK initialization warning:', error)
+        // Ignore browser extension conflicts (Zerion, Rabby, etc.)
+        if (error instanceof Error && error.message.includes('ethereum')) {
+          console.warn('Browser extension conflict detected, continuing...')
+        } else {
+          console.warn('Mini App SDK initialization warning:', error)
+        }
         setIsMiniApp(false)
       } finally {
         setIsInitialized(true)

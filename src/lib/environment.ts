@@ -31,17 +31,17 @@ export function detectEnvironment(): EnvironmentInfo {
   const isFarcaster = userAgent.includes('farcaster')
   const isWarpcast = userAgent.includes('warpcast') || userAgent.includes('farcaster')
   
-  // Check for WalletConnect
+  // Check for WalletConnect (ignore browser extension conflicts)
   const hasWalletConnect = !!(window as any).WalletConnect
 
-  // More precise detection - only consider it a Mini App if we have actual Farcaster context
+  // Simplified detection - be more permissive for Mini App detection
   const hasRealFarcasterContext = hasFarcasterUser || (isFarcaster && hasFarcasterObject)
-  const isMiniApp = hasRealFarcasterContext && (isInIframe || isFarcaster)
-  const isStandalone = !hasRealFarcasterContext && !isInIframe && !isFarcaster
+  const isMiniApp = isInIframe || isFarcaster || hasFarcasterObject
+  const isStandalone = !isInIframe && !isFarcaster && !hasFarcasterObject
 
   // Determine client type
   let clientType: 'farcaster' | 'standalone' | 'unknown' = 'unknown'
-  if (hasRealFarcasterContext && (isFarcaster || hasFarcasterObject)) {
+  if (isFarcaster || hasFarcasterObject) {
     clientType = 'farcaster'
   } else if (isStandalone) {
     clientType = 'standalone'
