@@ -329,9 +329,12 @@ export default function FarcasterCleanupApp() {
     
     if (!authenticatedUser?.fid) {
       console.log('❌ No authenticated user found')
+      console.log('❌ authenticatedUser:', authenticatedUser)
       toast.error("Please authenticate first")
       return
     }
+    
+    console.log('✅ User authenticated with FID:', authenticatedUser.fid)
 
     console.log('✅ User authenticated, starting analysis...')
     setIsAnalyzing(true)
@@ -341,15 +344,21 @@ export default function FarcasterCleanupApp() {
       console.log('📡 Making API request to /api/neynar/cleanup...')
       setAnalysisProgress('Fetching your following list...')
       
+      console.log('🔍 Authenticated user:', authenticatedUser)
+      console.log('🔍 FID being sent:', authenticatedUser?.fid)
+      
+      const requestBody = { 
+        fid: authenticatedUser.fid,
+        filters,
+        limit: 1000, // Increased limit for your 900+ following
+        threshold: 60
+      }
+      console.log('📤 Request body being sent:', requestBody)
+      
       const response = await fetch("/api/neynar/cleanup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          fid: authenticatedUser.fid,
-          filters,
-          limit: 1000, // Increased limit for your 900+ following
-          threshold: 60
-        }),
+        body: JSON.stringify(requestBody),
       })
       
       console.log('📥 API response status:', response.status)
