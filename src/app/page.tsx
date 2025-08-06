@@ -52,7 +52,8 @@ export default function FarcasterUnfollowApp() {
           await sdk.actions.ready()
         }
       } catch (error) {
-        // Silent error handling for production
+        // Handle SDK initialization errors gracefully
+        console.warn('Mini App SDK initialization warning:', error)
       } finally {
         setIsInitialized(true)
       }
@@ -71,8 +72,15 @@ export default function FarcasterUnfollowApp() {
       const farcasterUser = getFarcasterUser()
       
       if (!farcasterUser || !farcasterUser.fid) {
-        setAuthError('No Farcaster user found. Please open this app in Warpcast or another Farcaster client.')
-        toast.error('No Farcaster user found. Please open this app in Warpcast or another Farcaster client.')
+        // Provide better guidance based on environment
+        const env = detectEnvironment()
+        if (env.isMiniApp) {
+          setAuthError('User context not available. Please refresh the app.')
+          toast.error('User context not available. Please refresh the app.')
+        } else {
+          setAuthError('Please open this app in Warpcast or another Farcaster client to use it.')
+          toast.error('Please open this app in Warpcast or another Farcaster client to use it.')
+        }
         return
       }
       
@@ -321,12 +329,23 @@ export default function FarcasterUnfollowApp() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Farcaster Cleanup</h1>
           <p className="text-gray-600 mb-6">
-            Connect your Farcaster account with Neynar
+            {isMiniApp 
+              ? 'Connect your Farcaster account to start scanning'
+              : 'Open this app in Warpcast or another Farcaster client to use it'
+            }
           </p>
           
           {authError && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
               <p className="text-red-700 text-sm">{authError}</p>
+              {!isMiniApp && (
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+                  <p className="text-blue-700 text-sm">
+                    💡 <strong>Tip:</strong> This app works best in Warpcast or other Farcaster clients. 
+                    The browser version has limited functionality.
+                  </p>
+                </div>
+              )}
             </div>
           )}
           

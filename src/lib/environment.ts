@@ -4,6 +4,8 @@ export interface EnvironmentInfo {
   hasFarcasterContext: boolean
   hasWalletConnect: boolean
   clientType: 'farcaster' | 'standalone' | 'unknown'
+  isWarpcast: boolean
+  isFarcasterClient: boolean
 }
 
 export function detectEnvironment(): EnvironmentInfo {
@@ -13,7 +15,9 @@ export function detectEnvironment(): EnvironmentInfo {
       isStandalone: true,
       hasFarcasterContext: false,
       hasWalletConnect: false,
-      clientType: 'unknown'
+      clientType: 'unknown',
+      isWarpcast: false,
+      isFarcasterClient: false
     }
   }
 
@@ -25,6 +29,7 @@ export function detectEnvironment(): EnvironmentInfo {
   // Check if we're in Farcaster client
   const userAgent = window.navigator.userAgent.toLowerCase()
   const isFarcaster = userAgent.includes('farcaster')
+  const isWarpcast = userAgent.includes('warpcast') || userAgent.includes('farcaster')
   
   // Check for WalletConnect
   const hasWalletConnect = !!(window as any).WalletConnect
@@ -46,7 +51,9 @@ export function detectEnvironment(): EnvironmentInfo {
     isStandalone,
     hasFarcasterContext: hasFarcasterUser,
     hasWalletConnect,
-    clientType
+    clientType,
+    isWarpcast,
+    isFarcasterClient: isFarcaster || hasFarcasterObject
   }
 }
 
@@ -83,4 +90,8 @@ export function isStandaloneWeb(): boolean {
 
 export function getClientType(): 'farcaster' | 'standalone' | 'unknown' {
   return detectEnvironment().clientType
+}
+
+export function isWarpcast(): boolean {
+  return detectEnvironment().isWarpcast
 } 
