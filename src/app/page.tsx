@@ -68,7 +68,7 @@ export default function FarcasterUnfollowApp() {
           // Wait for context to be available, then call ready
           try {
             // You can access context like this:
-            const context = sdk.context
+            const context = await sdk.context
             console.log('User FID:', context.user?.fid)
             
             // Always call ready() when your UI is ready
@@ -109,7 +109,7 @@ export default function FarcasterUnfollowApp() {
         // Try to get user from SDK context first
         if (isMiniApp) {
           try {
-            const context = sdk.context
+            const context = await sdk.context
             if (context.user?.fid) {
               // Use SDK context user
               const userData = await fetch('/api/neynar/user', {
