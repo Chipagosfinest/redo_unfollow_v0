@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch following list using API
     const followingResponse = await fetch(
-      `https://api.neynar.com/v2/farcaster/user/following?viewer_fid=${fid}&fid=${fid}&limit=1000`,
+      `https://api.neynar.com/v2/farcaster/following?viewer_fid=${fid}&fid=${fid}&limit=1000`,
       {
         headers: {
           'accept': 'application/json',
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     if (!followingResponse.ok) {
       const errorText = await followingResponse.text()
       console.error(`Following API error: ${followingResponse.status} - ${errorText}`)
-      console.error(`Following API URL: https://api.neynar.com/v2/farcaster/user/following?viewer_fid=${fid}&fid=${fid}&limit=1000`)
+      console.error(`Following API URL: https://api.neynar.com/v2/farcaster/following?viewer_fid=${fid}&fid=${fid}&limit=1000`)
       return NextResponse.json(
         { error: `Failed to fetch following list: ${followingResponse.status}`, details: errorText },
         { status: 500 }
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch followers list using API
     const followersResponse = await fetch(
-      `https://api.neynar.com/v2/farcaster/user/followers?viewer_fid=${fid}&fid=${fid}&limit=1000`,
+      `https://api.neynar.com/v2/farcaster/followers?viewer_fid=${fid}&fid=${fid}&limit=1000`,
       {
         headers: {
           'accept': 'application/json',
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     if (!followersResponse.ok) {
       const errorText = await followersResponse.text()
       console.error(`Followers API error: ${followersResponse.status} - ${errorText}`)
-      console.error(`Followers API URL: https://api.neynar.com/v2/farcaster/user/followers?viewer_fid=${fid}&fid=${fid}&limit=1000`)
+      console.error(`Followers API URL: https://api.neynar.com/v2/farcaster/followers?viewer_fid=${fid}&fid=${fid}&limit=1000`)
       return NextResponse.json(
         { error: `Failed to fetch followers list: ${followersResponse.status}`, details: errorText },
         { status: 500 }
