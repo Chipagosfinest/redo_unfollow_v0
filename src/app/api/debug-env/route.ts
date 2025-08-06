@@ -1,29 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
-  // Only allow in development or with special header
-  const debugHeader = request.headers.get('x-debug-env')
-  const isDevelopment = process.env.NODE_ENV === 'development'
-  
-  if (!isDevelopment && !debugHeader) {
+  try {
+    const apiKey = process.env.NEYNAR_API_KEY
+    const clientId = process.env.NEYNAR_CLIENT_ID
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL
+    
+    return NextResponse.json({
+      success: true,
+      debug: {
+        apiKeyPresent: !!apiKey,
+        apiKeyLength: apiKey?.length || 0,
+        apiKeyPrefix: apiKey?.substring(0, 10) + '...' || 'none',
+        clientIdPresent: !!clientId,
+        appUrlPresent: !!appUrl,
+        appUrl: appUrl,
+        nodeEnv: process.env.NODE_ENV,
+        timestamp: new Date().toISOString()
+      }
+    })
+  } catch (error) {
+    console.error('Debug endpoint error:', error)
     return NextResponse.json(
-      { error: 'Debug endpoint only available in development' },
-      { status: 403 }
+      { error: 'Debug endpoint failed' },
+      { status: 500 }
     )
   }
-
-  const envInfo = {
-    nodeEnv: process.env.NODE_ENV,
-    vercelEnv: process.env.VERCEL_ENV,
-    neynarApiKeyPresent: !!process.env.NEYNAR_API_KEY,
-    neynarApiKeyLength: process.env.NEYNAR_API_KEY?.length || 0,
-    neynarApiKeyPreview: process.env.NEYNAR_API_KEY ? 
-      `${process.env.NEYNAR_API_KEY.substring(0, 8)}...` : 'NONE',
-    appUrl: process.env.NEXT_PUBLIC_APP_URL,
-    timestamp: new Date().toISOString()
-  }
-
-  return NextResponse.json(envInfo)
 }
 
 export async function POST(request: NextRequest) {

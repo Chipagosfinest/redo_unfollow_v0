@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
+    const requestBody = await request.json()
+    console.log(`📥 Request body:`, requestBody)
+    
     const { 
       fid, 
       filters = {
@@ -13,10 +16,20 @@ export async function POST(request: NextRequest) {
       limit = 100,
       threshold = 60, // 60 days for interaction analysis
       testMode = false // Show all users for debugging
-    } = await request.json()
+    } = requestBody
+    
+    // Validate FID
+    if (!fid || typeof fid !== 'number') {
+      console.error(`❌ Invalid FID: ${fid} (type: ${typeof fid})`)
+      return NextResponse.json(
+        { error: `Invalid FID: ${fid}. Expected a number.` },
+        { status: 400 }
+      )
+    }
     
     const apiKey = process.env.NEYNAR_API_KEY
     if (!apiKey) {
+      console.error(`❌ API key not configured`)
       return NextResponse.json(
         { error: 'API key not configured' },
         { status: 500 }
@@ -26,24 +39,30 @@ export async function POST(request: NextRequest) {
     console.log(`🧹 Starting comprehensive cleanup analysis for FID: ${fid}`)
     console.log(`📊 Filters:`, filters)
     console.log(`⏰ Threshold: ${threshold} days`)
+    console.log(`🔑 API Key present: ${apiKey ? 'Yes' : 'No'} (length: ${apiKey?.length})`)
 
     // 1. Fetch following list
     console.log(`🔍 Fetching following list...`)
-    const followingResponse = await fetch(
-      `https://api.neynar.com/v2/farcaster/following?fid=${fid}&viewer_fid=${fid}&limit=${limit}`,
-      {
-        headers: {
-          'accept': 'application/json',
-          'x-api-key': apiKey,
-        },
-      }
-    )
+    const followingUrl = `https://api.neynar.com/v2/farcaster/following?fid=${fid}&viewer_fid=${fid}&limit=${limit}`
+    console.log(`🌐 Following URL: ${followingUrl}`)
+    
+    const followingResponse = await fetch(followingUrl, {
+      headers: {
+        'accept': 'application/json',
+        'x-api-key': apiKey,
+      },
+    })
+
+    console.log(`📡 Following response status: ${followingResponse.status}`)
+    console.log(`📡 Following response headers:`, Object.fromEntries(followingResponse.headers.entries()))
 
     if (!followingResponse.ok) {
       const errorText = await followingResponse.text()
-      console.error(`Following API error: ${followingResponse.status} - ${errorText}`)
+      console.error(`❌ Following API error: ${followingResponse.status} - ${errorText}`)
+      console.error(`❌ Request URL: ${followingUrl}`)
+      console.error(`❌ API Key length: ${apiKey.length}`)
       return NextResponse.json(
-        { error: `Failed to fetch following list: ${followingResponse.status}` },
+        { error: `Failed to fetch following list: ${followingResponse.status} - ${errorText}` },
         { status: 500 }
       )
     }
