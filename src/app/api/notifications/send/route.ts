@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { notificationTokens } from '../../webhook/route'
+import { getNotificationTokensForFids, removeInvalidToken } from '@/lib/notification-storage'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,16 +14,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`📤 Sending notification to ${fids.length} users:`, { notificationId, title, body })
 
-    const tokens: string[] = []
-    const urls: string[] = []
-
-    // Collect tokens for the specified FIDs
-    for (const [key, value] of notificationTokens.entries()) {
-      if (fids.includes(value.fid)) {
-        tokens.push(value.token)
-        urls.push(value.url)
-      }
-    }
+    const { tokens, urls } = getNotificationTokensForFids(fids)
 
     if (tokens.length === 0) {
       return NextResponse.json(
@@ -77,11 +68,7 @@ export async function POST(request: NextRequest) {
 
     // Clean up invalid tokens
     for (const invalidToken of results.invalidTokens) {
-      for (const [key, value] of notificationTokens.entries()) {
-        if (value.token === invalidToken) {
-          notificationTokens.delete(key)
-        }
-      }
+      removeInvalidToken(invalidToken)
     }
 
     console.log(`✅ Notification sent successfully:`, {

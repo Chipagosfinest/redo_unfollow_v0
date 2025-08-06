@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { parseWebhookEvent, verifyAppKeyWithNeynar } from '@farcaster/miniapp-node'
-
-// In-memory storage for notification tokens (replace with Redis in production)
-const notificationTokens = new Map<string, { token: string; url: string; fid: number }>()
+import { addNotificationToken, removeNotificationTokensForFid } from '@/lib/notification-storage'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,59 +11,44 @@ export async function POST(request: NextRequest) {
     const data = await parseWebhookEvent(body, verifyAppKeyWithNeynar)
     console.log('✅ Verified webhook event:', data)
 
-    const { event, fid } = data
+    const eventType = data.event as unknown as string
+    const fid = data.fid as unknown as number
 
-    switch (event) {
+    switch (eventType) {
       case 'miniapp_added':
         console.log(`📱 Mini App added for FID: ${fid}`)
-        if (data.notificationDetails) {
-          const key = `${fid}-${data.notificationDetails.token}`
-          notificationTokens.set(key, {
-            token: data.notificationDetails.token,
-            url: data.notificationDetails.url,
-            fid
-          })
+        // Handle notification details if available
+        if ('notificationDetails' in data && data.notificationDetails) {
+          const details = data.notificationDetails as { token: string; url: string }
+          addNotificationToken(fid, details.token, details.url)
           console.log(`💾 Saved notification token for FID: ${fid}`)
         }
         break
 
       case 'miniapp_removed':
         console.log(`📱 Mini App removed for FID: ${fid}`)
-        // Remove all tokens for this FID
-        for (const [key, value] of notificationTokens.entries()) {
-          if (value.fid === fid) {
-            notificationTokens.delete(key)
-          }
-        }
+        removeNotificationTokensForFid(fid)
         console.log(`🗑️ Removed notification tokens for FID: ${fid}`)
         break
 
       case 'notifications_disabled':
         console.log(`🔕 Notifications disabled for FID: ${fid}`)
-        // Remove all tokens for this FID
-        for (const [key, value] of notificationTokens.entries()) {
-          if (value.fid === fid) {
-            notificationTokens.delete(key)
-          }
-        }
+        removeNotificationTokensForFid(fid)
         console.log(`🗑️ Removed notification tokens for FID: ${fid}`)
         break
 
       case 'notifications_enabled':
         console.log(`🔔 Notifications enabled for FID: ${fid}`)
-        if (data.notificationDetails) {
-          const key = `${fid}-${data.notificationDetails.token}`
-          notificationTokens.set(key, {
-            token: data.notificationDetails.token,
-            url: data.notificationDetails.url,
-            fid
-          })
+        // Handle notification details if available
+        if ('notificationDetails' in data && data.notificationDetails) {
+          const details = data.notificationDetails as { token: string; url: string }
+          addNotificationToken(fid, details.token, details.url)
           console.log(`💾 Saved notification token for FID: ${fid}`)
         }
         break
 
       default:
-        console.log(`❓ Unknown event type: ${event}`)
+        console.log(`❓ Unknown event type: ${eventType}`)
     }
 
     return NextResponse.json({ success: true })
@@ -80,4 +63,4 @@ export async function POST(request: NextRequest) {
 }
 
 // Export the notification tokens for use in other parts of the app
-export { notificationTokens } 
+// Note: This is in-memory storage. In production, use Redis or a database 
