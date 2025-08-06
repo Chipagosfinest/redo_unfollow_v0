@@ -114,19 +114,6 @@ export default function FarcasterCleanupApp() {
       originalError.apply(console, args)
     }
 
-    // Add ready() function to window for manual debugging
-    if (typeof window !== 'undefined') {
-      (window as any).callReady = async () => {
-        try {
-          console.log('🔄 Manual ready() call...')
-          await sdk.actions.ready()
-          console.log('✅ Manual ready() successful')
-        } catch (error) {
-          console.error('Manual ready() failed:', error)
-        }
-      }
-    }
-
     return () => {
       console.error = originalError
     }
@@ -136,62 +123,17 @@ export default function FarcasterCleanupApp() {
   useEffect(() => {
     const callReadyImmediately = async () => {
       try {
-        console.log('🔄 Checking if in Mini App...')
         const isMiniAppCheck = await sdk.isInMiniApp()
-        console.log('Is Mini App:', isMiniAppCheck)
         
         if (isMiniAppCheck) {
-          console.log('🔄 Calling ready() immediately...')
           await sdk.actions.ready()
-          console.log('✅ Ready called immediately')
-          
-          // Set up event listeners after SDK is ready
-          console.log('🎧 Setting up Mini App event listeners...')
-          
-          // TODO: Mini App notification events - Uncomment when Farcaster manifest integration is complete
-          /*
-          // Listen for Mini App being added
-          sdk.on('miniapp_added' as any, () => {
-            console.log('📱 Mini App added event received')
-            setNotificationsEnabled(true)
-            toast.success('Mini App added successfully!')
-          })
-          
-          // Listen for Mini App being removed
-          sdk.on('miniapp_removed' as any, () => {
-            console.log('📱 Mini App removed event received')
-            setNotificationsEnabled(false)
-            toast.info('Mini App removed')
-          })
-          */
-          
-          // TODO: Notifications event listeners - Uncomment when Farcaster manifest integration is complete
-          /*
-          // Listen for notifications being enabled
-          sdk.on('notifications_enabled' as any, () => {
-            console.log('🔔 Notifications enabled event received')
-            setNotificationsEnabled(true)
-            toast.success('Notifications enabled!')
-          })
-          
-          // Listen for notifications being disabled
-          sdk.on('notifications_disabled' as any, () => {
-            console.log('🔕 Notifications disabled event received')
-            setNotificationsEnabled(false)
-            toast.info('Notifications disabled')
-          })
-          */
-          
-          console.log('✅ Event listeners set up successfully')
-        } else {
-          console.log('Not in Mini App, skipping ready() and event listeners')
+          console.log('✅ Mini App ready')
         }
       } catch (error) {
         console.error('Failed to call ready() immediately:', error)
         // Try again after a short delay
         setTimeout(async () => {
           try {
-            console.log('🔄 Retrying ready() call...')
             await sdk.actions.ready()
             console.log('✅ Ready called on retry')
           } catch (retryError) {
@@ -205,7 +147,6 @@ export default function FarcasterCleanupApp() {
     
     // Cleanup function
     return () => {
-      console.log('🧹 Cleaning up event listeners...')
       sdk.removeAllListeners()
     }
   }, [])
@@ -234,12 +175,10 @@ export default function FarcasterCleanupApp() {
         
         // Initialize auth manager
         const authContext = await authManager.initialize()
-        console.log('Auth context initialized:', authContext)
         
         setIsMiniApp(authContext.isMiniApp)
         
         if (authContext.isAuthenticated && authContext.fid) {
-          console.log('User authenticated via', authContext.authMethod)
           const authenticatedUser: AuthenticatedUser = {
             fid: authContext.fid,
             username: authContext.username || `user_${authContext.fid}`,
@@ -251,17 +190,14 @@ export default function FarcasterCleanupApp() {
           
           setAuthenticatedUser(authenticatedUser)
           setIsAuthenticated(true)
-          console.log('User authenticated, ready to analyze...')
-        } else {
-          console.log('No authenticated user available')
+          console.log('✅ User authenticated')
         }
         
         // Always call ready() for Mini App - CRITICAL for splash screen
         if (authContext.isMiniApp) {
           try {
-            console.log('Calling sdk.actions.ready() to hide splash screen...')
             await sdk.actions.ready()
-            console.log('✅ Splash screen hidden successfully')
+            console.log('✅ Splash screen hidden')
           } catch (readyError) {
             console.error('Failed to call ready():', readyError)
             // Still try to call ready even if there are errors
@@ -280,7 +216,6 @@ export default function FarcasterCleanupApp() {
         try {
           const isMiniAppCheck = await sdk.isInMiniApp()
           if (isMiniAppCheck) {
-            console.log('Auth failed, but still calling ready()...')
             await sdk.actions.ready()
             console.log('✅ Ready called after auth failure')
           }
@@ -296,7 +231,6 @@ export default function FarcasterCleanupApp() {
     
     // Cleanup function
     return () => {
-      console.log('🧹 Cleaning up event listeners...')
       sdk.removeAllListeners()
     }
   }, [])
@@ -344,43 +278,16 @@ export default function FarcasterCleanupApp() {
 
   // Analyze following list
   const analyzeFollowingList = async () => {
-    console.log('🔍 Analyze button clicked!')
-    
     if (!authenticatedUser?.fid) {
-      console.log('❌ No authenticated user found')
-      console.log('❌ authenticatedUser:', authenticatedUser)
-      toast.error("Please authenticate first")
+      toast.error('Please authenticate first')
       return
     }
-    
-    console.log('✅ User authenticated with FID:', authenticatedUser.fid)
 
-    console.log('✅ User authenticated, starting analysis...')
     setIsAnalyzing(true)
     setAnalysisProgress('Starting analysis...')
-    
-    let progressInterval: NodeJS.Timeout | undefined
-    
+    let progressInterval: NodeJS.Timeout | null = null
+
     try {
-      console.log('📡 Making API request to /api/neynar/cleanup...')
-      setAnalysisProgress('Fetching your following list...')
-      
-      // Simulate progress updates
-      progressInterval = setInterval(() => {
-        setAnalysisProgress(prev => {
-          if (prev?.includes('Processing batch')) {
-            const current = parseInt(prev.match(/batch (\d+)/)?.[1] || '1')
-            return `Processing batch ${current + 1} of your following list...`
-          } else if (prev?.includes('Fetching')) {
-            return 'Analyzing user interactions...'
-          } else if (prev?.includes('Analyzing')) {
-            return 'Processing batch 1 of your following list...'
-          } else {
-            return 'Analyzing user interactions...'
-          }
-        })
-      }, 2000)
-      
       // Add retry mechanism for blocked requests
       const makeRequestWithRetry = async (retryCount = 0): Promise<Response> => {
         try {
@@ -408,37 +315,28 @@ export default function FarcasterCleanupApp() {
         }
       }
 
-      console.log('🔍 Authenticated user:', authenticatedUser)
-      console.log('🔍 FID being sent:', authenticatedUser?.fid)
-      
       const requestBody = { 
         fid: authenticatedUser.fid,
         filters,
         limit: 1000, // TURBO MODE - much higher limit
         threshold: 30 // TURBO MODE - much more aggressive
       }
-      console.log('📤 Request body being sent:', requestBody)
       
       const response = await makeRequestWithRetry()
       
-      console.log('📥 API response status:', response.status)
-      
       if (response.ok) {
         const data = await response.json()
-        console.log('📊 Analysis data received:', data)
 
         if (data.success) {
           setUsers(data.users)
           setFilterCounts(data.summary.filterCounts)
-          console.log('✅ Analysis completed successfully')
+          console.log('✅ Analysis completed')
           toast.success(`Found ${data.users.length} accounts to manage`)
         } else {
-          console.log('❌ Analysis failed:', data.error)
           toast.error(data.error || 'Analysis failed')
         }
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('❌ API failed:', response.status, errorData)
         
         // Handle specific error types
         if (response.status === 429) {
@@ -460,13 +358,11 @@ export default function FarcasterCleanupApp() {
       }
       setIsAnalyzing(false)
       setAnalysisProgress('')
-      console.log('🏁 Analysis process finished')
     }
   }
 
   // Filter toggle handlers
   const toggleFilter = (filterKey: keyof Filters) => {
-    console.log('🔘 Filter toggled:', filterKey)
     setFilters(prev => ({
       ...prev,
       [filterKey]: !prev[filterKey]
@@ -475,17 +371,14 @@ export default function FarcasterCleanupApp() {
 
   // Selection management
   const selectAll = () => {
-    console.log('✅ Select All clicked!')
     setSelectedUsers(new Set(users.map(u => u.fid)))
   }
 
   const clearSelection = () => {
-    console.log('🗑️ Clear Selection clicked!')
     setSelectedUsers(new Set())
   }
 
   const toggleUser = (fid: number) => {
-    console.log('👤 User toggled:', fid)
     const newSelected = new Set(selectedUsers)
     if (newSelected.has(fid)) {
       newSelected.delete(fid)
@@ -497,12 +390,9 @@ export default function FarcasterCleanupApp() {
 
   // Unfollow operations
   const unfollowSelected = () => {
-    console.log('🚫 Unfollow Selected clicked!')
     if (selectedUsers.size === 0) {
-      console.log('❌ No users selected')
       return
     }
-    console.log('✅ Opening confirmation modal')
     setShowConfirmUnfollow(true)
   }
 

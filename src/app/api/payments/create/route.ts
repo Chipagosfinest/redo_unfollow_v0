@@ -103,45 +103,35 @@ async function processAnalysisJob(jobId: string) {
   await db.updateAnalysisJob(jobId, { status: 'processing' })
 
   try {
-    // Simulate analysis processing (replace with actual analysis logic)
-    await new Promise(resolve => setTimeout(resolve, 5000)) // 5 second delay
-
-    // Mock results (replace with actual analysis from your cleanup API)
-    const mockResults = {
-      totalFollowing: 150,
-      totalFollowers: 120,
-      usersToUnfollow: 23,
-      filterCounts: {
-        nonMutual: 15,
-        noInteractionWithYou: 8,
-        youNoInteraction: 0,
-        nuclear: 0
+    // Perform actual analysis using the cleanup API
+    const analysisResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/neynar/cleanup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      users: [
-        {
-          fid: 12345,
-          username: 'user1',
-          displayName: 'User One',
-          pfpUrl: '',
-          reasons: ['Non-mutual follow'],
-          shouldUnfollow: true
-        },
-        {
-          fid: 67890,
-          username: 'user2',
-          displayName: 'User Two',
-          pfpUrl: '',
-          reasons: ['No recent interactions'],
-          shouldUnfollow: true
-        }
-      ]
+      body: JSON.stringify({
+        fid: job.userId,
+        filters: job.config.filters,
+        limit: job.config.limit || 1000,
+        threshold: job.config.threshold || 30
+      })
+    })
+
+    if (!analysisResponse.ok) {
+      throw new Error(`Analysis API failed: ${analysisResponse.status}`)
     }
 
-    // Update job with results
+    const analysisData = await analysisResponse.json()
+    
+    if (!analysisData.success) {
+      throw new Error(analysisData.error || 'Analysis failed')
+    }
+
+    // Update job with real results
     await db.updateAnalysisJob(jobId, {
       status: 'completed',
       completedAt: new Date(),
-      results: mockResults
+      results: analysisData
     })
 
     // Create notification
@@ -149,7 +139,7 @@ async function processAnalysisJob(jobId: string) {
       userId: job.userId,
       type: 'analysis_complete',
       title: '🧹 Your Analysis is Ready!',
-      body: `Found ${mockResults.usersToUnfollow} accounts ready for review.`,
+      body: `Found ${analysisData.users.length} accounts ready for review.`,
       targetUrl: `/analysis-results/${jobId}`,
       read: false
     })
@@ -158,10 +148,22 @@ async function processAnalysisJob(jobId: string) {
 
   } catch (error) {
     console.error(`❌ Analysis failed for job ${jobId}:`, error)
+    
+    // Update job with error
     await db.updateAnalysisJob(jobId, {
       status: 'failed',
+      completedAt: new Date(),
       error: error instanceof Error ? error.message : 'Unknown error'
     })
-    throw error
+
+    // Create error notification
+    await db.createNotification({
+      userId: job.userId,
+      type: 'analysis_failed',
+      title: '❌ Analysis Failed',
+      body: 'Your analysis encountered an error. Please try again.',
+      targetUrl: `/paid-analysis`,
+      read: false
+    })
   }
 } 

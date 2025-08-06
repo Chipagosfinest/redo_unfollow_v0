@@ -75,11 +75,47 @@ export async function POST(request: NextRequest) {
       followingUsers.map(async (user: any) => {
         const isMutual = followerFids.has(user.fid)
         
-        // For now, we'll set interaction timestamps to null
-        // In a full implementation, you would analyze actual interaction data
-        // from the FeedAPI or other endpoints
-        const lastInteractionWithYou = null // TODO: Implement interaction analysis
-        const lastInteractionByYou = null // TODO: Implement interaction analysis
+        // Analyze actual interaction data from Neynar API
+        let lastInteractionWithYou = null
+        let lastInteractionByYou = null
+        
+        try {
+          // Fetch recent interactions between users
+          const interactionsResponse = await fetch(
+            `https://api.neynar.com/v2/farcaster/user/interactions?fids=${userFid},${user.fid}&type=follows`,
+            {
+              headers: {
+                'accept': 'application/json',
+                'api_key': apiKey,
+              },
+            }
+          )
+
+          if (interactionsResponse.ok) {
+            const interactionsData = await interactionsResponse.json()
+            const interactions = interactionsData.interactions || []
+            
+            // Find most recent interactions
+            const recentInteractions = interactions
+              .filter((interaction: any) => {
+                const interactionTime = new Date(interaction.most_recent_timestamp).getTime()
+                const daysSinceInteraction = (Date.now() - interactionTime) / (1000 * 60 * 60 * 24)
+                return daysSinceInteraction <= 60 // 60 days threshold
+              })
+              .sort((a: any, b: any) => 
+                new Date(b.most_recent_timestamp).getTime() - new Date(a.most_recent_timestamp).getTime()
+              )
+
+            if (recentInteractions.length > 0) {
+              const mostRecent = recentInteractions[0]
+              lastInteractionWithYou = mostRecent.most_recent_timestamp
+              lastInteractionByYou = mostRecent.most_recent_timestamp
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to fetch interactions for user ${user.fid}:`, error)
+          // Keep null values if interaction fetch fails
+        }
 
         return {
           fid: user.fid,

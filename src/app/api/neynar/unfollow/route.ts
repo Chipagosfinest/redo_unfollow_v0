@@ -21,75 +21,55 @@ export async function POST(request: NextRequest) {
 
     console.log(`🚫 Unfollowing user ${targetFid} for user ${userFid}...`)
 
-    // Note: This is a placeholder implementation
-    // The actual unfollow functionality would require:
-    // 1. User authentication with a signer
-    // 2. Creating and signing an unfollow message
-    // 3. Broadcasting the message to the network
-    
-    // For now, we'll simulate a successful unfollow
-    // In a real implementation, you would use the Neynar API to:
-    // - Create an unfollow message
-    // - Sign it with the user's signer
-    // - Broadcast it to the network
-    
-    // Example implementation structure:
-    /*
+    // Create unfollow message using Neynar API
     const unfollowResponse = await fetch(
-      `https://api.neynar.com/v2/farcaster/cast`,
+      `https://api.neynar.com/v2/farcaster/follow`,
       {
-        method: 'POST',
+        method: 'DELETE',
         headers: {
-          'api_key': apiKey,
           'accept': 'application/json',
+          'api_key': apiKey,
           'content-type': 'application/json',
         },
         body: JSON.stringify({
-          signer_uuid: userSignerUuid,
+          signer_uuid: process.env.NEYNAR_SIGNER_UUID, // You'll need to set this
           data: {
-            type: 'MESSAGE_TYPE_USER_DATA_ADD',
+            type: 'MESSAGE_TYPE_FOLLOW',
             fid: userFid,
             timestamp: Math.floor(Date.now() / 1000),
             network: 'FARCASTER_NETWORK_MAINNET',
-            userDataBody: {
-              type: 'USER_DATA_TYPE_TYPE_USERNAME',
-              value: targetFid.toString()
+            followBody: {
+              targetFid: targetFid
             }
           }
         })
       }
     )
-    */
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500))
+    if (!unfollowResponse.ok) {
+      const errorText = await unfollowResponse.text()
+      console.error(`❌ Unfollow failed: ${unfollowResponse.status} - ${errorText}`)
+      return NextResponse.json(
+        { error: `Failed to unfollow: ${unfollowResponse.status} - ${errorText}` },
+        { status: unfollowResponse.status }
+      )
+    }
 
+    const result = await unfollowResponse.json()
     console.log(`✅ Successfully unfollowed user ${targetFid}`)
     
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       message: `Successfully unfollowed user ${targetFid}`,
-      targetFid,
-      userFid
+      data: result
     })
-    
-    response.headers.set('Access-Control-Allow-Origin', '*')
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-    
-    return response
 
   } catch (error) {
-    console.error('❌ Unfollow failed:', error)
-    const errorResponse = NextResponse.json(
-      { 
-        error: 'Failed to unfollow user', 
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
+    console.error('❌ Unfollow error:', error)
+    return NextResponse.json(
+      { error: 'Failed to unfollow user' },
       { status: 500 }
     )
-    errorResponse.headers.set('Access-Control-Allow-Origin', '*')
-    return errorResponse
   }
 }
 
