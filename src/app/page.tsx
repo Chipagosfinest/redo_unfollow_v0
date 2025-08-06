@@ -74,6 +74,7 @@ export default function FarcasterUnfollowApp() {
           
           // If we have user context, set it immediately
           if (context.user?.fid) {
+            console.log('Setting authenticated user from SDK context:', context.user)
             const authenticatedUser: AuthenticatedUser = {
               fid: context.user.fid,
               username: context.user.username || `user_${context.user.fid}`,
@@ -84,9 +85,12 @@ export default function FarcasterUnfollowApp() {
             
             setAuthenticatedUser(authenticatedUser)
             setIsAuthenticated(true)
+            console.log('User authenticated, starting scan...')
             
             // Automatically start scanning
             await startScan(authenticatedUser.fid)
+          } else {
+            console.log('No user context available in SDK')
           }
         }
       } catch (error) {
@@ -113,7 +117,7 @@ export default function FarcasterUnfollowApp() {
     
     try {
       if (isMiniApp) {
-        // In Mini App, get user from SDK context
+        // In Mini App, get user from SDK context directly
         try {
           const context = await sdk.context
           if (context.user?.fid) {
@@ -142,48 +146,9 @@ export default function FarcasterUnfollowApp() {
         return
       }
       
-      // For non-Mini App environments, try to get user from other sources
-      const farcasterUser = getFarcasterUser()
-      
-      if (!farcasterUser || !farcasterUser.fid) {
-        setAuthError('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
-        toast.error('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
-        return
-      }
-      
-      // Get user data from API using real FID
-      const userData = await fetch('/api/neynar/user', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-fid': farcasterUser.fid.toString(),
-          'x-user-username': farcasterUser.username || '',
-          'x-user-display-name': farcasterUser.displayName || '',
-        },
-      })
-      
-      if (userData.ok) {
-        const user = await userData.json()
-        
-        const authenticatedUser: AuthenticatedUser = {
-          fid: user.fid,
-          username: user.username || `user_${user.fid}`,
-          displayName: user.displayName || `User ${user.fid}`,
-          pfpUrl: user.pfpUrl || '',
-          isAuthenticated: true
-        }
-        
-        setAuthenticatedUser(authenticatedUser)
-        setIsAuthenticated(true)
-        toast.success('Successfully authenticated!')
-        
-        // Automatically start scanning
-        await startScan(authenticatedUser.fid)
-      } else {
-        const errorData = await userData.json().catch(() => ({ error: 'Unknown error' }))
-        setAuthError(errorData.error || 'Authentication failed')
-        toast.error('Authentication failed: ' + (errorData.error || 'Unknown error'))
-      }
+      // For non-Mini App environments, show guidance
+      setAuthError('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
+      toast.error('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
     } catch (error) {
       setAuthError('Failed to authenticate')
       toast.error('Failed to authenticate: ' + (error instanceof Error ? error.message : 'Unknown error'))
