@@ -258,8 +258,8 @@ export default function FarcasterCleanupApp() {
         setAuthError('User context not available. Please refresh the app.')
         toast.error('User context not available. Please refresh the app.')
       } else {
-        setAuthError('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
-        toast.error('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
+        setAuthError('This app requires a Farcaster client. Please open it in a Farcaster app.')
+        toast.error('This app requires a Farcaster client. Please open it in a Farcaster app.')
       }
     } catch (error) {
       setAuthError('Failed to authenticate')
@@ -540,7 +540,7 @@ export default function FarcasterCleanupApp() {
           <p className="text-gray-600 mb-6">
             {isMiniApp 
               ? 'Connect your Farcaster account to start managing your active following'
-              : 'This app works in Farcaster clients like Warpcast'
+              : 'This app works in Farcaster clients'
             }
           </p>
           
@@ -550,7 +550,7 @@ export default function FarcasterCleanupApp() {
               {!isMiniApp && (
                 <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
                   <p className="text-blue-700 text-sm">
-                    💡 <strong>Tip:</strong> This app works best in Warpcast or other Farcaster clients. 
+                    💡 <strong>Tip:</strong> This app works best in Farcaster clients. 
                     The browser version has limited functionality.
                   </p>
                 </div>

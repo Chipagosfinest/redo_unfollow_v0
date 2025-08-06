@@ -8,7 +8,7 @@ A Mini App that helps users clean up their Farcaster following list by identifyi
 - **Bulk Actions**: Select and unfollow multiple users at once with confirmation dialogs
 - **Filter Options**: Choose from different criteria (non-mutual, no interactions, nuclear option)
 - **Notifications**: Get reminded every 5 days to review your following list
-- **Mini App Integration**: Works seamlessly in Warpcast and other Farcaster clients
+- **Mini App Integration**: Works seamlessly in Farcaster clients
 
 ## Quick Start
 
@@ -37,9 +37,9 @@ A Mini App that helps users clean up their Farcaster following list by identifyi
    npm run dev
    ```
 
-5. **Open in Warpcast**
+5. **Open in Farcaster Client**
    - Deploy to Vercel or your preferred hosting platform
-   - Open the app in Warpcast to test the Mini App functionality
+   - Open the app in a Farcaster client to test the Mini App functionality
 
 ## Environment Variables
 
