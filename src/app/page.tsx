@@ -65,27 +65,37 @@ export default function FarcasterUnfollowApp() {
         setIsMiniApp(miniAppCheck)
         
         if (miniAppCheck) {
-          // Wait for context to be available, then call ready
-          try {
-            // You can access context like this:
-            const context = await sdk.context
-            console.log('User FID:', context.user?.fid)
+          // Get user context
+          const context = await sdk.context
+          console.log('User FID:', context.user?.fid)
+          
+          // CRITICAL: Always call ready() to hide the splash screen
+          await sdk.actions.ready()
+          
+          // If we have user context, set it immediately
+          if (context.user?.fid) {
+            const authenticatedUser: AuthenticatedUser = {
+              fid: context.user.fid,
+              username: context.user.username || `user_${context.user.fid}`,
+              displayName: context.user.displayName || `User ${context.user.fid}`,
+              pfpUrl: context.user.pfpUrl || '',
+              isAuthenticated: true
+            }
             
-            // Always call ready() when your UI is ready
-            await sdk.actions.ready()
-          } catch (error) {
-            console.error('Failed to initialize:', error)
-            // Still call ready() even if there are errors
-            await sdk.actions.ready()
+            setAuthenticatedUser(authenticatedUser)
+            setIsAuthenticated(true)
+            
+            // Automatically start scanning
+            await startScan(authenticatedUser.fid)
           }
         }
       } catch (error) {
-        // Handle SDK initialization errors gracefully
-        // Ignore browser extension conflicts (Zerion, Rabby, etc.)
-        if (error instanceof Error && error.message.includes('ethereum')) {
-          console.warn('Browser extension conflict detected, continuing...')
-        } else {
-          console.warn('Mini App SDK initialization warning:', error)
+        console.error('Initialization error:', error)
+        // Still call ready even if there are errors
+        try {
+          await sdk.actions.ready()
+        } catch (readyError) {
+          console.error('Failed to call ready():', readyError)
         }
         setIsMiniApp(false)
       } finally {
@@ -102,60 +112,42 @@ export default function FarcasterUnfollowApp() {
     setAuthError(null)
     
     try {
-      // Get real user from Mini App context
+      if (isMiniApp) {
+        // In Mini App, get user from SDK context
+        try {
+          const context = await sdk.context
+          if (context.user?.fid) {
+            const authenticatedUser: AuthenticatedUser = {
+              fid: context.user.fid,
+              username: context.user.username || `user_${context.user.fid}`,
+              displayName: context.user.displayName || `User ${context.user.fid}`,
+              pfpUrl: context.user.pfpUrl || '',
+              isAuthenticated: true
+            }
+            
+            setAuthenticatedUser(authenticatedUser)
+            setIsAuthenticated(true)
+            toast.success('Successfully authenticated!')
+            
+            // Automatically start scanning
+            await startScan(authenticatedUser.fid)
+            return
+          }
+        } catch (error) {
+          console.warn('Failed to get user from SDK context:', error)
+        }
+        
+        setAuthError('User context not available. Please refresh the app.')
+        toast.error('User context not available. Please refresh the app.')
+        return
+      }
+      
+      // For non-Mini App environments, try to get user from other sources
       const farcasterUser = getFarcasterUser()
       
       if (!farcasterUser || !farcasterUser.fid) {
-        // Try to get user from SDK context first
-        if (isMiniApp) {
-          try {
-            const context = await sdk.context
-            if (context.user?.fid) {
-              // Use SDK context user
-              const userData = await fetch('/api/neynar/user', {
-                method: 'GET',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'x-user-fid': context.user.fid.toString(),
-                  'x-user-username': context.user.username || '',
-                  'x-user-display-name': context.user.displayName || '',
-                },
-              })
-              
-              if (userData.ok) {
-                const user = await userData.json()
-                
-                const authenticatedUser: AuthenticatedUser = {
-                  fid: user.fid,
-                  username: user.username || `user_${user.fid}`,
-                  displayName: user.displayName || `User ${user.fid}`,
-                  pfpUrl: user.pfpUrl || '',
-                  isAuthenticated: true
-                }
-                
-                setAuthenticatedUser(authenticatedUser)
-                setIsAuthenticated(true)
-                toast.success('Successfully authenticated!')
-                
-                // Automatically start scanning
-                await startScan(authenticatedUser.fid)
-                return
-              }
-            }
-          } catch (error) {
-            console.warn('Failed to get user from SDK context:', error)
-          }
-        }
-        
-        // Provide better guidance based on environment
-        const env = detectEnvironment()
-        if (env.isMiniApp) {
-          setAuthError('User context not available. Please refresh the app.')
-          toast.error('User context not available. Please refresh the app.')
-        } else {
-          setAuthError('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
-          toast.error('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
-        }
+        setAuthError('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
+        toast.error('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
         return
       }
       
