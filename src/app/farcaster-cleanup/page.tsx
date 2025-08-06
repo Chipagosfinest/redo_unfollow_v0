@@ -156,6 +156,22 @@ export default function FarcasterCleanupApp() {
     
     const initializeAuth = async () => {
       try {
+        // Debug environment detection
+        console.log('🔍 Environment check:', {
+          isPreviewTool: window.location.hostname.includes('farcaster.xyz'),
+          isWarpcast: window.location.hostname.includes('warpcast.com'),
+          isVercel: window.location.hostname.includes('vercel.app'),
+          currentHost: window.location.hostname,
+          userAgent: navigator.userAgent.substring(0, 100) + '...'
+        })
+
+        // Detect extension blocking
+        window.addEventListener('error', (e) => {
+          if (e.message.includes('ERR_BLOCKED_BY_CLIENT')) {
+            console.log('⚠️ Extension blocking detected:', e.message)
+          }
+        })
+
         // Handle wallet conflicts before auth
         if (typeof window !== 'undefined') {
           // Check for multiple wallet providers
