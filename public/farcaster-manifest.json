@@ -1,9 +1,9 @@
 {
   "app": {
-    "name": "Farcaster Cleanup",
+    "name": "Manage Your Following",
     "description": "Comprehensive Farcaster management suite. Clean up your following list with smart filters, analytics dashboard, whitelist protection, and bulk unfollow operations.",
     "icon": "🧹",
-    "url": "https://redounfollowv0.vercel.app",
+    "url": "https://redounfollowv0-brdkfcq8x-chipagosfinests-projects.vercel.app",
     "verified": true,
     "category": "social",
     "tags": ["farcaster", "unfollow", "cleanup", "analytics", "whitelist", "social", "feed-cleaner", "management"]
@@ -26,7 +26,7 @@
   ],
   "pages": [
     {
-      "name": "Farcaster Cleanup",
+      "name": "Manage Your Following",
       "path": "/farcaster-cleanup",
       "description": "Main cleanup interface with smart filters and bulk operations"
     },

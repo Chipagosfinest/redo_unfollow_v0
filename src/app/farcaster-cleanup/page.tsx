@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, LogIn, BarChart3, X, ChevronDown, ChevronUp, Bell, BellOff } from "lucide-react"
+import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, LogIn, BarChart3, X, ChevronDown, ChevronUp, Bell, BellOff, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { sdk } from '@farcaster/miniapp-sdk'
 import { getFarcasterUser, detectEnvironment } from '@/lib/environment'
@@ -140,8 +140,41 @@ export default function FarcasterCleanupApp() {
           console.log('🔄 Calling ready() immediately...')
           await sdk.actions.ready()
           console.log('✅ Ready called immediately')
+          
+          // Set up event listeners after SDK is ready
+          console.log('🎧 Setting up Mini App event listeners...')
+          
+          // Listen for Mini App being added
+          sdk.on('miniapp_added' as any, () => {
+            console.log('📱 Mini App added event received')
+            setNotificationsEnabled(true)
+            toast.success('Mini App added successfully!')
+          })
+          
+          // Listen for Mini App being removed
+          sdk.on('miniapp_removed' as any, () => {
+            console.log('📱 Mini App removed event received')
+            setNotificationsEnabled(false)
+            toast.info('Mini App removed')
+          })
+          
+          // Listen for notifications being enabled
+          sdk.on('notifications_enabled' as any, () => {
+            console.log('🔔 Notifications enabled event received')
+            setNotificationsEnabled(true)
+            toast.success('Notifications enabled!')
+          })
+          
+          // Listen for notifications being disabled
+          sdk.on('notifications_disabled' as any, () => {
+            console.log('🔕 Notifications disabled event received')
+            setNotificationsEnabled(false)
+            toast.info('Notifications disabled')
+          })
+          
+          console.log('✅ Event listeners set up successfully')
         } else {
-          console.log('Not in Mini App, skipping ready()')
+          console.log('Not in Mini App, skipping ready() and event listeners')
         }
       } catch (error) {
         console.error('Failed to call ready() immediately:', error)
@@ -159,10 +192,23 @@ export default function FarcasterCleanupApp() {
     }
     
     callReadyImmediately()
+    
+    // Cleanup function
+    return () => {
+      console.log('🧹 Cleaning up event listeners...')
+      sdk.removeAllListeners()
+    }
   }, [])
 
   // Initialize auth context
   useEffect(() => {
+    // Add a simple DOM event listener to test clicks
+    const testClickHandler = () => {
+      console.log('🚨 DOM CLICK EVENT DETECTED!')
+    }
+    
+    document.addEventListener('click', testClickHandler)
+    
     const initializeAuth = async () => {
       try {
         // Initialize auth manager
@@ -226,6 +272,11 @@ export default function FarcasterCleanupApp() {
     }
 
     initializeAuth()
+    
+    // Cleanup function
+    return () => {
+      document.removeEventListener('click', testClickHandler)
+    }
   }, [])
 
   // User-initiated authentication
@@ -271,13 +322,19 @@ export default function FarcasterCleanupApp() {
 
   // Analyze following list
   const analyzeFollowingList = async () => {
+    console.log('🔍 Analyze button clicked!')
+    
     if (!authenticatedUser?.fid) {
+      console.log('❌ No authenticated user found')
       toast.error("Please authenticate first")
       return
     }
 
+    console.log('✅ User authenticated, starting analysis...')
     setIsAnalyzing(true)
+    
     try {
+      console.log('📡 Making API request to /api/neynar/cleanup...')
       const response = await fetch("/api/neynar/cleanup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -289,31 +346,38 @@ export default function FarcasterCleanupApp() {
         }),
       })
       
+      console.log('📥 API response status:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log('📊 Analysis data received:', data)
 
         if (data.success) {
           setUsers(data.users)
           setFilterCounts(data.summary.filterCounts)
+          console.log('✅ Analysis completed successfully')
           toast.success(`Found ${data.users.length} accounts to manage`)
         } else {
+          console.log('❌ Analysis failed:', data.error)
           toast.error(data.error || 'Analysis failed')
         }
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('API failed:', response.status, errorData)
+        console.error('❌ API failed:', response.status, errorData)
         toast.error(errorData.error || `API failed: ${response.status}`)
       }
     } catch (error) {
-      console.error('Analysis failed:', error)
+      console.error('❌ Analysis failed:', error)
       toast.error("Analysis failed - please try again")
     } finally {
       setIsAnalyzing(false)
+      console.log('🏁 Analysis process finished')
     }
   }
 
   // Filter toggle handlers
   const toggleFilter = (filterKey: keyof Filters) => {
+    console.log('🔘 Filter toggled:', filterKey)
     setFilters(prev => ({
       ...prev,
       [filterKey]: !prev[filterKey]
@@ -322,14 +386,17 @@ export default function FarcasterCleanupApp() {
 
   // Selection management
   const selectAll = () => {
+    console.log('✅ Select All clicked!')
     setSelectedUsers(new Set(users.map(u => u.fid)))
   }
 
   const clearSelection = () => {
+    console.log('🗑️ Clear Selection clicked!')
     setSelectedUsers(new Set())
   }
 
   const toggleUser = (fid: number) => {
+    console.log('👤 User toggled:', fid)
     const newSelected = new Set(selectedUsers)
     if (newSelected.has(fid)) {
       newSelected.delete(fid)
@@ -341,7 +408,12 @@ export default function FarcasterCleanupApp() {
 
   // Unfollow operations
   const unfollowSelected = () => {
-    if (selectedUsers.size === 0) return
+    console.log('🚫 Unfollow Selected clicked!')
+    if (selectedUsers.size === 0) {
+      console.log('❌ No users selected')
+      return
+    }
+    console.log('✅ Opening confirmation modal')
     setShowConfirmUnfollow(true)
   }
 
@@ -456,12 +528,15 @@ export default function FarcasterCleanupApp() {
 
   // Enable notifications
   const enableNotifications = async () => {
+    console.log('🔔 Enable notifications button clicked!')
     try {
+      console.log('📱 Calling sdk.actions.addMiniApp()...')
       await sdk.actions.addMiniApp()
+      console.log('✅ Mini App added successfully')
       setNotificationsEnabled(true)
       toast.success("Notifications enabled! You'll receive updates every 5 days.")
     } catch (error) {
-      console.error('Failed to enable notifications:', error)
+      console.error('❌ Failed to enable notifications:', error)
       toast.error("Failed to enable notifications")
     }
   }
@@ -586,22 +661,109 @@ export default function FarcasterCleanupApp() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-md mx-auto">
-        {/* Header with user info */}
-        <div className="text-center mb-6">
-          <div className="flex items-center justify-center mb-4">
-            <Avatar className="w-12 h-12 mr-3">
-              <AvatarImage src={authenticatedUser?.pfpUrl} />
-              <AvatarFallback>{authenticatedUser?.displayName?.[0]}</AvatarFallback>
-            </Avatar>
-            <div className="text-left">
-              <h2 className="font-semibold text-gray-900">{authenticatedUser?.displayName}</h2>
-              <p className="text-sm text-gray-600">@{authenticatedUser?.username}</p>
-            </div>
+      <div className="max-w-md mx-auto space-y-4">
+        {/* Header */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <h1 className="text-xl font-bold text-gray-900 mb-4">🧹 Farcaster Cleanup</h1>
+          
+          {/* Action Buttons */}
+          <div className="flex space-x-2">
+            <Button 
+              onClick={() => {
+                console.log('🚨 ANALYZE BUTTON CLICKED!')
+                analyzeFollowingList()
+              }}
+              disabled={isAnalyzing}
+              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Users className="w-4 h-4 mr-2" />
+                  Analyze Following List
+                </>
+              )}
+            </Button>
+            <Button 
+              onClick={() => {
+                console.log('🚨 REFRESH BUTTON CLICKED!')
+                analyzeFollowingList()
+              }}
+              disabled={isAnalyzing}
+              variant="outline"
+              className="px-3"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
           </div>
           
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">🧹 Manage Your Following</h1>
-          <p className="text-gray-600">Don't be inactive about who you follow</p>
+          {/* Test Button */}
+          <div className="mt-2">
+            <Button 
+              onClick={() => {
+                console.log('🚨 TEST BUTTON CLICKED!')
+                alert('Test button works!')
+              }}
+              variant="outline"
+              className="w-full text-xs"
+            >
+              🧪 Test Click (Should Show Alert)
+            </Button>
+            
+            {/* Raw HTML Button Test */}
+            <button 
+              onClick={() => {
+                console.log('🚨 RAW HTML BUTTON CLICKED!')
+                alert('Raw HTML button works!')
+              }}
+              className="mt-2 w-full p-2 bg-red-500 text-white rounded text-xs"
+            >
+              🔥 Raw HTML Button Test
+            </button>
+            
+            {/* SDK Test Button */}
+            <Button 
+              onClick={async () => {
+                console.log('🚨 SDK TEST BUTTON CLICKED!')
+                try {
+                  const isMiniApp = await sdk.isInMiniApp()
+                  console.log('Is Mini App:', isMiniApp)
+                  alert(`SDK Test: Is Mini App = ${isMiniApp}`)
+                } catch (error) {
+                  console.error('SDK test failed:', error)
+                  alert(`SDK Test Error: ${error}`)
+                }
+              }}
+              variant="outline"
+              className="w-full text-xs mt-2"
+            >
+              🔧 SDK Test (Check Console)
+            </Button>
+            
+            {/* SDK Actions Test Button */}
+            <Button 
+              onClick={async () => {
+                console.log('🚨 SDK ACTIONS TEST BUTTON CLICKED!')
+                try {
+                  // Test if we can call SDK actions
+                  await sdk.actions.ready()
+                  console.log('✅ SDK actions.ready() works!')
+                  alert('SDK Actions Test: ready() works!')
+                } catch (error) {
+                  console.error('SDK actions test failed:', error)
+                  alert(`SDK Actions Error: ${error}`)
+                }
+              }}
+              variant="outline"
+              className="w-full text-xs mt-2"
+            >
+              ⚡ SDK Actions Test
+            </Button>
+          </div>
         </div>
 
         {/* Progress Indicator */}
@@ -640,7 +802,10 @@ export default function FarcasterCleanupApp() {
                 </div>
                 <Button
                   size="sm"
-                  onClick={enableNotifications}
+                  onClick={() => {
+                    console.log('🚨 ENABLE NOTIFICATIONS BUTTON CLICKED!')
+                    enableNotifications()
+                  }}
                   className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
                 >
                   Enable
@@ -653,149 +818,106 @@ export default function FarcasterCleanupApp() {
           </div>
         )}
 
-        {/* Filter Toggles */}
+        {/* Filters */}
         {users.length > 0 && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-3">
-                          <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-              <Filter className="w-5 h-5 mr-2" />
-              Review Criteria
-            </h2>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                className="text-xs p-2 h-auto"
-              >
-                {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </Button>
-            </div>
-            
-            {showFilters && (
-              <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={filters.nonMutual}
-                      onCheckedChange={() => toggleFilter('nonMutual')}
-                    />
-                    <span className="text-sm font-medium">Non-mutual follows</span>
-                  </div>
-                  <span className="text-sm text-gray-600">({filterCounts.nonMutual})</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={filters.noInteractionWithYou}
-                      onCheckedChange={() => toggleFilter('noInteractionWithYou')}
-                    />
-                    <span className="text-sm font-medium">Haven't interacted with you</span>
-                  </div>
-                  <span className="text-sm text-gray-600">({filterCounts.noInteractionWithYou})</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={filters.youNoInteraction}
-                      onCheckedChange={() => toggleFilter('youNoInteraction')}
-                    />
-                    <span className="text-sm font-medium">You haven't interacted</span>
-                  </div>
-                  <span className="text-sm text-gray-600">({filterCounts.youNoInteraction})</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={filters.nuclear}
-                      onCheckedChange={() => toggleFilter('nuclear')}
-                    />
-                    <span className="text-sm font-medium text-red-600">Nuclear option (all following)</span>
-                  </div>
-                  <span className="text-sm text-gray-600">({filterCounts.nuclear})</span>
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">Filters:</h2>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    checked={filters.nonMutual}
+                    onCheckedChange={() => toggleFilter('nonMutual')}
+                  />
+                  <span className="text-sm font-medium">☑️ Non-mutual ({filterCounts.nonMutual})</span>
                 </div>
               </div>
-            )}
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    checked={filters.noInteractionWithYou}
+                    onCheckedChange={() => toggleFilter('noInteractionWithYou')}
+                  />
+                  <span className="text-sm font-medium">☑️ No interaction with you ({filterCounts.noInteractionWithYou})</span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    checked={filters.youNoInteraction}
+                    onCheckedChange={() => toggleFilter('youNoInteraction')}
+                  />
+                  <span className="text-sm font-medium">☑️ You no interaction ({filterCounts.youNoInteraction})</span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    checked={filters.nuclear}
+                    onCheckedChange={() => toggleFilter('nuclear')}
+                  />
+                  <span className="text-sm font-medium text-red-600">☐ Nuclear option ({filterCounts.nuclear})</span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Selection Management */}
         {users.length > 0 && (
-          <div className="mb-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-gray-900">Take Action</h2>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={selectAll}
+                  className="text-xs p-2 h-auto"
+                >
+                  Select All
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearSelection}
+                  className="text-xs p-2 h-auto"
+                >
+                  Clear
+                </Button>
+              </div>
               <span className="text-sm text-gray-600">
-                {selectedUsers.size} selected
+                ({selectedUsers.size} selected)
               </span>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={selectAll}
-                className="text-xs p-2 h-auto"
-              >
-                <CheckCircle className="w-3 h-3 mr-1" />
-                Select All
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearSelection}
-                className="text-xs p-2 h-auto"
-              >
-                <Trash2 className="w-3 h-3 mr-1" />
-                Clear Selection
-              </Button>
             </div>
           </div>
         )}
 
         {/* Action Buttons */}
         {users.length > 0 && (
-          <div className="mb-4">
-            <div className="grid grid-cols-3 gap-2">
-              <Button
-                onClick={unfollowSelected}
-                disabled={selectedUsers.size === 0 || isUnfollowing}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                {isUnfollowing ? (
-                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                ) : (
-                  <UserMinus className="w-4 h-4 mr-1" />
-                )}
-                Unfollow {selectedUsers.size}
-              </Button>
-              <Button
-                onClick={shareResults}
-                variant="outline"
-                className="border-purple-200 text-purple-700 hover:bg-purple-50"
-              >
-                <Share2 className="w-4 h-4 mr-1" />
-                Share
-              </Button>
-              <Button
-                onClick={sendNotificationReminder}
-                variant="outline"
-                className="border-blue-200 text-blue-700 hover:bg-blue-50"
-                title="Send yourself a notification reminder"
-              >
-                <Bell className="w-4 h-4 mr-1" />
-                Remind
-              </Button>
-            </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <Button
+              onClick={unfollowSelected}
+              disabled={selectedUsers.size === 0 || isUnfollowing}
+              className="bg-red-600 hover:bg-red-700 text-white w-full"
+            >
+              {isUnfollowing ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <UserMinus className="w-4 h-4 mr-1" />
+              )}
+              Unfollow Selected ({selectedUsers.size})
+            </Button>
           </div>
         )}
 
         {/* User List */}
         {users.length > 0 && (
-          <div className="mb-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-gray-900">Manage Your Following</h2>
+              <h2 className="text-lg font-semibold text-gray-900">User List (infinite scroll):</h2>
               <span className="text-sm text-gray-600">
                 {users.length} users
               </span>
@@ -812,29 +934,15 @@ export default function FarcasterCleanupApp() {
                       className="mt-1"
                     />
 
-                    {/* Avatar */}
-                    <Avatar className="w-10 h-10 flex-shrink-0">
-                      <AvatarImage src={user.pfpUrl || "/placeholder.svg"} />
-                      <AvatarFallback>{user.displayName[0]}</AvatarFallback>
-                    </Avatar>
-
                     {/* User Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <h3 className="font-medium text-gray-900 truncate">{user.displayName}</h3>
+                          <h3 className="font-medium text-gray-900 truncate">☑️ [👤] {user.displayName}</h3>
                           <p className="text-sm text-gray-500">@{user.username}</p>
-                          <div className="flex items-center gap-4 mt-1">
-                            <span className="text-xs text-gray-500">
-                              {user.followerCount.toLocaleString()} followers
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {user.followingCount.toLocaleString()} following
-                            </span>
-                          </div>
-                          <div className="mt-2 space-y-1">
+                          <div className="mt-1">
                             {user.reasons.map((reason, index) => (
-                              <p key={index} className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+                              <p key={index} className="text-xs text-gray-600">
                                 {reason}
                               </p>
                             ))}
@@ -848,7 +956,6 @@ export default function FarcasterCleanupApp() {
                           onClick={() => unfollowSingle(user.fid)}
                           className="text-xs border-red-200 text-red-700 hover:bg-red-50 ml-2"
                         >
-                          <UserMinus className="w-3 h-3 mr-1" />
                           Unfollow
                         </Button>
                       </div>
@@ -886,7 +993,10 @@ export default function FarcasterCleanupApp() {
         {isAuthenticated && (
           <div className="mb-6">
             <Button 
-              onClick={analyzeFollowingList}
+              onClick={() => {
+                console.log('🚨 REVIEW YOUR FOLLOWING BUTTON CLICKED!')
+                analyzeFollowingList()
+              }}
               disabled={isAnalyzing}
               className="bg-purple-600 hover:bg-purple-700 text-white w-full"
             >
@@ -910,41 +1020,39 @@ export default function FarcasterCleanupApp() {
       {showConfirmUnfollow && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold mb-4">Confirm Action</h3>
+            <h3 className="text-lg font-semibold mb-4">Confirm Bulk Unfollow</h3>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to unfollow {selectedUsers.size} users? This will help you manage your active following.
+              Unfollow {selectedUsers.size} selected users?
             </p>
             
             {/* Preview of selected users */}
             <div className="max-h-32 overflow-y-auto mb-6">
-              {users.filter(u => selectedUsers.has(u.fid)).slice(0, 5).map(user => (
+              {users.filter(u => selectedUsers.has(u.fid)).slice(0, 3).map(user => (
                 <div key={user.fid} className="flex items-center space-x-2 mb-2">
-                  <Avatar className="w-6 h-6">
-                    <AvatarImage src={user.pfpUrl} />
-                    <AvatarFallback>{user.displayName[0]}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm text-gray-700">@{user.username}</span>
-                  <span className="text-xs text-gray-500">({user.reasons[0]})</span>
+                  <span className="text-sm text-gray-700">• {user.displayName}</span>
+                  <span className="text-xs text-gray-500">
+                    ({user.reasons[0]})
+                  </span>
                 </div>
               ))}
-              {selectedUsers.size > 5 && (
-                <p className="text-sm text-gray-500">+ {selectedUsers.size - 5} more...</p>
+              {selectedUsers.size > 3 && (
+                <p className="text-sm text-gray-500">+ {selectedUsers.size - 3} more...</p>
               )}
             </div>
             
             <div className="flex space-x-3">
-              <Button
-                onClick={performUnfollow}
-                className="bg-red-600 hover:bg-red-700 text-white flex-1"
-              >
-                Yes, Unfollow
-              </Button>
               <Button
                 onClick={() => setShowConfirmUnfollow(false)}
                 variant="outline"
                 className="flex-1"
               >
                 Cancel
+              </Button>
+              <Button
+                onClick={performUnfollow}
+                className="bg-red-600 hover:bg-red-700 text-white flex-1"
+              >
+                Confirm Unfollow
               </Button>
             </div>
           </div>
