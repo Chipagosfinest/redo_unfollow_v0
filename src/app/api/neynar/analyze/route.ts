@@ -33,10 +33,11 @@ export async function POST(request: NextRequest) {
 
     // Fetch following list using API
     const followingResponse = await fetch(
-      `https://api.neynar.com/v2/farcaster/user/following?viewer_fid=${fid}&fid=${fid}&limit=1000&api_key=${apiKey}`,
+      `https://api.neynar.com/v2/farcaster/user/following?viewer_fid=${fid}&fid=${fid}&limit=1000`,
       {
         headers: {
           'accept': 'application/json',
+          'x-api-key': apiKey,
         },
       }
     )
@@ -58,10 +59,11 @@ export async function POST(request: NextRequest) {
 
     // Fetch followers list using API
     const followersResponse = await fetch(
-      `https://api.neynar.com/v2/farcaster/user/followers?viewer_fid=${fid}&fid=${fid}&limit=1000&api_key=${apiKey}`,
+      `https://api.neynar.com/v2/farcaster/user/followers?viewer_fid=${fid}&fid=${fid}&limit=1000`,
       {
         headers: {
           'accept': 'application/json',
+          'x-api-key': apiKey,
         },
       }
     )
