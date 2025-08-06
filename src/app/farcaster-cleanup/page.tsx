@@ -99,6 +99,8 @@ export default function FarcasterCleanupApp() {
     isActive: boolean
   }>({ current: 0, total: 0, isActive: false })
   const [analysisProgress, setAnalysisProgress] = useState<string>('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [usersPerPage] = useState(15)
 
   // Suppress browser extension conflicts and add ready() to window for debugging
   useEffect(() => {
@@ -1013,7 +1015,9 @@ export default function FarcasterCleanupApp() {
             </div>
 
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {users.map((user) => (
+              {users
+                .slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage)
+                .map((user) => (
                 <div key={user.fid} className="bg-white rounded-lg border border-gray-200 p-3">
                   <div className="flex items-start space-x-3">
                     {/* Checkbox */}
@@ -1052,6 +1056,35 @@ export default function FarcasterCleanupApp() {
                   </div>
                 </div>
               ))}
+              
+              {/* Pagination Controls */}
+              {users.length > usersPerPage && (
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="text-xs"
+                  >
+                    Previous
+                  </Button>
+                  
+                  <span className="text-sm text-gray-600">
+                    Page {currentPage} of {Math.ceil(users.length / usersPerPage)}
+                  </span>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(Math.ceil(users.length / usersPerPage), prev + 1))}
+                    disabled={currentPage === Math.ceil(users.length / usersPerPage)}
+                    className="text-xs"
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}
