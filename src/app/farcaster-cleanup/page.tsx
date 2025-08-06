@@ -905,7 +905,7 @@ export default function FarcasterCleanupApp() {
                   <ul className="text-xs text-gray-600 space-y-1">
                     <li>• Non-mutual follows: {filterCounts.nonMutual}</li>
                     <li>• No recent interactions: {filterCounts.noInteractionWithYou}</li>
-                    <li>• Inactive accounts: {filterCounts.youNoInteraction}</li>
+                    <li>• You no interaction: {filterCounts.youNoInteraction}</li>
                   </ul>
                 </div>
               </div>
@@ -992,7 +992,7 @@ export default function FarcasterCleanupApp() {
 
         {/* Action Buttons */}
         {users.length > 0 && (
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
             <Button
               onClick={unfollowSelected}
               disabled={selectedUsers.size === 0 || isUnfollowing}
@@ -1004,6 +1004,24 @@ export default function FarcasterCleanupApp() {
                 <UserMinus className="w-4 h-4 mr-1" />
               )}
               Unfollow Selected ({selectedUsers.size})
+            </Button>
+            
+            <Button
+              onClick={() => {
+                // Select all users and then unfollow
+                const allUserFids = users.map(user => user.fid)
+                setSelectedUsers(new Set(allUserFids))
+                setTimeout(() => unfollowSelected(), 100)
+              }}
+              disabled={isUnfollowing}
+              className="bg-orange-600 hover:bg-orange-700 text-white w-full"
+            >
+              {isUnfollowing ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <Users className="w-4 h-4 mr-1" />
+              )}
+              Unfollow All ({users.length})
             </Button>
           </div>
         )}
