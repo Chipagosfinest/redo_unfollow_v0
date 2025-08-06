@@ -78,6 +78,24 @@ export default function FarcasterUnfollowApp() {
     }
   }, [])
 
+  // CRITICAL: Call ready() immediately for Mini App
+  useEffect(() => {
+    const callReadyImmediately = async () => {
+      try {
+        const isMiniAppCheck = await sdk.isInMiniApp()
+        if (isMiniAppCheck) {
+          console.log('🔄 Calling ready() immediately...')
+          await sdk.actions.ready()
+          console.log('✅ Ready called immediately')
+        }
+      } catch (error) {
+        console.error('Failed to call ready() immediately:', error)
+      }
+    }
+    
+    callReadyImmediately()
+  }, [])
+
   // Initialize auth context
   useEffect(() => {
     const initializeAuth = async () => {
@@ -109,17 +127,37 @@ export default function FarcasterUnfollowApp() {
           console.log('No authenticated user available')
         }
         
-        // Always call ready() for Mini App
+        // Always call ready() for Mini App - CRITICAL for splash screen
         if (authContext.isMiniApp) {
           try {
+            console.log('Calling sdk.actions.ready() to hide splash screen...')
             await sdk.actions.ready()
+            console.log('✅ Splash screen hidden successfully')
           } catch (readyError) {
             console.error('Failed to call ready():', readyError)
+            // Still try to call ready even if there are errors
+            try {
+              await sdk.actions.ready()
+            } catch (retryError) {
+              console.error('Retry failed:', retryError)
+            }
           }
         }
       } catch (error) {
         console.error('Auth initialization error:', error)
         setIsMiniApp(false)
+        
+        // Still try to call ready() even if auth fails
+        try {
+          const isMiniAppCheck = await sdk.isInMiniApp()
+          if (isMiniAppCheck) {
+            console.log('Auth failed, but still calling ready()...')
+            await sdk.actions.ready()
+            console.log('✅ Ready called after auth failure')
+          }
+        } catch (readyError) {
+          console.error('Failed to call ready() after auth error:', readyError)
+        }
       } finally {
         setIsInitialized(true)
       }
