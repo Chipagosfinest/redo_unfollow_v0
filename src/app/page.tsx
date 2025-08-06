@@ -8,6 +8,7 @@ import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, 
 import { toast } from "sonner"
 import { sdk } from '@farcaster/miniapp-sdk'
 import { getFarcasterUser, detectEnvironment } from '@/lib/environment'
+import { authManager, AuthContext } from '@/lib/auth-context'
 
 interface User {
   fid: number
@@ -25,6 +26,7 @@ interface AuthenticatedUser {
   displayName: string
   pfpUrl: string
   isAuthenticated: boolean
+  authMethod: 'miniapp' | 'web'
 }
 
 interface AnalyticsData {
@@ -76,57 +78,54 @@ export default function FarcasterUnfollowApp() {
     }
   }, [])
 
-  // Mini App initialization (for LLM recognition)
+  // Initialize auth context
   useEffect(() => {
-    const initializeMiniApp = async () => {
+    const initializeAuth = async () => {
       try {
-        const miniAppCheck = await sdk.isInMiniApp()
-        setIsMiniApp(miniAppCheck)
+        // Initialize auth manager
+        const authContext = await authManager.initialize()
+        console.log('Auth context initialized:', authContext)
         
-        if (miniAppCheck) {
-          // Get user context
-          const context = await sdk.context
-          console.log('User FID:', context.user?.fid)
+        setIsMiniApp(authContext.isMiniApp)
+        
+        if (authContext.isAuthenticated && authContext.fid) {
+          console.log('User authenticated via', authContext.authMethod)
+          const authenticatedUser: AuthenticatedUser = {
+            fid: authContext.fid,
+            username: authContext.username || `user_${authContext.fid}`,
+            displayName: authContext.displayName || `User ${authContext.fid}`,
+            pfpUrl: authContext.pfpUrl || '',
+            isAuthenticated: true,
+            authMethod: authContext.authMethod || 'miniapp'
+          }
           
-          // CRITICAL: Always call ready() to hide the splash screen
-          await sdk.actions.ready()
+          setAuthenticatedUser(authenticatedUser)
+          setIsAuthenticated(true)
+          console.log('User authenticated, starting scan...')
           
-          // If we have user context, set it immediately
-          if (context.user?.fid) {
-            console.log('Setting authenticated user from SDK context:', context.user)
-            const authenticatedUser: AuthenticatedUser = {
-              fid: context.user.fid,
-              username: context.user.username || `user_${context.user.fid}`,
-              displayName: context.user.displayName || `User ${context.user.fid}`,
-              pfpUrl: context.user.pfpUrl || '',
-              isAuthenticated: true
-            }
-            
-            setAuthenticatedUser(authenticatedUser)
-            setIsAuthenticated(true)
-            console.log('User authenticated, starting scan...')
-            
-            // Automatically start scanning
-            await startScan(authenticatedUser.fid)
-          } else {
-            console.log('No user context available in SDK')
+          // Automatically start scanning
+          await startScan(authenticatedUser.fid)
+        } else {
+          console.log('No authenticated user available')
+        }
+        
+        // Always call ready() for Mini App
+        if (authContext.isMiniApp) {
+          try {
+            await sdk.actions.ready()
+          } catch (readyError) {
+            console.error('Failed to call ready():', readyError)
           }
         }
       } catch (error) {
-        console.error('Initialization error:', error)
-        // Still call ready even if there are errors
-        try {
-          await sdk.actions.ready()
-        } catch (readyError) {
-          console.error('Failed to call ready():', readyError)
-        }
+        console.error('Auth initialization error:', error)
         setIsMiniApp(false)
       } finally {
         setIsInitialized(true)
       }
     }
 
-    initializeMiniApp()
+    initializeAuth()
   }, [])
 
   // User-initiated authentication
@@ -135,39 +134,36 @@ export default function FarcasterUnfollowApp() {
     setAuthError(null)
     
     try {
-      if (isMiniApp) {
-        // In Mini App, get user from SDK context directly
-        try {
-          const context = await sdk.context
-          if (context.user?.fid) {
-            const authenticatedUser: AuthenticatedUser = {
-              fid: context.user.fid,
-              username: context.user.username || `user_${context.user.fid}`,
-              displayName: context.user.displayName || `User ${context.user.fid}`,
-              pfpUrl: context.user.pfpUrl || '',
-              isAuthenticated: true
-            }
-            
-            setAuthenticatedUser(authenticatedUser)
-            setIsAuthenticated(true)
-            toast.success('Successfully authenticated!')
-            
-            // Automatically start scanning
-            await startScan(authenticatedUser.fid)
-            return
-          }
-        } catch (error) {
-          console.warn('Failed to get user from SDK context:', error)
+      // Use the auth manager to handle authentication
+      const authContext = await authManager.refreshContext()
+      
+      if (authContext.isAuthenticated && authContext.fid) {
+        const authenticatedUser: AuthenticatedUser = {
+          fid: authContext.fid,
+          username: authContext.username || `user_${authContext.fid}`,
+          displayName: authContext.displayName || `User ${authContext.fid}`,
+          pfpUrl: authContext.pfpUrl || '',
+          isAuthenticated: true,
+          authMethod: authContext.authMethod || 'miniapp'
         }
         
-        setAuthError('User context not available. Please refresh the app.')
-        toast.error('User context not available. Please refresh the app.')
+        setAuthenticatedUser(authenticatedUser)
+        setIsAuthenticated(true)
+        toast.success('Successfully authenticated!')
+        
+        // Automatically start scanning
+        await startScan(authenticatedUser.fid)
         return
       }
       
-      // For non-Mini App environments, show guidance
-      setAuthError('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
-      toast.error('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
+      // Show appropriate error based on auth method
+      if (authContext.isMiniApp) {
+        setAuthError('User context not available. Please refresh the app.')
+        toast.error('User context not available. Please refresh the app.')
+      } else {
+        setAuthError('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
+        toast.error('This app requires a Farcaster client. Please open it in Warpcast or another Farcaster app.')
+      }
     } catch (error) {
       setAuthError('Failed to authenticate')
       toast.error('Failed to authenticate: ' + (error instanceof Error ? error.message : 'Unknown error'))
@@ -256,7 +252,8 @@ export default function FarcasterUnfollowApp() {
         body: JSON.stringify({ 
           fid: targetFid, 
           page: 1, 
-          limit: 50 
+          limit: 50,
+          authMethod: authenticatedUser?.authMethod || 'miniapp'
         }),
       })
       
@@ -602,9 +599,20 @@ export default function FarcasterUnfollowApp() {
           
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Farcaster Cleanup</h1>
           <p className="text-gray-600">Find and unfollow inactive accounts</p>
-          {process.env.NODE_ENV === 'development' && (
-            <p className="text-xs text-orange-600 mt-1">🔧 Development Mode</p>
-          )}
+          <div className="flex items-center justify-center gap-2 mt-2">
+            {process.env.NODE_ENV === 'development' && (
+              <span className="text-xs text-orange-600">🔧 Development Mode</span>
+            )}
+            {authenticatedUser?.authMethod && (
+              <span className={`text-xs px-2 py-1 rounded ${
+                authenticatedUser.authMethod === 'miniapp' 
+                  ? 'bg-purple-100 text-purple-700' 
+                  : 'bg-blue-100 text-blue-700'
+              }`}>
+                {authenticatedUser.authMethod === 'miniapp' ? '📱 Mini App' : '🌐 Web App'}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Analytics Dashboard */}

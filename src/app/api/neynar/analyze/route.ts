@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { fid, page = 1, limit = 50 } = await request.json()
+    const { fid, page = 1, limit = 50, authMethod = 'miniapp' } = await request.json()
     
     // Enhanced environment checking
     const apiKey = process.env.NEYNAR_API_KEY
@@ -10,6 +10,7 @@ export async function POST(request: NextRequest) {
     const vercelEnv = process.env.VERCEL_ENV
     
     console.log(`Environment: NODE_ENV=${nodeEnv}, VERCEL_ENV=${vercelEnv}`)
+    console.log(`Auth method: ${authMethod}`)
     console.log(`Analyzing following list for FID: ${fid}`)
     console.log(`API Key present: ${apiKey ? 'YES' : 'NO'}`)
     console.log(`API Key length: ${apiKey?.length || 0}`)
