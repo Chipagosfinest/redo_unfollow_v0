@@ -40,6 +40,14 @@ interface AnalyticsData {
 }
 
 export default function FarcasterUnfollowApp() {
+  // CRITICAL: Call ready() synchronously at component start
+  if (typeof window !== 'undefined') {
+    // Try to call ready immediately
+    sdk.actions.ready().catch(() => {
+      // Ignore errors here, we'll retry in useEffect
+    })
+  }
+
   const [isLoading, setIsLoading] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
@@ -61,7 +69,7 @@ export default function FarcasterUnfollowApp() {
   const [filterReason, setFilterReason] = useState<'all' | 'inactive' | 'not_following_back'>('all')
   const [sortBy, setSortBy] = useState<'name' | 'followers' | 'following' | 'reason'>('reason')
 
-  // Suppress browser extension conflicts
+  // Suppress browser extension conflicts and add ready() to window for debugging
   useEffect(() => {
     const originalError = console.error
     console.error = (...args) => {
@@ -73,6 +81,19 @@ export default function FarcasterUnfollowApp() {
       originalError.apply(console, args)
     }
 
+    // Add ready() function to window for manual debugging
+    if (typeof window !== 'undefined') {
+      (window as any).callReady = async () => {
+        try {
+          console.log('🔄 Manual ready() call...')
+          await sdk.actions.ready()
+          console.log('✅ Manual ready() successful')
+        } catch (error) {
+          console.error('Manual ready() failed:', error)
+        }
+      }
+    }
+
     return () => {
       console.error = originalError
     }
@@ -82,14 +103,29 @@ export default function FarcasterUnfollowApp() {
   useEffect(() => {
     const callReadyImmediately = async () => {
       try {
+        console.log('🔄 Checking if in Mini App...')
         const isMiniAppCheck = await sdk.isInMiniApp()
+        console.log('Is Mini App:', isMiniAppCheck)
+        
         if (isMiniAppCheck) {
           console.log('🔄 Calling ready() immediately...')
           await sdk.actions.ready()
           console.log('✅ Ready called immediately')
+        } else {
+          console.log('Not in Mini App, skipping ready()')
         }
       } catch (error) {
         console.error('Failed to call ready() immediately:', error)
+        // Try again after a short delay
+        setTimeout(async () => {
+          try {
+            console.log('🔄 Retrying ready() call...')
+            await sdk.actions.ready()
+            console.log('✅ Ready called on retry')
+          } catch (retryError) {
+            console.error('Retry failed:', retryError)
+          }
+        }, 1000)
       }
     }
     
