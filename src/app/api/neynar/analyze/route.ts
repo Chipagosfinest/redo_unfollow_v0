@@ -6,11 +6,14 @@ export async function POST(request: NextRequest) {
     
     const apiKey = process.env.NEYNAR_API_KEY
     if (!apiKey) {
+      console.error('NEYNAR_API_KEY not configured')
       return NextResponse.json(
         { error: 'API key not configured' },
         { status: 500 }
       )
     }
+
+    console.log(`Analyzing following list for FID: ${fid}`)
 
     // Fetch following list using API
     const followingResponse = await fetch(
@@ -23,15 +26,20 @@ export async function POST(request: NextRequest) {
       }
     )
 
+    console.log(`Following API response status: ${followingResponse.status}`)
+
     if (!followingResponse.ok) {
+      const errorText = await followingResponse.text()
+      console.error(`Following API error: ${followingResponse.status} - ${errorText}`)
       return NextResponse.json(
-        { error: 'Failed to fetch following list' },
+        { error: `Failed to fetch following list: ${followingResponse.status}` },
         { status: 500 }
       )
     }
 
     const followingData = await followingResponse.json()
     const following = followingData.users || []
+    console.log(`Found ${following.length} following users`)
 
     // Fetch followers list using API
     const followersResponse = await fetch(
@@ -44,15 +52,20 @@ export async function POST(request: NextRequest) {
       }
     )
 
+    console.log(`Followers API response status: ${followersResponse.status}`)
+
     if (!followersResponse.ok) {
+      const errorText = await followersResponse.text()
+      console.error(`Followers API error: ${followersResponse.status} - ${errorText}`)
       return NextResponse.json(
-        { error: 'Failed to fetch followers list' },
+        { error: `Failed to fetch followers list: ${followersResponse.status}` },
         { status: 500 }
       )
     }
 
     const followersData = await followersResponse.json()
     const followers = followersData.users || []
+    console.log(`Found ${followers.length} followers`)
 
     // Create sets for efficient lookup
     const followerFids = new Set(followers.map((f: any) => f.fid))
