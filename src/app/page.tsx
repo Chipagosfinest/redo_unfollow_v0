@@ -10,6 +10,19 @@ import { sdk } from '@farcaster/miniapp-sdk'
 import { getFarcasterUser, detectEnvironment } from '@/lib/environment'
 import { authManager, AuthContext } from '@/lib/auth-context'
 
+// CRITICAL: Call ready() immediately when module loads
+if (typeof window !== 'undefined') {
+  (async () => {
+    try {
+      console.log('🔄 Module-level ready() call...')
+      await sdk.actions.ready()
+      console.log('✅ Module-level ready() success!')
+    } catch (error) {
+      console.error('❌ Module-level ready() failed:', error)
+    }
+  })()
+}
+
 interface User {
   fid: number
   username: string
