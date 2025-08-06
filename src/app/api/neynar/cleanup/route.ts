@@ -218,6 +218,18 @@ export async function POST(request: NextRequest) {
     const followingData = await followingResponse.json()
     const following = followingData.users || []
     console.log(`📊 Found ${following.length} following users`)
+    
+    // Debug: Log the first few users to see what data we're getting
+    if (following.length > 0) {
+      console.log(`🔍 Sample following users:`, following.slice(0, 3).map(u => ({
+        fid: u.fid,
+        username: u.username,
+        displayName: u.displayName,
+        followerCount: u.followerCount,
+        hasPfp: !!u.pfp?.url,
+        lastActiveStatus: u.lastActiveStatus
+      })))
+    }
 
     // 2. Fetch followers list for mutual analysis
     console.log(`🔍 Fetching followers list...`)
@@ -412,10 +424,19 @@ export async function POST(request: NextRequest) {
       console.log(`🔍 Sample analyzed users:`, analyzedUsers.slice(0, 3).map(u => ({
         fid: u.fid,
         username: u.username,
+        displayName: u.displayName,
         isMutual: u.isMutual,
         reasons: u.reasons,
-        shouldUnfollow: u.shouldUnfollow
+        shouldUnfollow: u.shouldUnfollow,
+        followerCount: u.followerCount,
+        hasPfp: !!u.pfpUrl
       })))
+    }
+
+    // Debug: Check for empty/invalid users
+    const emptyUsers = analyzedUsers.filter(u => !u.fid || !u.username)
+    if (emptyUsers.length > 0) {
+      console.log(`⚠️ Found ${emptyUsers.length} empty/invalid users:`, emptyUsers.slice(0, 3))
     }
 
     const response = NextResponse.json({
