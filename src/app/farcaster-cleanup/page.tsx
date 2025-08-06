@@ -344,6 +344,22 @@ export default function FarcasterCleanupApp() {
       console.log('📡 Making API request to /api/neynar/cleanup...')
       setAnalysisProgress('Fetching your following list...')
       
+      // Simulate progress updates
+      const progressInterval = setInterval(() => {
+        setAnalysisProgress(prev => {
+          if (prev?.includes('Processing batch')) {
+            const current = parseInt(prev.match(/batch (\d+)/)?.[1] || '1')
+            return `Processing batch ${current + 1} of your following list...`
+          } else if (prev?.includes('Fetching')) {
+            return 'Analyzing user interactions...'
+          } else if (prev?.includes('Analyzing')) {
+            return 'Processing batch 1 of your following list...'
+          } else {
+            return 'Analyzing user interactions...'
+          }
+        })
+      }, 2000)
+      
       console.log('🔍 Authenticated user:', authenticatedUser)
       console.log('🔍 FID being sent:', authenticatedUser?.fid)
       
@@ -385,7 +401,9 @@ export default function FarcasterCleanupApp() {
       console.error('❌ Analysis failed:', error)
       toast.error("Analysis failed - please try again")
     } finally {
+      clearInterval(progressInterval)
       setIsAnalyzing(false)
+      setAnalysisProgress('')
       console.log('🏁 Analysis process finished')
     }
   }
@@ -731,18 +749,26 @@ export default function FarcasterCleanupApp() {
           </div>
         </div>
 
-        {/* Analysis Progress */}
-        {isAnalyzing && analysisProgress && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center space-x-2">
-              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-              <span className="text-sm font-medium text-blue-900">
-                {analysisProgress}
-              </span>
-            </div>
-                          <p className="text-xs text-blue-700 mt-2">
-                Turbo mode enabled! Processing your following list at high speed...
+                {/* Analysis Progress */}
+        {isAnalyzing && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-4">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                Analyzing Your Following List
+              </h3>
+              <p className="text-sm text-blue-700 mb-4">
+                {analysisProgress || "Starting analysis..."}
               </p>
+              <div className="w-full bg-blue-200 rounded-full h-2">
+                <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+              </div>
+              <p className="text-xs text-blue-600 mt-3">
+                Turbo mode enabled! Processing at high speed...
+              </p>
+            </div>
           </div>
         )}
 
@@ -798,6 +824,88 @@ export default function FarcasterCleanupApp() {
           </div>
         )}
         */}
+
+        {/* Results Section */}
+        {!isAnalyzing && (users.length > 0 || (authenticatedUser && !isAnalyzing)) && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            {users.length > 0 ? (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">Analysis Results</h2>
+                  <span className="text-sm text-gray-500">
+                    {users.length} accounts to review
+                  </span>
+                </div>
+                
+                {/* Filters */}
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Active Filters:</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={filters.nonMutual}
+                          onCheckedChange={() => toggleFilter('nonMutual')}
+                        />
+                        <span className="text-sm font-medium">☑️ Non-mutual ({filterCounts.nonMutual})</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={filters.noInteractionWithYou}
+                          onCheckedChange={() => toggleFilter('noInteractionWithYou')}
+                        />
+                        <span className="text-sm font-medium">☑️ No interaction with you ({filterCounts.noInteractionWithYou})</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={filters.youNoInteraction}
+                          onCheckedChange={() => toggleFilter('youNoInteraction')}
+                        />
+                        <span className="text-sm font-medium">☑️ You no interaction ({filterCounts.youNoInteraction})</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={filters.nuclear}
+                          onCheckedChange={() => toggleFilter('nuclear')}
+                        />
+                        <span className="text-sm font-medium">☑️ Nuclear option ({filterCounts.nuclear})</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-8 h-8 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Your Following List Looks Great!
+                </h3>
+                <p className="text-gray-600 text-sm mb-4">
+                  No accounts found that match your cleanup criteria. Your following list is well-curated!
+                </p>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">What we checked:</h4>
+                  <ul className="text-xs text-gray-600 space-y-1">
+                    <li>• Non-mutual follows: {filterCounts.nonMutual}</li>
+                    <li>• No recent interactions: {filterCounts.noInteractionWithYou}</li>
+                    <li>• Inactive accounts: {filterCounts.youNoInteraction}</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Filters */}
         {users.length > 0 && (
