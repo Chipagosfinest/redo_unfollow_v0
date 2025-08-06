@@ -215,6 +215,23 @@ export default function FarcasterCleanupApp() {
     
     const initializeAuth = async () => {
       try {
+        // Handle wallet conflicts before auth
+        if (typeof window !== 'undefined') {
+          // Check for multiple wallet providers
+          if (window.ethereum && window.ethereum.providers?.length > 1) {
+            console.log('⚠️ Multiple wallet providers detected:', window.ethereum.providers.length)
+            // Try to use the first provider to avoid conflicts
+            window.ethereum = window.ethereum.providers[0]
+          }
+          
+          // Prevent ethereum property conflicts
+          Object.defineProperty(window, 'ethereum', {
+            value: window.ethereum,
+            writable: false,
+            configurable: false
+          })
+        }
+        
         // Initialize auth manager
         const authContext = await authManager.initialize()
         console.log('Auth context initialized:', authContext)
@@ -364,22 +381,45 @@ export default function FarcasterCleanupApp() {
         })
       }, 2000)
       
+      // Add retry mechanism for blocked requests
+      const makeRequestWithRetry = async (retryCount = 0): Promise<Response> => {
+        try {
+          const response = await fetch("/api/neynar/cleanup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody),
+          })
+          
+          // If blocked by client, retry with delay
+          if (response.status === 0 && retryCount < 3) {
+            console.log(`🔄 Request blocked, retrying... (attempt ${retryCount + 1})`)
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)))
+            return makeRequestWithRetry(retryCount + 1)
+          }
+          
+          return response
+        } catch (error) {
+          if (retryCount < 3) {
+            console.log(`🔄 Network error, retrying... (attempt ${retryCount + 1})`)
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)))
+            return makeRequestWithRetry(retryCount + 1)
+          }
+          throw error
+        }
+      }
+
       console.log('🔍 Authenticated user:', authenticatedUser)
       console.log('🔍 FID being sent:', authenticatedUser?.fid)
       
       const requestBody = { 
         fid: authenticatedUser.fid,
         filters,
-        limit: 100, // API limit is 1-100, backend will handle pagination
-        threshold: 60
+        limit: 1000, // TURBO MODE - much higher limit
+        threshold: 30 // TURBO MODE - much more aggressive
       }
       console.log('📤 Request body being sent:', requestBody)
       
-      const response = await fetch("/api/neynar/cleanup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-      })
+      const response = await makeRequestWithRetry()
       
       console.log('📥 API response status:', response.status)
       
@@ -399,7 +439,17 @@ export default function FarcasterCleanupApp() {
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
         console.error('❌ API failed:', response.status, errorData)
-        toast.error(errorData.error || `API failed: ${response.status}`)
+        
+        // Handle specific error types
+        if (response.status === 429) {
+          toast.error('Rate limit exceeded - please wait a moment and try again')
+        } else if (response.status === 403) {
+          toast.error('Access denied - please check your authentication')
+        } else if (response.status === 0) {
+          toast.error('Network error - request may have been blocked by browser extension')
+        } else {
+          toast.error(errorData.error || `API failed: ${response.status}`)
+        }
       }
     } catch (error) {
       console.error('❌ Analysis failed:', error)
