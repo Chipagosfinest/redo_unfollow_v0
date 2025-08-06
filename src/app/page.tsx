@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, LogIn } from "lucide-react"
 import { toast } from "sonner"
 import { sdk } from '@farcaster/miniapp-sdk'
-import { getFarcasterUser } from '@/lib/environment'
+import { getFarcasterUser, detectEnvironment } from '@/lib/environment'
 
 interface User {
   fid: number
