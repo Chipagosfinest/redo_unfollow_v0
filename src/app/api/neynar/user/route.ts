@@ -13,15 +13,24 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // For now, we'll use a demo FID since we're not in a real Mini App context
-    // In production, this would come from the Mini App SDK
-    const demoFid = 12345 // This would be the actual user's FID in a real Mini App
+    // Get user from request headers (Mini App context)
+    const userFid = request.headers.get('x-user-fid')
+    const userUsername = request.headers.get('x-user-username')
+    const userDisplayName = request.headers.get('x-user-display-name')
     
-    console.log('Fetching live user data for FID:', demoFid)
+    if (!userFid) {
+      console.error('No user FID provided in headers')
+      return NextResponse.json(
+        { error: 'User not authenticated' },
+        { status: 401 }
+      )
+    }
+
+    console.log('Fetching live user data for FID:', userFid)
 
     // Get real user data from API
     const userResponse = await fetch(
-      `https://api.neynar.com/v2/farcaster/user/bulk?fids=${demoFid}`,
+      `https://api.neynar.com/v2/farcaster/user/bulk?fids=${userFid}`,
       {
         headers: {
           'api_key': apiKey,

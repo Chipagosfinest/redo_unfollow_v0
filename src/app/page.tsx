@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, LogIn } from "lucide-react"
 import { toast } from "sonner"
 import { sdk } from '@farcaster/miniapp-sdk'
+import { getFarcasterUser } from '@/lib/environment'
 
 interface User {
   fid: number
@@ -63,7 +64,7 @@ export default function FarcasterUnfollowApp() {
     initializeMiniApp()
   }, [])
 
-  // User-initiated authentication using Neynar MCP
+  // User-initiated authentication
   const handleAuthenticate = async () => {
     setIsLoading(true)
     setAuthError(null)
@@ -71,13 +72,25 @@ export default function FarcasterUnfollowApp() {
     try {
       console.log('User initiated authentication...')
       
-      // Get user data from Mini App context
+      // Get real user from Mini App context
+      const farcasterUser = getFarcasterUser()
+      console.log('Farcaster user from context:', farcasterUser)
+      
+      if (!farcasterUser || !farcasterUser.fid) {
+        console.error('No Farcaster user found in context')
+        setAuthError('No Farcaster user found. Please open this app in Warpcast or another Farcaster client.')
+        toast.error('No Farcaster user found. Please open this app in Warpcast or another Farcaster client.')
+        return
+      }
+      
+      // Get user data from API using real FID
       const userData = await fetch('/api/neynar/user', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          // For now, we'll get user data from the API directly
-          // In a real Mini App, this would come from the context
+          'x-user-fid': farcasterUser.fid.toString(),
+          'x-user-username': farcasterUser.username || '',
+          'x-user-display-name': farcasterUser.displayName || '',
         },
       })
       
