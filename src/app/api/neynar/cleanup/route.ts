@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
     
     // Debug: Log the first few users to see what data we're getting
     if (following.length > 0) {
-      console.log(`🔍 Sample following users:`, following.slice(0, 3).map(u => ({
+      console.log(`🔍 Sample following users:`, following.slice(0, 3).map((u: any) => ({
         fid: u.fid,
         username: u.username,
         displayName: u.displayName,
@@ -434,7 +434,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Debug: Check for empty/invalid users
-    const emptyUsers = analyzedUsers.filter(u => !u.fid || !u.username)
+    const emptyUsers = analyzedUsers.filter((u: any) => !u.fid || !u.username)
     if (emptyUsers.length > 0) {
       console.log(`⚠️ Found ${emptyUsers.length} empty/invalid users:`, emptyUsers.slice(0, 3))
     }
