@@ -331,9 +331,19 @@ export default function FarcasterUnfollowApp() {
 
   const shareResults = () => {
     const text = `Just cleaned up my Farcaster following list! 🧹 Found ${users.length} accounts to unfollow. Try it yourself!`
-    if (navigator.share) {
-      navigator.share({ text })
-    } else {
+    try {
+      if (navigator.share) {
+        navigator.share({ text }).catch(() => {
+          // Fallback to clipboard if share fails
+          navigator.clipboard.writeText(text)
+          toast.success("Share text copied to clipboard")
+        })
+      } else {
+        navigator.clipboard.writeText(text)
+        toast.success("Share text copied to clipboard")
+      }
+    } catch (error) {
+      // Fallback to clipboard on any error
       navigator.clipboard.writeText(text)
       toast.success("Share text copied to clipboard")
     }

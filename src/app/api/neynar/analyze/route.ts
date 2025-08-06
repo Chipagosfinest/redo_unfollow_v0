@@ -14,6 +14,29 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`Analyzing following list for FID: ${fid}`)
+    console.log(`API Key present: ${apiKey ? 'YES' : 'NO'}`)
+    console.log(`API Key length: ${apiKey?.length || 0}`)
+
+    // Test the API key first with a simple endpoint
+    const testResponse = await fetch(
+      `https://api.neynar.com/v2/farcaster/user/info?fid=${fid}&api_key=${apiKey}`,
+      {
+        headers: {
+          'accept': 'application/json',
+        },
+      }
+    )
+
+    console.log(`Test API response status: ${testResponse.status}`)
+    
+    if (!testResponse.ok) {
+      const errorText = await testResponse.text()
+      console.error(`Test API error: ${testResponse.status} - ${errorText}`)
+      return NextResponse.json(
+        { error: `API key validation failed: ${testResponse.status}` },
+        { status: 500 }
+      )
+    }
 
     // Fetch following list using API
     const followingResponse = await fetch(
@@ -116,6 +139,7 @@ export async function POST(request: NextRequest) {
       }
     })
     
+    // Add proper CORS headers
     response.headers.set('Access-Control-Allow-Origin', '*')
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
