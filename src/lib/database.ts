@@ -57,7 +57,7 @@ export interface Payment {
 export interface UserNotification {
   id: string
   userId: number // FID
-  type: 'analysis_complete' | 'payment_success' | 'payment_failed'
+  type: 'analysis_complete' | 'analysis_failed' | 'payment_success' | 'payment_failed'
   title: string
   body: string
   targetUrl?: string
