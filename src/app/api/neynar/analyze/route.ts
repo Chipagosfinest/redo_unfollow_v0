@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     // Test the API key first with a simple endpoint
     const testResponse = await fetch(
-      `https://api.neynar.com/v2/farcaster/user/info?fid=${fid}&api_key=${apiKey}`,
+      `https://api.neynar.com/v2/farcaster/user/bulk?fids=${fid}&api_key=${apiKey}`,
       {
         headers: {
           'accept': 'application/json',
