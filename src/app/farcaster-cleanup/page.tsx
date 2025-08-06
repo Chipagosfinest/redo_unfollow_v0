@@ -295,7 +295,7 @@ export default function FarcasterCleanupApp() {
         if (data.success) {
           setUsers(data.users)
           setFilterCounts(data.summary.filterCounts)
-          toast.success(`Found ${data.users.length} accounts to review`)
+          toast.success(`Found ${data.users.length} accounts to manage`)
         } else {
           toast.error(data.error || 'Analysis failed')
         }
@@ -435,7 +435,7 @@ export default function FarcasterCleanupApp() {
 
   // Share results
   const shareResults = () => {
-    const text = `Just cleaned up my Farcaster following list! 🧹 Found ${users.length} accounts to unfollow. Try it yourself!`
+          const text = `Just managed my Farcaster following! 🧹 Found ${users.length} accounts to review. Don't be inactive about who you follow!`
     try {
       if (navigator.share) {
         navigator.share({ text }).catch(() => {
@@ -501,7 +501,7 @@ export default function FarcasterCleanupApp() {
           <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <Loader2 className="w-10 h-10 text-white animate-spin" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">🧹 Farcaster Cleanup</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">🧹 Manage Your Following</h1>
           <p className="text-gray-600">Initializing Mini App...</p>
         </div>
       </div>
@@ -516,7 +516,7 @@ export default function FarcasterCleanupApp() {
           <div className="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertTriangle className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">🧹 Farcaster Cleanup</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">🧹 Manage Your Following</h1>
           <p className="text-gray-600 mb-6">
             This app works best in Farcaster Mini App
           </p>
@@ -536,10 +536,10 @@ export default function FarcasterCleanupApp() {
           <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <LogIn className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">🧹 Farcaster Cleanup</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">🧹 Manage Your Following</h1>
           <p className="text-gray-600 mb-6">
             {isMiniApp 
-              ? 'Connect your Farcaster account to start cleaning up'
+              ? 'Connect your Farcaster account to start managing your active following'
               : 'This app works in Farcaster clients like Warpcast'
             }
           </p>
@@ -577,7 +577,7 @@ export default function FarcasterCleanupApp() {
           </Button>
           
           <p className="text-sm text-gray-500 mt-4">
-            This will authenticate you and analyze your following list
+            This will authenticate you and help you manage your active following
           </p>
         </div>
       </div>
@@ -600,8 +600,8 @@ export default function FarcasterCleanupApp() {
             </div>
           </div>
           
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">🧹 Farcaster Cleanup</h1>
-          <p className="text-gray-600">Clean up your following list with smart filters</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">🧹 Manage Your Following</h1>
+          <p className="text-gray-600">Don't be inactive about who you follow</p>
         </div>
 
         {/* Progress Indicator */}
@@ -635,7 +635,7 @@ export default function FarcasterCleanupApp() {
                 <div className="flex items-center space-x-2">
                   <Bell className="w-4 h-4 text-blue-600" />
                   <span className="text-sm font-medium text-blue-900">
-                    Get notified every 5 days
+                    Stay active about who you follow
                   </span>
                 </div>
                 <Button
@@ -647,7 +647,7 @@ export default function FarcasterCleanupApp() {
                 </Button>
               </div>
               <p className="text-xs text-blue-700 mt-2">
-                We'll remind you to review your following list and keep your feed clean
+                We'll remind you to review your following and stay active about who you follow
               </p>
             </div>
           </div>
@@ -657,10 +657,10 @@ export default function FarcasterCleanupApp() {
         {users.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                <Filter className="w-5 h-5 mr-2" />
-                Filters
-              </h2>
+                          <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+              <Filter className="w-5 h-5 mr-2" />
+              Review Criteria
+            </h2>
               <Button
                 variant="outline"
                 size="sm"
@@ -725,7 +725,7 @@ export default function FarcasterCleanupApp() {
         {users.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-gray-900">Selection</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Take Action</h2>
               <span className="text-sm text-gray-600">
                 {selectedUsers.size} selected
               </span>
@@ -795,7 +795,7 @@ export default function FarcasterCleanupApp() {
         {users.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-gray-900">Users to Unfollow</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Manage Your Following</h2>
               <span className="text-sm text-gray-600">
                 {users.length} users
               </span>
@@ -869,16 +869,16 @@ export default function FarcasterCleanupApp() {
             className="w-full bg-transparent"
           >
             {isAnalyzing ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Re-analyzing...
-              </>
-            ) : (
-              <>
-                <Users className="w-4 h-4 mr-2" />
-                Re-analyze Following List
-              </>
-            )}
+                              <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Reviewing...
+                </>
+              ) : (
+                <>
+                  <Users className="w-4 h-4 mr-2" />
+                  Review Again
+                </>
+              )}
           </Button>
         )}
 
@@ -893,12 +893,12 @@ export default function FarcasterCleanupApp() {
               {isAnalyzing ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analyzing Following List...
+                  Reviewing Your Following...
                 </>
               ) : (
                 <>
                   <Users className="w-4 h-4 mr-2" />
-                  {users.length > 0 ? 'Re-analyze Following List' : 'Analyze Following List'}
+                  {users.length > 0 ? 'Review Your Following' : 'Review Your Following'}
                 </>
               )}
             </Button>
@@ -910,9 +910,9 @@ export default function FarcasterCleanupApp() {
       {showConfirmUnfollow && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold mb-4">Confirm Bulk Unfollow</h3>
+            <h3 className="text-lg font-semibold mb-4">Confirm Action</h3>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to unfollow {selectedUsers.size} users? This action cannot be undone.
+              Are you sure you want to unfollow {selectedUsers.size} users? This will help you manage your active following.
             </p>
             
             {/* Preview of selected users */}

@@ -6,11 +6,11 @@
   },
   "miniapp": {
     "version": "1",
-    "name": "Farcaster Cleanup",
+    "name": "Manage Your Following",
     "iconUrl": "https://farcaster-cleanup.app/unfollow-icon.svg",
     "homeUrl": "https://farcaster-cleanup.app",
     "imageUrl": "https://farcaster-cleanup.app/image.png",
-    "buttonTitle": "Clean up your feed",
+    "buttonTitle": "Manage your following",
     "splashImageUrl": "https://farcaster-cleanup.app/splash.png",
     "splashBackgroundColor": "#8b5cf6",
     "webhookUrl": "https://farcaster-cleanup.app/api/webhook"
