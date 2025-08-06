@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, LogIn, BarChart3, X, ChevronDown, ChevronUp, Bell, BellOff, RefreshCw, User } from "lucide-react"
+import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, LogIn, BarChart3, X, ChevronDown, ChevronUp, Bell, BellOff, RefreshCw, User, CreditCard } from "lucide-react"
 import { toast } from "sonner"
 import { sdk } from '@farcaster/miniapp-sdk'
 import { getFarcasterUser, detectEnvironment } from '@/lib/environment'
@@ -1156,6 +1156,27 @@ export default function FarcasterCleanupApp() {
                 </>
               )}
             </Button>
+          </div>
+        )}
+
+        {/* Paid Analysis Link */}
+        {isAuthenticated && (
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200 p-4 mb-6">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-purple-900 mb-2">
+                🚀 Premium Analysis
+              </h3>
+              <p className="text-sm text-purple-700 mb-4">
+                Get comprehensive analysis of your entire following list with notifications
+              </p>
+              <Button 
+                onClick={() => window.location.href = '/paid-analysis'}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                Try Premium ($5.00)
+              </Button>
+            </div>
           </div>
         )}
       </div>
