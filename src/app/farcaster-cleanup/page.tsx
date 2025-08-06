@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, LogIn, BarChart3, X, ChevronDown, ChevronUp, Bell, BellOff, RefreshCw } from "lucide-react"
+import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, LogIn, BarChart3, X, ChevronDown, ChevronUp, Bell, BellOff, RefreshCw, User } from "lucide-react"
 import { toast } from "sonner"
 import { sdk } from '@farcaster/miniapp-sdk'
 import { getFarcasterUser, detectEnvironment } from '@/lib/environment'
