@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { sdk } from '@farcaster/miniapp-sdk'
 import { getFarcasterUser, detectEnvironment } from '@/lib/environment'
 import { authManager, AuthContext } from '@/lib/auth-context'
+import { TestControls } from '@/components/TestControls'
 
 // CRITICAL: Call ready() immediately when module loads
 if (typeof window !== 'undefined') {
@@ -81,6 +82,7 @@ export default function FarcasterUnfollowApp() {
   }>({ current: 0, total: 0, isActive: false })
   const [filterReason, setFilterReason] = useState<'all' | 'inactive' | 'not_following_back'>('all')
   const [sortBy, setSortBy] = useState<'name' | 'followers' | 'following' | 'reason'>('reason')
+  const [currentResults, setCurrentResults] = useState<any>(null)
 
   // Suppress browser extension conflicts and add ready() to window for debugging
   useEffect(() => {
