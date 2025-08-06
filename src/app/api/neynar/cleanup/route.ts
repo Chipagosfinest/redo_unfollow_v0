@@ -68,24 +68,8 @@ export async function POST(request: NextRequest) {
     }
 
     const followingData = await followingResponse.json()
-    let following = followingData.users || []
+    const following = followingData.users || []
     console.log(`📊 Found ${following.length} following users`)
-    
-    // Sort by FID (lower FID = earlier user, likely followed longer ago)
-    // Also prioritize non-mutual follows first
-    following.sort((a: any, b: any) => {
-      // First, prioritize non-mutual follows
-      const aIsMutual = followerFids.has(a.fid)
-      const bIsMutual = followerFids.has(b.fid)
-      
-      if (!aIsMutual && bIsMutual) return -1
-      if (aIsMutual && !bIsMutual) return 1
-      
-      // Then sort by FID (lower = older)
-      return a.fid - b.fid
-    })
-    
-    console.log(`🔄 Sorted following list - prioritizing oldest and non-mutual follows first`)
 
     // 2. Fetch followers list for mutual analysis
     console.log(`🔍 Fetching followers list...`)
