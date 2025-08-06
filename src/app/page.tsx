@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, LogIn } from "lucide-react"
+import { Loader2, Users, UserMinus, Share2, CheckCircle, AlertTriangle, Filter, Trash2, LogIn, BarChart3 } from "lucide-react"
 import { toast } from "sonner"
 import { sdk } from '@farcaster/miniapp-sdk'
 import { getFarcasterUser, detectEnvironment } from '@/lib/environment'
@@ -27,6 +27,16 @@ interface AuthenticatedUser {
   isAuthenticated: boolean
 }
 
+interface AnalyticsData {
+  totalFollowing: number
+  inactiveUsers: number
+  nonMutualUsers: number
+  mutualFollowers: number
+  averageFollowers: number
+  averageFollowing: number
+  topReasons: { reason: string; count: number }[]
+}
+
 export default function FarcasterUnfollowApp() {
   const [isLoading, setIsLoading] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -39,6 +49,15 @@ export default function FarcasterUnfollowApp() {
   const [isInitialized, setIsInitialized] = useState(false)
   const [isUnfollowing, setIsUnfollowing] = useState(false)
   const [showConfirmUnfollow, setShowConfirmUnfollow] = useState(false)
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
+  const [showAnalytics, setShowAnalytics] = useState(false)
+  const [unfollowProgress, setUnfollowProgress] = useState<{
+    current: number
+    total: number
+    isActive: boolean
+  }>({ current: 0, total: 0, isActive: false })
+  const [filterReason, setFilterReason] = useState<'all' | 'inactive' | 'not_following_back'>('all')
+  const [sortBy, setSortBy] = useState<'name' | 'followers' | 'following' | 'reason'>('reason')
 
   // Suppress browser extension conflicts
   useEffect(() => {
@@ -157,6 +176,69 @@ export default function FarcasterUnfollowApp() {
     }
   }
 
+  // Calculate analytics from user data
+  const calculateAnalytics = (userList: User[]): AnalyticsData => {
+    const totalFollowing = userList.length
+    const inactiveUsers = userList.filter(u => u.reason === 'inactive').length
+    const nonMutualUsers = userList.filter(u => u.reason === 'not_following_back').length
+    const mutualFollowers = totalFollowing - nonMutualUsers
+    
+    const totalFollowers = userList.reduce((sum, u) => sum + u.follower_count, 0)
+    const totalFollowingCount = userList.reduce((sum, u) => sum + u.following_count, 0)
+    const averageFollowers = totalFollowing > 0 ? Math.round(totalFollowers / totalFollowing) : 0
+    const averageFollowing = totalFollowing > 0 ? Math.round(totalFollowingCount / totalFollowing) : 0
+    
+    const reasonCounts = userList.reduce((acc, user) => {
+      acc[user.reason] = (acc[user.reason] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    
+    const topReasons = Object.entries(reasonCounts)
+      .map(([reason, count]) => ({ reason, count }))
+      .sort((a, b) => b.count - a.count)
+    
+    return {
+      totalFollowing,
+      inactiveUsers,
+      nonMutualUsers,
+      mutualFollowers,
+      averageFollowers,
+      averageFollowing,
+      topReasons
+    }
+  }
+
+  // Filter and sort users
+  const getFilteredAndSortedUsers = () => {
+    let filteredUsers = users
+
+    // Apply reason filter
+    if (filterReason !== 'all') {
+      filteredUsers = filteredUsers.filter(user => user.reason === filterReason)
+    }
+
+    // Apply sorting
+    filteredUsers.sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.display_name.localeCompare(b.display_name)
+        case 'followers':
+          return b.follower_count - a.follower_count
+        case 'following':
+          return b.following_count - a.following_count
+        case 'reason':
+          // Sort by reason priority: inactive first, then not_following_back
+          if (a.reason === 'inactive' && b.reason !== 'inactive') return -1
+          if (a.reason !== 'inactive' && b.reason === 'inactive') return 1
+          return 0
+        default:
+          return 0
+      }
+    })
+
+    return filteredUsers
+  }
+
   // Scan following list
   const startScan = async (fid?: number) => {
     const targetFid = fid || authenticatedUser?.fid
@@ -192,32 +274,34 @@ export default function FarcasterUnfollowApp() {
         }))
 
         setUsers(allUsers)
+        
+        // Calculate and set analytics
+        const analyticsData = calculateAnalytics(allUsers)
+        setAnalytics(analyticsData)
+        
         toast.success(`Found ${allUsers.length} accounts to review`)
       } else {
-        // API failed, show demo data
-        console.warn('API failed, showing demo data')
-        const demoUsers: User[] = [
-          {
-            fid: 12345,
-            username: 'demo_user_1',
-            display_name: 'Demo User 1',
-            pfp_url: '',
-            follower_count: 100,
-            following_count: 50,
-            reason: 'not_following_back' as const,
-          },
-          {
-            fid: 12346,
-            username: 'demo_user_2',
-            display_name: 'Demo User 2',
-            pfp_url: '',
-            follower_count: 200,
-            following_count: 100,
-            reason: 'inactive' as const,
-          }
-        ]
-        setUsers(demoUsers)
-        toast.success(`Demo mode: Found ${demoUsers.length} sample accounts to review`)
+        // API failed - show the actual error
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('API failed:', response.status, errorData)
+        
+        // Show detailed error message
+        let errorMessage = `API failed: ${response.status}`
+        if (errorData.error) {
+          errorMessage += ` - ${errorData.error}`
+        }
+        if (errorData.details?.message) {
+          errorMessage += ` (${errorData.details.message})`
+        }
+        
+        toast.error(errorMessage)
+        
+        // Show error in UI
+        setUsers([])
+        setAnalytics(null)
+        
+        // Log detailed error for debugging
+        console.error('Full error details:', errorData)
       }
     } catch (error) {
       console.error('Scan failed:', error)
@@ -255,47 +339,81 @@ export default function FarcasterUnfollowApp() {
     setSelectedUsers(newSelected)
   }
 
-  const confirmUnfollow = () => {
+
+
+  // Show confirmation modal first, then unfollow
+  const unfollowSelected = () => {
     if (selectedUsers.size === 0) return
     setShowConfirmUnfollow(true)
   }
 
-  // Use Neynar MCP for unfollow operations
-  const unfollowSelected = async () => {
+  // Actually perform the unfollow operation
+  const performUnfollow = async () => {
     if (selectedUsers.size === 0) return
 
     setIsUnfollowing(true)
     setShowConfirmUnfollow(false)
+    setUnfollowProgress({ current: 0, total: selectedUsers.size, isActive: true })
     let successCount = 0
 
     try {
-      // Use Neynar MCP for bulk unfollow
-      const response = await fetch("/api/neynar/unfollow", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          targetFids: Array.from(selectedUsers),
-          mode: 'selected'
-        }),
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        successCount = result.results?.successful?.length || 0
-        
-        // Remove unfollowed users from the list
-        setUsers(users.filter((u) => !selectedUsers.has(u.fid)))
-        setSelectedUsers(new Set())
-        
-        toast.success(`Successfully unfollowed ${successCount} users`)
-      } else {
-        const errorData = await response.json().catch(() => ({}))
-        toast.error(errorData.error || "Failed to unfollow users")
+      const targetFids = Array.from(selectedUsers)
+      const batchSize = 5
+      const batches = []
+      
+      for (let i = 0; i < targetFids.length; i += batchSize) {
+        batches.push(targetFids.slice(i, i + batchSize))
       }
+
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i]
+        
+        // Use Neynar MCP for batch unfollow
+        const response = await fetch("/api/neynar/unfollow", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            targetFids: batch,
+            mode: 'selected'
+          }),
+        })
+
+        if (response.ok) {
+          const result = await response.json()
+          successCount += result.results?.successful?.length || 0
+          
+          // Update progress
+          setUnfollowProgress(prev => ({
+            ...prev,
+            current: prev.current + batch.length
+          }))
+        } else {
+          const errorData = await response.json().catch(() => ({}))
+          console.error('Batch unfollow failed:', errorData)
+        }
+
+        // Add delay between batches to avoid rate limiting
+        if (i < batches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+      }
+      
+      // Remove unfollowed users from the list
+      setUsers(users.filter((u) => !selectedUsers.has(u.fid)))
+      setSelectedUsers(new Set())
+      
+      // Recalculate analytics
+      const remainingUsers = users.filter((u) => !selectedUsers.has(u.fid))
+      const updatedAnalytics = calculateAnalytics(remainingUsers)
+      setAnalytics(updatedAnalytics)
+      
+      toast.success(`Successfully unfollowed ${successCount} users`)
     } catch (error) {
+      console.error('Unfollow failed:', error)
       toast.error("Failed to unfollow users")
     } finally {
       setIsUnfollowing(false)
+      setUnfollowProgress({ current: 0, total: 0, isActive: false })
     }
   }
 
@@ -347,6 +465,32 @@ export default function FarcasterUnfollowApp() {
       navigator.clipboard.writeText(text)
       toast.success("Share text copied to clipboard")
     }
+  }
+
+  const exportResults = () => {
+    const csvData = [
+      ['Username', 'Display Name', 'Followers', 'Following', 'Reason', 'FID'],
+      ...getFilteredAndSortedUsers().map(user => [
+        user.username,
+        user.display_name,
+        user.follower_count.toString(),
+        user.following_count.toString(),
+        user.reason,
+        user.fid.toString()
+      ])
+    ].map(row => row.join(',')).join('\n')
+
+    const blob = new Blob([csvData], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `farcaster-unfollow-list-${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    
+    toast.success("Results exported to CSV")
   }
 
   // Show loading screen during initialization
@@ -458,7 +602,106 @@ export default function FarcasterUnfollowApp() {
           
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Farcaster Cleanup</h1>
           <p className="text-gray-600">Find and unfollow inactive accounts</p>
+          {process.env.NODE_ENV === 'development' && (
+            <p className="text-xs text-orange-600 mt-1">🔧 Development Mode</p>
+          )}
         </div>
+
+        {/* Analytics Dashboard */}
+        {analytics && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <BarChart3 className="w-5 h-5 mr-2" />
+                Analytics Dashboard
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAnalytics(!showAnalytics)}
+                className="text-xs p-2 h-auto bg-transparent"
+              >
+                {showAnalytics ? 'Hide' : 'Show'} Details
+              </Button>
+            </div>
+            
+            {showAnalytics && (
+              <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
+                {/* Key Metrics */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">{analytics.totalFollowing}</div>
+                    <div className="text-sm text-blue-700">Total Following</div>
+                  </div>
+                  <div className="text-center p-3 bg-orange-50 rounded-lg">
+                    <div className="text-2xl font-bold text-orange-600">{analytics.inactiveUsers}</div>
+                    <div className="text-sm text-orange-700">Inactive Users</div>
+                  </div>
+                  <div className="text-center p-3 bg-red-50 rounded-lg">
+                    <div className="text-2xl font-bold text-red-600">{analytics.nonMutualUsers}</div>
+                    <div className="text-sm text-red-700">Not Following Back</div>
+                  </div>
+                  <div className="text-center p-3 bg-green-50 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">{analytics.mutualFollowers}</div>
+                    <div className="text-sm text-green-700">Mutual Followers</div>
+                  </div>
+                </div>
+                
+                {/* Averages */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-purple-50 rounded-lg">
+                    <div className="text-lg font-bold text-purple-600">{analytics.averageFollowers}</div>
+                    <div className="text-sm text-purple-700">Avg Followers</div>
+                  </div>
+                  <div className="text-center p-3 bg-indigo-50 rounded-lg">
+                    <div className="text-lg font-bold text-indigo-600">{analytics.averageFollowing}</div>
+                    <div className="text-sm text-indigo-700">Avg Following</div>
+                  </div>
+                </div>
+                
+                {/* Top Reasons */}
+                {analytics.topReasons.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2">Top Reasons for Unfollow</h3>
+                    <div className="space-y-2">
+                      {analytics.topReasons.map((reason, index) => (
+                        <div key={reason.reason} className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600 capitalize">
+                            {reason.reason.replace('_', ' ')}
+                          </span>
+                          <span className="text-sm font-semibold text-gray-900">{reason.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Progress Indicator */}
+        {unfollowProgress.isActive && (
+          <div className="mb-4 bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-gray-900">Unfollowing Progress</h3>
+              <span className="text-sm text-gray-600">
+                {unfollowProgress.current} / {unfollowProgress.total}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-red-600 h-2 rounded-full transition-all duration-300"
+                style={{ 
+                  width: `${unfollowProgress.total > 0 ? (unfollowProgress.current / unfollowProgress.total) * 100 : 0}%` 
+                }}
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Processing batch {Math.ceil(unfollowProgress.current / 5)} of {Math.ceil(unfollowProgress.total / 5)}
+            </p>
+          </div>
+        )}
 
         {/* Filter Buttons */}
         {users.length > 0 && (
@@ -502,10 +745,30 @@ export default function FarcasterUnfollowApp() {
               </Button>
             </div>
 
+            {/* Progress Indicator */}
+            {unfollowProgress.isActive && (
+              <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-blue-700">Unfollowing Progress</span>
+                  <span className="text-sm text-blue-600">
+                    {unfollowProgress.current} / {unfollowProgress.total}
+                  </span>
+                </div>
+                <div className="w-full bg-blue-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${unfollowProgress.total > 0 ? (unfollowProgress.current / unfollowProgress.total) * 100 : 0}%` 
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <Button
-                onClick={confirmUnfollow}
+                onClick={unfollowSelected}
                 disabled={selectedUsers.size === 0 || isUnfollowing}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
@@ -514,7 +777,7 @@ export default function FarcasterUnfollowApp() {
                 ) : (
                   <UserMinus className="w-4 h-4 mr-1" />
                 )}
-                Unfollow {selectedUsers.size} Users
+                Unfollow {selectedUsers.size}
               </Button>
               <Button
                 onClick={shareResults}
@@ -522,7 +785,15 @@ export default function FarcasterUnfollowApp() {
                 className="border-purple-200 text-purple-700 hover:bg-purple-50 bg-transparent"
               >
                 <Share2 className="w-4 h-4 mr-1" />
-                Share Results
+                Share
+              </Button>
+              <Button
+                onClick={exportResults}
+                variant="outline"
+                className="border-green-200 text-green-700 hover:bg-green-50 bg-transparent"
+              >
+                <BarChart3 className="w-4 h-4 mr-1" />
+                Export
               </Button>
             </div>
           </div>
@@ -531,11 +802,59 @@ export default function FarcasterUnfollowApp() {
         {/* User List */}
         {users.length > 0 && (
           <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Following List</h2>
-            <p className="text-sm text-gray-600 mb-4">Users who haven't casted in 75+ days or don't follow back</p>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-gray-900">Following List</h2>
+              <span className="text-sm text-gray-600">
+                {getFilteredAndSortedUsers().length} of {users.length} users
+              </span>
+            </div>
+            
+            {/* Filter Controls */}
+            <div className="mb-4 space-y-3">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={filterReason === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilterReason('all')}
+                  className="text-xs"
+                >
+                  All ({users.length})
+                </Button>
+                <Button
+                  variant={filterReason === 'inactive' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilterReason('inactive')}
+                  className="text-xs"
+                >
+                  Inactive ({users.filter(u => u.reason === 'inactive').length})
+                </Button>
+                <Button
+                  variant={filterReason === 'not_following_back' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilterReason('not_following_back')}
+                  className="text-xs"
+                >
+                  Not Following Back ({users.filter(u => u.reason === 'not_following_back').length})
+                </Button>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Sort by:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="text-xs border border-gray-300 rounded px-2 py-1 bg-white"
+                >
+                  <option value="reason">Reason</option>
+                  <option value="name">Name</option>
+                  <option value="followers">Followers</option>
+                  <option value="following">Following</option>
+                </select>
+              </div>
+            </div>
 
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {users.map((user) => (
+              {getFilteredAndSortedUsers().map((user) => (
                 <div key={user.fid} className="bg-white rounded-lg border border-gray-200 p-3">
                   <div className="flex items-start space-x-3">
                     {/* Checkbox */}
@@ -554,10 +873,22 @@ export default function FarcasterUnfollowApp() {
                     {/* User Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <div>
+                        <div className="flex-1">
                           <h3 className="font-medium text-gray-900 truncate">{user.display_name}</h3>
                           <p className="text-sm text-gray-500">@{user.username}</p>
-                          <p className="text-xs text-orange-600 mt-1">
+                          <div className="flex items-center gap-4 mt-1">
+                            <span className="text-xs text-gray-500">
+                              {user.follower_count.toLocaleString()} followers
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {user.following_count.toLocaleString()} following
+                            </span>
+                          </div>
+                          <p className={`text-xs mt-1 ${
+                            user.reason === "inactive" 
+                              ? "text-orange-600 bg-orange-50 px-2 py-1 rounded" 
+                              : "text-red-600 bg-red-50 px-2 py-1 rounded"
+                          }`}>
                             {user.reason === "inactive" ? "Inactive 75+ days" : "Not following back"}
                           </p>
                         </div>
@@ -567,7 +898,7 @@ export default function FarcasterUnfollowApp() {
                           size="sm"
                           variant="outline"
                           onClick={() => unfollowSingle(user.fid)}
-                          className="text-xs border-red-200 text-red-700 hover:bg-red-50"
+                          className="text-xs border-red-200 text-red-700 hover:bg-red-50 ml-2"
                         >
                           <UserMinus className="w-3 h-3 mr-1" />
                           Unfollow
@@ -607,7 +938,7 @@ export default function FarcasterUnfollowApp() {
             </p>
             <div className="flex space-x-3">
               <Button
-                onClick={unfollowSelected}
+                onClick={performUnfollow}
                 className="bg-red-600 hover:bg-red-700 text-white flex-1"
               >
                 Yes, Unfollow

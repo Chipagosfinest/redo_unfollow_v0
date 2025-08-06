@@ -4,18 +4,31 @@ export async function POST(request: NextRequest) {
   try {
     const { fid, page = 1, limit = 50 } = await request.json()
     
+    // Enhanced environment checking
     const apiKey = process.env.NEYNAR_API_KEY
-    if (!apiKey) {
-      console.error('NEYNAR_API_KEY not configured')
-      return NextResponse.json(
-        { error: 'API key not configured' },
-        { status: 500 }
-      )
-    }
-
+    const nodeEnv = process.env.NODE_ENV
+    const vercelEnv = process.env.VERCEL_ENV
+    
+    console.log(`Environment: NODE_ENV=${nodeEnv}, VERCEL_ENV=${vercelEnv}`)
     console.log(`Analyzing following list for FID: ${fid}`)
     console.log(`API Key present: ${apiKey ? 'YES' : 'NO'}`)
     console.log(`API Key length: ${apiKey?.length || 0}`)
+    console.log(`API Key preview: ${apiKey ? `${apiKey.substring(0, 8)}...` : 'NONE'}`)
+    
+    if (!apiKey) {
+      console.error('NEYNAR_API_KEY not configured')
+      return NextResponse.json(
+        { 
+          error: 'API key not configured',
+          details: {
+            nodeEnv,
+            vercelEnv,
+            message: 'Please ensure NEYNAR_API_KEY is set in your Vercel environment variables'
+          }
+        },
+        { status: 500 }
+      )
+    }
 
     // Fetch following list using API
     const followingResponse = await fetch(

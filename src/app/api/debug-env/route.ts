@@ -1,15 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
-  const envVars = {
-    NEYNAR_API_KEY: process.env.NEYNAR_API_KEY ? 'Set' : 'Not set',
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'Not set',
-    NODE_ENV: process.env.NODE_ENV,
-    VERCEL_URL: process.env.VERCEL_URL,
-    VERCEL_ENV: process.env.VERCEL_ENV,
-  }
+  // Only allow in development or with special header
+  const debugHeader = request.headers.get('x-debug-env')
+  const isDevelopment = process.env.NODE_ENV === 'development'
   
-  return NextResponse.json(envVars)
+  if (!isDevelopment && !debugHeader) {
+    return NextResponse.json(
+      { error: 'Debug endpoint only available in development' },
+      { status: 403 }
+    )
+  }
+
+  const envInfo = {
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+    neynarApiKeyPresent: !!process.env.NEYNAR_API_KEY,
+    neynarApiKeyLength: process.env.NEYNAR_API_KEY?.length || 0,
+    neynarApiKeyPreview: process.env.NEYNAR_API_KEY ? 
+      `${process.env.NEYNAR_API_KEY.substring(0, 8)}...` : 'NONE',
+    appUrl: process.env.NEXT_PUBLIC_APP_URL,
+    timestamp: new Date().toISOString()
+  }
+
+  return NextResponse.json(envInfo)
 }
 
 export async function POST(request: NextRequest) {
