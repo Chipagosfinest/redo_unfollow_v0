@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Rate limiting and retry configuration
+// Rate limiting and retry configuration - TURBO MODE for Growth plan
 const RATE_LIMIT_CONFIG = {
-  maxRetries: 3,
-  baseDelay: 1000, // 1 second base delay
-  maxDelay: 10000, // 10 seconds max delay
-  batchSize: 20,
-  delayBetweenBatches: 1000,
-  delayBetweenRequests: 50
+  maxRetries: 10, // Maximum retries
+  baseDelay: 100, // Super fast base delay
+  maxDelay: 2000, // Quick max delay
+  batchSize: 100, // Large batches
+  delayBetweenBatches: 50, // Minimal delay between batches
+  delayBetweenRequests: 5 // Minimal delay between requests
 }
 
-// Circuit breaker state
+// Circuit breaker state - More tolerant for single user
 const circuitBreaker = {
   failures: 0,
   lastFailureTime: 0,
   isOpen: false,
-  threshold: 5,
-  timeout: 30000 // 30 seconds
+  threshold: 20, // Much higher threshold
+  timeout: 5000 // Quick recovery
 } as {
   failures: number
   lastFailureTime: number
@@ -110,7 +110,7 @@ async function makeApiRequest(url: string, options: RequestInit, retryCount = 0)
 class RequestQueue {
   private queue: Array<() => Promise<any>> = []
   private processing = false
-  private concurrentLimit = 5
+  private concurrentLimit = 25 // TURBO MODE - much higher concurrent limit
   private activeRequests = 0
 
   async add<T>(requestFn: () => Promise<T>): Promise<T> {
@@ -165,8 +165,8 @@ export async function POST(request: NextRequest) {
         youNoInteraction: true,
         nuclear: false
       },
-      limit = 100,
-      threshold = 60, // 60 days for interaction analysis
+      limit = 1000, // TURBO MODE - much higher limit
+      threshold = 30, // TURBO MODE - much more aggressive (30 days instead of 60)
       testMode = false // Show all users for debugging
     } = requestBody
     
@@ -307,6 +307,28 @@ export async function POST(request: NextRequest) {
             if (filters.nonMutual) {
               analysis.shouldUnfollow = true
             }
+          }
+
+          // TURBO MODE: Add more aggressive filters
+          // Check for low follower counts (potential spam/bot accounts)
+          if (!analysis.shouldUnfollow && user.followerCount < 10) {
+            analysis.reasons.push('Low follower count (< 10)')
+            filterCounts.nuclear++
+            analysis.shouldUnfollow = true
+          }
+
+          // Check for inactive accounts (no recent activity)
+          if (!analysis.shouldUnfollow && user.lastActiveStatus === 'inactive') {
+            analysis.reasons.push('Inactive account')
+            filterCounts.nuclear++
+            analysis.shouldUnfollow = true
+          }
+
+          // Check for accounts with no display name (potential bots)
+          if (!analysis.shouldUnfollow && (!user.displayName || user.displayName.trim() === '')) {
+            analysis.reasons.push('No display name')
+            filterCounts.nuclear++
+            analysis.shouldUnfollow = true
           }
 
           // Only check interactions if we need to (not already marked for unfollow)
